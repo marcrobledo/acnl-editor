@@ -104,4 +104,5 @@ Do not worry, you can still restore it. You will need to update its secure NAND 
 3. Open the old garden.dat/garden_plus.dat savegame in the editor
 4. Go to the Other tab, click on the pencil next to Secure Value and load the newest garden.dat/garden_plus.dat here.
 5. That will turn your old savegame into a valid savegame for the console.
+
 Alternatively you can use [svdt](https://github.com/meladroit/svdt/releases) which updates the NAND value for you.
