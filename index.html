@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html manifest="acnl_editor.appcache">
+<head>
+	<title>Animal Crossing: New Leaf Save Editor</title>
+	<link rel="shortcut icon" href="./data/favicon.png"/>
+	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="description" content="An Animal Crossing: New Leaf savegame editor. It lets you edit your town, items, villagers and more!"/>
+	<meta name="keywords" content="animal, crossing, new, leaf, save, editor, ram, town, pockets, items, hack, exploit"/>
+	<link type="text/css" rel="stylesheet" href="./data/acnl_editor.css" media="all"/>
+	<script type="text/javascript" src="./data/acnl_items.js"></script>
+	<script type="text/javascript" src="./data/acnl_editor.js"></script>
+</head>
+<body>
+
+
+<div id="home">
+	<div class="title">
+		<span class="logo"></span>
+		<h1>Animal Crossing: New Leaf Save Editor</h1>
+		<div class="author">
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 27th Jan 2017)</span>
+		</div>
+
+		<div id="help">
+			<a href="help.html" target="_blank">About</a> | 
+			<a href="help.html#Homebrew" target="_blank">How to</a> | 
+			<a href="https://github.com/marcrobledo/acnl-editor/releases">Download</a> | 
+			<a href="help.html#FAQ" target="_blank">FAQ</a>
+		</div>
+	</div>
+
+	<div id="blocks">
+		<div id="contribute"><a href="https://www.paypal.me/marcrobledo" target="_blank" rel="nofollow"><span>Feel free to contribute by making a donation!</span><span class="donate"><span class="sprite heart"></span> Donate</span></a></div>
+
+		<div class="block block-warning center open" id="block-warning">
+			Use this tool at your own risk.<br/>
+			By using it, you are responsible of any data lost.
+		</div>
+
+		<div class="block">
+			<label for="lang-selector">Select item language:</label> <span id="lang-flag" class="sprite flag flag-en"></span>
+			<select onchange="setCookie('lang',this.value); updateLangIcon(this.value)" id="lang-selector">
+				<option value="0" selected="selected">English</option>
+				<option value="5">English (UK)</option>
+				<option value="1">Français</option>
+				<option value="2">Deutsch</option>
+				<option value="3">Italiano</option>
+				<option value="4">Español</option>
+			</select>
+
+			<hr/>
+			<span id="loading">Loading item database, please wait...</span>
+			<form id="loadform" style="display:none">
+				Open your <u>garden.dat</u> or <u>garden_plus.dat</u> file here:<br/>
+				<input type="file" onchange="loadSavegameFromFile(this.files[0])"/>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+<div id="header">
+
+	<div id="itemsribbon">
+		<input type="text" id="search-input" onkeyup="searchItem(this.value)" onfocus="showSearchResults();" placeholder="Search item..." />
+		<ul id="search-results"></ul>
+		<label for="items">Current item:</label> <select id="items" onchange="buildFlagsSelects(0,0);"><option value="32766" id="item_32766">-</option><option value="32764" id="item_32764">- (empty room space) -</option><option value="32766" id="item_unk">unknown item</option></select>
+		<label for="flag1">Flag 1:</label>
+		<input type="text" id="flag1" disabled="disabled" length="2" oninput="cleanFlagInput(1)" maxlength="2"/>
+		<select id="select-flag1" onchange="setFlag(1, parseInt(this.value))">
+			<option value="-1">custom</option>
+			<option value="0" selected="selected">none</option>
+		</select>
+		<label for="flag2">Flag 2:</label>
+		<input type="text" id="flag2" disabled="disabled" length="2" oninput="cleanFlagInput(2)" maxlength="2" />
+		<select id="select-flag2" onchange="setFlag(2,parseInt(this.value))">
+			<option value="-1">custom</option>
+			<option value="0" selected="selected">none</option>
+		</select>
+	</div>
+
+	<span class="logo"></span>
+	<div id="tab-selector">
+		<span class="active">Map</span>
+		<span>Players</span>
+		<span>Island</span>
+		<span>Villagers</span>
+		<span>Shops</span>
+		<span>Other</span>
+	</div>
+	<button id="save-button" onclick="saveChanges()"><span class="sprite save-icon"></span> Save changes</button>
+</div>
+
+
+
+<form id="file-form" class="hidden"><input type="file" id="file-load" onchange="tempFile=new HexFile(this.files[0], tempFileLoadFunction), el('file-form').reset();"/></form>
+
+
+
+<div id="debug"><div id="debug-name"></div><div id="debug-hex"></div></div>
+
+<div id="editor" style="display:none">
+
+
+
+
+<div id="tab-map">
+	<div style="float:right;width:360px">
+		<h3 class="no-separation">Buildings</h3>
+		<ul id="buildings" class="building-list">
+			<li id="buildings-sort-button" style="text-align:center"><input type="button" value="Sort by type" onclick="sortMapBuildings()"/></li>
+		</ul>
+	</div>
+	<div id="map-map" class="map"></div>
+
+	<br style="clear:both; display:block"/>
+	Options:
+	<input type="button" value="Fill all" onclick="fillAll()"/>
+	<input type="button" value="Remove all" onclick="removeAll()"/>
+	&nbsp;&nbsp;&nbsp;
+	<input type="button" value="Maintenance" onclick="MarcDialogs.open('maintenance')"/>
+	&nbsp;&nbsp;&nbsp;
+	<input type="button" value="Revive grass" onclick="town.fillGrass()"/>
+	<input type="button" value="Desert grass" onclick="town.fillDesert()"/>
+
+	<div class="row">
+		<div class="column column-5 end">
+			<h3>Acres</h3>
+			<div id="map-acres"></div><br/>
+			<input type="button" value="Import map" onclick="tempFileLoadFunction=importMap;el('file-load').click()"/>
+			<input type="button" value="Export map" onclick="exportMap(map)"/>
+		</div>
+	</div>
+
+
+</div>
+
+<div id="tab-players" style="display:none" class="with-sticky-ribbon">
+	<div id="player-selector">
+		<input type="image" class="button" src="" id="player0-pic" onclick="selectPlayer(0)"/>
+		<input type="image" class="button" src="" id="player1-pic" onclick="selectPlayer(1)"/>
+		<input type="image" class="button" src="" id="player2-pic" onclick="selectPlayer(2)"/>
+		<input type="image" class="button" src="" id="player3-pic" onclick="selectPlayer(3)"/>
+	</div>
+
+	<div class="row">
+		<div class="column column-4">
+			<h3 class="no-separation">Player info</h3>
+			<table>
+				<tr>
+					<td>Name/SID:</td>
+					<td><div id="player-name"></div> <span id="player-id" class="mono"></span></td>
+				</tr>
+				<tr>
+					<td>TPC text:</td>
+					<td><div id="player-tpctext"></div></td>
+				</tr>
+				<tr>
+					<td><label for="select-gender">Gender:</label></td>
+					<td><select id="select-gender"></select></td>
+				</tr>
+				<tr>
+					<td><label for="select-tan">Tan:</label></td>
+					<td><select id="select-tan"></select></td>
+				</tr>
+				<tr>
+					<td><label for="select-hairstyle">Hair style:</label></td>
+					<td><select id="select-hairstyle"></select> <span id="span-hair-style"></span></td>
+				</tr>
+				<tr>
+					<td><label for="select-haircolor">Hair color:</label></td>
+					<td><select id="select-haircolor"></select> <span id="span-hair-color"></span></td>
+				</tr>
+				<tr>
+					<td><label for="select-eyecolor">Eye color:</label></td>
+					<td><select id="select-eyecolor"></select> <span id="span-eye-color"></span></td>
+				</tr>
+				<tr>
+					<td><label for="select-face">Face:</label></td>
+					<td><select id="select-face"></select> <span id="span-face"></span></td>
+				</tr>
+				<tr>
+					<td>Playtime:</td>
+					<td><span id="player-playtime"></span></td>
+				</tr>
+				<tr>
+					<td>Birthday:</td>
+					<td><select id="select-birthday-day"></select> <select id="select-birthday-month"></select></td>
+				</tr>
+				<tr>
+					<td>Registration:</td>
+					<td><select id="select-registration-day"></select> <select id="select-registration-month"></select> <select id="select-registration-year"></select></td>
+				</tr>
+				<tr>
+					<td>Cheats:</td>
+					<td id="player-cheats">
+						<input type="button" value="Bank" onclick="currentPlayer.maxBank()"/>
+						<input type="button" value="Island medals" onclick="currentPlayer.maxIslandMedals()"/>
+						<input type="button" value="MEOW coupons" onclick="currentPlayer.maxMeow()" id="button-meow"/>
+						<input type="button" value="Encyclopedia" onclick="currentPlayer.fillEncyclopedia()"/>
+						<input type="button" value="Emotions" onclick="currentPlayer.unlockEmotions()"/>
+						<input type="button" value="Change TPC pic" onclick="changeTPCPic()"/>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div class="column column-7">
+			<h3 class="no-separation">Items</h3>
+
+			<div class="row">
+				<div class="column column-12" id="pockets">Pockets: </div>
+
+				<div class="column column-3" id="dresser0">Dresser A:<br/></div>
+				<div class="column column-3" id="dresser1">Dresser B:<br/></div>
+				<div class="column column-3" id="dresser2">Dresser C:<br/></div>
+				<div class="column column-3" id="islandbox">Island box:<br/></div>
+
+				<div class="column column-12" id="column-storage">Storage room:</div>
+				<div class="column column-3" id="storage0"></div>
+				<div class="column column-3" id="storage1"></div>
+				<div class="column column-3" id="storage2"></div>
+				<div class="column column-3" id="storage3"></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<h3>House exterior</h3>
+		<div class="column column-5">
+			<table>
+				<tr><td><label for="select-house-style">House style:</label></td><td><select id="select-house-style"></select></td></tr>
+				<tr><td><label for="select-house-brick">House brick:</label></td><td><select id="select-house-brick"></select></td></tr>
+				<tr><td><label for="select-house-roof">House roof:</label></td><td><select id="select-house-roof"></select></td></tr>
+				<tr><td>House door:</td><td><select id="select-house-doorshape"></select> <select id="select-house-door"></select></td></tr>
+			</table>
+		</div>
+		<div class="column column-5">
+			<table>
+				<tr><td><label for="select-house-fence">House fence:</label></td><td><select id="select-house-fence"></select></td></tr>
+				<tr><td><label for="select-house-pavement">House pavement:</label></td><td><select id="select-house-pavement"></select></td></tr>
+				<tr><td><label for="select-house-mailbox">House mailbox:</label></td><td><select id="select-house-mailbox"></select></td></tr>
+			</table>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="column column-4">
+			<h3>Patterns</h3>
+			<div id="patterns0" class="player-patterns"></div>
+			<div id="patterns1" class="player-patterns"></div>
+			<div id="patterns2" class="player-patterns"></div>
+			<div id="patterns3" class="player-patterns"></div>
+		</div>
+		<div class="column column-7">
+			<h3>Badges</h3>
+			<ul id="badges"></ul>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="column column-5 room-container" id="rooms0">
+			<h3>Main room</h3>
+		</div>
+		<div class="column column-5 room-container" id="rooms1">
+			<h3>Attic</h3>
+		</div>
+	</div>
+	<div class="row">
+		<div class="column column-5 room-container" id="rooms2">
+			<h3>Basement</h3>
+		</div>
+		<div class="column column-5 room-container" id="rooms3">
+			<h3>East room</h3>
+		</div>
+	</div>
+	<div class="row">
+		<div class="column column-5 room-container" id="rooms4">
+			<h3>West room</h3>
+		</div>
+		<div class="column column-5 room-container" id="rooms5">
+			<h3>North room</h3>
+		</div>
+	</div>
+</div>
+
+
+<div id="tab-island" style="display:none">
+	<div id="map-island" class="map"></div>
+
+	<div class="row">
+		<div class="column column-5">
+			<h3>Acres</h3>
+			<div id="island-acres"></div><br/>
+			<input type="button" value="Import map" onclick="tempFileLoadFunction=importIsland;el('file-load').click()"/>
+			<input type="button" value="Export map" onclick="exportMap(island)"/>
+		</div>
+
+		<div class="column column-5">
+			<h3>Buildings</h3>
+			<ul id="buildings-island" class="building-list"></ul>
+		</div>
+	</div>
+
+</div>
+
+<div id="tab-shops" style="display:none">
+	<table>
+		<tr><td>Retail:</td><td><div id="shop-retail"></div></td></tr>
+		<tr><td>T&amp;T:</td><td><div id="shop-nook"></div></td></tr>
+		<tr><td>Gracie:</td><td><div id="shop-gracie"></div></td></tr>
+		<tr><td>Nook's homes:</td><td><div id="shop-homes"></div></td></tr>
+		<tr><td>Leif:</td><td><div id="shop-leif"></div></td></tr>
+		<tr><td>Able sisters (clothes):</td><td><div id="shop-able1"></div></td></tr>
+		<tr><td>Able sisters (accesories):</td><td><div id="shop-able2"></div></td></tr>
+		<tr><td>Able sisters (patterns):</td><td><div id="labelle" class="patterns-labelle"></div></td></tr>
+		<tr><td>Kicks:</td><td><div id="shop-kicks"></div></td></tr>
+		<tr><td>Redd:</td><td><div id="shop-redd"></div></td></tr>
+		<tr><td>Island shop:</td><td><div id="shop-island"></div></td></tr>
+		<tr><td>Museum shop:</td><td><div id="shop-museum"></div></td></tr>
+		<tr><td>Lost &amp; found:</td><td><div id="lostfound"></div></td></tr>
+		<tr><td>Club LOL gyroids:</td><td><div id="lol-gyroids"></div></td></tr>
+		<tr id="tr-shop-harvey"><td>Harvey:</td><td><div id="shop-harvey"></div></td></tr>
+	</table>
+</div>
+
+<div id="tab-villagers" style="display:none">
+	<div class="row">
+		<h3 class="no-separation">Current villagers</h3>
+		<table id="villagers">
+			<tr><td></td><td></td><th>Wall</th><th>Floor</th><th>Song</th><th>Shirt</th><th>Umbrella</th><th>Furniture</th><th>Catchphrase</th></tr>
+		</table>
+	</div>
+
+	<div class="row">
+		<div class="column column-5">
+			<h3>Past villagers</h3>
+			<div class="row">
+				<div class="column column-6"><table id="past-villagers1"></table></div>
+				<div class="column column-6"><table id="past-villagers2"></table></div>
+			</div>
+			
+		</div>
+
+		<div class="column column-5" id="column-caravan">
+			<h3>Campsite &amp; caravans</h3>
+			<table id="caravan-villagers"></table>
+		</div>
+	</div>
+</div>
+
+<div id="tab-other" style="display:none">
+	<h3 class="no-separation">Town info</h3>
+	<div class="row">
+		<div class="column column-5">
+			<table>
+				<tr>
+					<td>Town name/SID:</td><td><div id="town-name"></div> <span id="town-id" class="mono"></span></td>
+				</tr>
+				<tr>
+					<td><label for="nativefruit">Native fruit:</label></td><td><select id="select-nativefruit"></select></td>
+				</tr>
+				<tr>
+					<td><label for="grasstype">Grass type:</label></td><td><select id="select-grasstype"></select></td>
+				</tr>
+				<tr>
+					<td><label for="grasstype">Grass type (island):</label></td><td><select id="select-grasstypeisland"></select></td>
+				</tr>
+				<tr>
+					<td><label for="townhallcolor">Town hall color:</label></td><td><select id="select-townhallcolor"></select></td>
+				</tr>
+				<tr>
+					<td><label for="trainstationcolor">Train station color:</label></td><td><select id="select-trainstationcolor"></select></td>
+				</tr>
+			</table>
+		</div>
+		<div class="column column-5">
+			<table>
+				<tr>
+					<td><label for="towntreesize">Town tree size stage:</label></td><td><select id="select-towntreesize"></select></td>
+				</tr>
+				<tr>
+					<td>Playtime:</td><td><span id="town-playtime"></span><br/><span id="town-sessions"></span> days played</td>
+				</tr>
+				<tr>
+					<td>Secure value:</td><td><span id="nand-value" class="mono"></span></td>
+				</tr>
+				<tr id="town-cheats">
+					<td>Cheats:</td>
+					<td>
+						<input type="button" value="Unlock all PWPs" onclick="town.unlockAllPWPs()"/>
+						<input type="button" value="Turnip prices" onclick="town.maxTurnipPrices()"/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+
+
+	<div class="row">
+		<div id="museumroom0" class="column column-5 room-container">
+			<h3>Museum Room 1</h3>
+		</div>
+		<div id="museumroom2" class="column column-5 room-container">
+			<h3>Museum Room 3</h3>
+		</div>
+	</div>
+	<div class="row">
+		<div id="museumroom1" class="column column-5 room-container">
+			<h3>Museum Room 2</h3>
+		</div>
+		<div id="museumroom3" class="column column-5 room-container">
+			<h3>Museum Room 4</h3>
+		</div>
+	</div>
+</div>
+
+
+
+
+</div>
+
+<!-- DIALOGS -->
+<div id="dialog-disclaimer" class="dialog">
+	<b>Disclaimer</b><br/><br/>
+	This tool can damage your savegame if not used correctly.<br/>
+	You are responsible of any data lost.<br/><br/>
+	Be careful when editing your savegame, always keep a backup of your previous savegame.
+	<div class="buttons">
+		<input type="button" class="red" value="I accept" onclick="acceptDisclaimer()" />
+	</div>
+</div>
+
+<div id="dialog-secure-value" class="dialog">
+	Secure NAND value determines if the <b>garden.dat</b> savegame will be valid for your console.<br/>
+	If you want to use an old savegame, you will need to update its secure NAND value using your most up-to-date garden.dat file.<br/>
+	<b class="warning">Warning!</b> Use this at your own risk.
+
+	<div class="buttons">
+		<input type="button" class="red" value="Update secure NAND value" onclick="tempFileLoadFunction=changeSecureNANDValue;el('file-load').click();MarcDialogs.close()"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+
+<div id="dialog-maintenance" class="dialog">
+	<input type="checkbox" id="remove-weeds" checked="checked" /> <label for="remove-weeds">Remove weeds</label><br/>
+	<input type="checkbox" id="water-flowers" checked="checked" /> <label for="water-flowers">Water flowers</label><br/>
+	<input type="checkbox" id="perfectize-trees" /> <label for="perfectize-trees">Add a perfect fruit to trees</label>
+
+	<div class="buttons">
+		<input type="button" class="button-accept" value="Accept" onclick="acceptMaintenance()"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+
+<div id="dialog-importmap" class="dialog">
+	<input type="checkbox" id="import-items" checked="checked" /> <label for="import-items">Import items</label><br/>
+	<input type="checkbox" id="import-buildings" /> <label for="import-buildings">Import building positions (may need manually fixing)</label>
+
+	<div class="buttons">
+		<input type="button" class="button-accept" value="Accept" onclick="acceptImportMap()"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+
+<div id="dialog-acre" class="dialog">
+	Select an acre to replace.<br/>
+	<b class="warning">Warning!</b> An invalid acre structure will might freeze the game while booting. <a href="help.html#Warnings" class="help" target="_blank">More info</a>
+	<div id="acre-selector"></div>
+</div>
+
+<div id="dialog-string" class="dialog">
+	<label for="input-string" id="input-string-title"></label>:	<input type="text" id="input-string" />
+
+	<div class="buttons">
+		<input type="button" class="button-accept" value="Accept" onclick="acceptEditString()"/>
+		<input type="button" value="Insert special character" onclick="MarcDialogs.open('specialchars')"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+
+<div id="dialog-specialchars" class="dialog">
+	<label for="select-unicode">Select special character</label>:
+	<select id="select-unicode">
+		<optgroup label="Nintendo DS">
+			<option value="57344">A Button</option>
+			<option value="57345">B Button</option>
+			<option value="57346">X Button</option>
+			<option value="57347">Y Button</option>
+			<option value="57348">L Button</option>
+			<option value="57349">R Button</option>
+			<option value="57350">D-pad</option>
+			<option value="57364">DS Touch Screen Calibration</option>
+		</optgroup>
+		<optgroup label="Nintendo DSi">
+			<option value="57373">DSi/3DS Touch Screen Calibration</option>
+			<option value="57374">Camera Icon</option>
+		</optgroup>
+		<optgroup label="Nintendo 3DS">
+			<option value="57465">D-pad Up</option>
+			<option value="57466">D-pad Down</option>
+			<option value="57467">D-pad Left</option>
+			<option value="57468">D-pad Right</option>
+			<option value="57469">D-pad Up &amp; Down</option>
+			<option value="57470">D-pad Left &amp; Right</option>
+			<option value="57464">Power Button</option>
+			<option value="57462">Video Icon</option>
+			<option value="57458">Turning Arrow</option>
+			<option value="57459">HOME Menu</option>
+			<option value="57460">Pedometer</option>
+			<option value="57461">Play Coin</option>
+			<option value="57457">Close Button</option>
+			<option value="57456">Close Button</option>
+		</optgroup>
+		<optgroup label="PictoChat">
+			<option value="57352">Happy Face</option>
+			<option value="57353">Angry Face</option>
+			<option value="57354">Sad Face</option>
+			<option value="57355">Sleepy Face</option>
+			<option value="57356">Sun</option>
+			<option value="57357">Cloud</option>
+			<option value="57358">Umbrella</option>
+			<option value="57359">Snowman</option>
+			<option value="57360">Black Box with !</option>
+			<option value="57361">Black Box with ?</option>
+			<option value="57362">Envelope</option>
+			<option value="57363">Cellphone</option>
+			<option value="57351">Clock</option>
+			<option value="57365">Spade</option>
+			<option value="57366">Diamond</option>
+			<option value="57367">Heart</option>
+			<option value="57368">Clubs</option>
+			<option value="57369">Right Arrow</option>
+			<option value="57370">Left Arrow</option>
+			<option value="57371">Up Arrow</option>
+			<option value="57372">Down Arrow</option>
+			<option value="57375">Box with X inside</option>
+			<option value="57376">Loading Squares 1</option>
+			<option value="57377">Loading Squares 2</option>
+			<option value="57378">Loading Squares 3</option>
+			<option value="57379">Loading Squares 4</option>
+			<option value="57380">Loading Squares 5</option>
+			<option value="57381">Loading Squares 6</option>
+			<option value="57382">Loading Squares 7</option>
+			<option value="57383">Loading Squares 8</option>
+			<option value="57384">Big X</option>
+			<option value="57385">Chat Room A</option>
+			<option value="57386">Chat Room B</option>
+			<option value="57387">Chat Room C</option>
+			<option value="57388">Chat Room D</option>
+			<option value="57389">A in Black Background</option>
+			<option value="57390">M in Black Background</option>
+			<option value="57392">P in PictoChat Logo</option>
+			<option value="57393">I in PictoChat Logo</option>
+			<option value="57394">C in PictoChat Logo</option>
+			<option value="57395">T in PictoChat Logo</option>
+			<option value="57396">H in PictoChat Logo</option>
+			<option value="57397">A in PictoChat Logo</option>
+			<option value="57406">Small X in Black Background</option>
+			<option value="57407">Large X in Black Background</option>
+		</optgroup>
+		<optgroup label="Nintendo Wii">
+			<option value="57447">Wii Logo</option>
+			<option value="57410">Wii Remote A Button</option>
+			<option value="57411">Wii Remote B Button</option>
+			<option value="57409">D-pad</option>
+			<option value="57412">Home Button</option>
+			<option value="57413">+ Button</option>
+			<option value="57414">- Button</option>
+			<option value="57415">1 Button</option>
+			<option value="57416">2 Button</option>
+			<option value="57408">Power Button</option>
+			<option value="57417">Analog Stick</option>
+			<option value="57418">Nunchuk C Button</option>
+			<option value="57419">Nunchuk Z Button</option>
+			<option value="57424">Left Analog Stick</option>
+			<option value="57425">Right Analog Stick</option>
+			<option value="57420">Classic Controller A Button</option>
+			<option value="57421">Classic Controller B Button</option>
+			<option value="57422">Classic Controller X Button</option>
+			<option value="57423">Classic Controller Y Button</option>
+			<option value="57426">Classic Controller L Button</option>
+			<option value="57427">Classic Controller R Button</option>
+			<option value="57428">Classic Controller ZL Button</option>
+			<option value="57429">Classic Controller ZR Button</option>
+			<option value="57430">Enter Key</option>
+			<option value="57431">Space Key</option>
+			<option value="57432">Wii Remote Pointer</option>
+			<option value="57433">Wii Remote Pointer 1</option>
+			<option value="57434">Wii Remote Pointer 2</option>
+			<option value="57435">Wii Remote Pointer 3</option>
+			<option value="57436">Wii Remote Pointer 4</option>
+			<option value="57437">Wii Remote Pointer Grabbing</option>
+			<option value="57438">Wii Remote Pointer Grabbing 1</option>
+			<option value="57439">Wii Remote Pointer Grabbing 2</option>
+			<option value="57440">Wii Remote Pointer Grabbing 3</option>
+			<option value="57441">Wii Remote Pointer Grabbing 4</option>
+			<option value="57442">Wii Remote Pointer Open</option>
+			<option value="57443">Wii Remote Pointer Open 1</option>
+			<option value="57444">Wii Remote Pointer Open 2</option>
+			<option value="57445">Wii Remote Pointer Open 3</option>
+			<option value="57446">Wii Remote Pointer Open 4</option>
+			<option value="57451">? in Black Background</option>
+			<option value="57448">Superscript er</option>
+		</optgroup>
+		<optgroup label="Extra">
+			<option value="9728">Sun</option>
+			<option value="9729">Cloud</option>
+			<option value="9730">Umbrella</option>
+			<option value="9731">Snowman</option>
+			<option value="9742">Telephone</option>
+			<option value="9756">Hand Left</option>
+			<option value="9757">Hand Up</option>
+			<option value="9758">Hand Right</option>
+			<option value="9759">Hand Down</option>
+			<option value="9824">Spade</option>
+			<option value="9829">Heart</option>
+			<option value="9827">Clubs</option>
+			<option value="9830">Diamond</option>
+			<option value="9828">White Spade</option>
+			<option value="9825">White Heart</option>
+			<option value="9831">White Clubs</option>
+			<option value="9826">White Diamond</option>
+			<option value="9743">White Telephone</option>
+			<option value="10004">Tick</option>
+			<option value="8481">TEL</option>
+		</optgroup>
+	</select>
+
+	<div class="buttons">
+		<input type="button" value="Insert special character" onclick="el('input-string').value+=String.fromCharCode(el('select-unicode').value);MarcDialogs.open('string')"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.open('string')"/>
+	</div>
+</div>
+
+<div id="dialog-pattern" class="dialog">
+	<img src="" id="pattern-preview"/><br/>
+	<span id="pattern-preview-title"></span>
+
+	<div class="buttons">
+		<input type="button" value="Import pattern" onclick="el('file-load').click()"/>
+		<input type="button" value="Export pattern" onclick="currentEditingItem.export()"/>	
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+<div id="dialog-building" class="dialog">
+	Select the new building: <select id="select-building-list"></select>
+
+	<div class="buttons">
+		<input type="button" class="button-accept" value="Accept" onclick="acceptBuilding()"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+<div id="dialog-villager" class="dialog">
+	<label for="villager-new">New villager:</label> <select id="villager-new" onchange="el('villager-default').checked=true;refreshVillagerEdit();"></select> <span id="villager-pic"></span><br/>
+	Personality: <span id="villager-personality"></span><br/>
+	<div id="villager-current-options">
+		<input type="checkbox" id="villager-default"/> <label for="villager-default">Set villager data to default (catchphrase, clothes and furniture)</label><br/>
+		<input type="checkbox" id="villager-boxed"/> <label for="villager-boxed">Boxed (will move next day)</label><br/>
+	</div>
+
+	<div class="buttons">
+		<input type="button" class="button-accept" value="Accept" onclick="acceptVillagerEdit()"/>
+		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+	</div>
+</div>
+
+
+
+</body>
+</html>

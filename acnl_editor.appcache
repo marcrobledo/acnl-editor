@@ -1,0 +1,21 @@
+CACHE MANIFEST
+# last update 2017-01-27
+# these belong to the CACHE block
+index.html
+help.html
+data/acnl_editor.css
+data/acnl_editor.js
+data/acnl_editor_logo.png
+data/acnl_editor_sprites.png
+data/acnl_items.js
+data/acres.png
+data/favicon.png
+data/no_tpc.png
+data/NotoSans.woff2
+data/NotoSansBold.woff2
+data/NotoSansItalic.woff2
+data/villagers.jpg
+
+# force these files to be loaded in network
+# NETWORK:
+# data/villagers.jpg

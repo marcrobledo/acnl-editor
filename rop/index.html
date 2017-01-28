@@ -1,0 +1,17 @@
+<html><head><meta charset="ISO-8859-1" /><link rel="shortcut icon" href="icon_acnl.png"/><meta name="viewport" content="width=320" /><style>body{text-align:center;background-color:black;color:white}a{color:#f7d139}hr{border:none;border-bottom:1px dotted gray}</style><title>AC:NL RAM dumper/injector</title><script type="text/javascript"><!--
+function updateLinks(){
+	var v=document.getElementById('input').value;
+	var a='';
+	if(v)a='&'+v;
+	document.getElementById('ram2sd').href='loader-remove-.html?acnldump.dat'+a;
+	document.getElementById('sd2ram').href='loader-remove-.html?acnlinjc.dat'+a;
+}
+--></script></head><body onload="updateLinks()">
+<b><img src="icon_acnl.png" /> AC:NL RAM dumper/injector</b><br/><br/>
+Type your filename:<br/>
+<input id="input" type="text" maxlength="13" value="gardenram.dat" onchange="updateLinks()" /><br/><br/>
+<a id="ram2sd" href="loader-remove-.html?acnldump.dat&gardenram.dat">RAM &gt; SD</a><br/>
+<a id="sd2ram" href="loader-remove-.html?acnlinjc.dat&gardenram.dat">SD &gt; RAM</a><br/><br/>
+<hr/>
+<small>original ROP loader HTML by <a href="https://github.com/dukesrg" target="_blank">duke_srg</a></small>
+</body></html>

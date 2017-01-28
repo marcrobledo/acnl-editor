@@ -1,0 +1,13 @@
+<html><head><meta charset="ISO-8859-1"/><meta name="viewport" content="width=320"/><style>body{background-color:black;color:white}a{color:#f7d139}</style><script><!--
+var u=decodeURI(window.location.search.substring(1));
+var f=(u.search('&')>-1)?u.substring(u.search('&')+1):'gardenram.dat';
+
+if(/acnldump/.test(u))document.title='AC:NL RAM > '+f;
+else if(/acnlinjc/.test(u))document.title='AC:NL '+f+' > RAM';
+else document.title='*INVALID ACTION*';
+--></script>
+<link rel="shortcut icon" href="icon_warn.png"/><title>ROP</title></head><body>
+<b>Ready.</b><br/>
+Now add this page to your bookmarks, edit and remove <b>-remove-</b> from the URL.<br/><br/>
+<a href="./" onclick="history.back();return false">&laquo; Go back</a>
+</body></html>
