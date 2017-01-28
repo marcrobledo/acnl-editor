@@ -32,6 +32,7 @@ Be careful when editing your savegame, always keep a backup of your previous sav
 
 ### Configuration
 You will only need to do this once.
+
 1. Install Homebrew Launcher from [smealum](http://smealum.github.io/3ds/) using any of your available entrypoints (depending on your firmware version).
 2. Recommended entrypoints:
   * **9.x/10.x/11.0 users:** use browserhax+menuhax or soundhax</li>
@@ -99,6 +100,7 @@ No.
 That means you injected an old savegame, and the game blocked it using an anti-cheat protection system.
 
 Do not worry, you can still restore it. You will need to update its secure NAND value.
+
 1. Make a backup of your old savegame you want to restore
 2. Restart your game and save. Make a dump of this new AC:NL savegame.
 3. Open the old garden.dat/garden_plus.dat savegame in the editor
