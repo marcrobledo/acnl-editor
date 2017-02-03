@@ -507,7 +507,7 @@ Town.prototype.save=function(){
 
 	for(var i=0; i<16; i++)
 		this.pastVillagers[i].save();
-
+	this.campsiteVillager.save();
 
 
 
