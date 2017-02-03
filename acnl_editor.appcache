@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# last update 2017-02-03
+# last update 2017-02-03b
 # these belong to the CACHE block
 index.html
 help.html
@@ -17,5 +17,5 @@ data/NotoSansItalic.woff2
 data/villagers.jpg
 
 # force these files to be loaded in network
-# NETWORK:
-# data/villagers.jpg
+NETWORK:
+*

@@ -2066,7 +2066,7 @@ Player.prototype.save=function(){
 Player.prototype.refreshJPG=function(){
 	var offset=this.offset+Offsets.PLAYER_TPCPIC;
 
-	if(savegame.readByte4(offset)==0xe1ffd8ff){
+	if((savegame.readByte4(offset) & 0x00ffffff)==0x00ffd8ff){
 		var base64='';
 		for(var j=0; j<0x1400 && (savegame.readByte2(offset+j)!=0xffd9); j++){
 			base64+=String.fromCharCode(savegame.readByte1(offset+j));
@@ -2820,7 +2820,7 @@ function initializeEverything(){
 
 	/* Grass */
 	grassCurrent=new GrassMapPrevious(Offsets.MAP_GRASS_CURRENT,'grass-current',5,4);
-	new GrassMapCurrent(Offsets.MAP_GRASS_PREVIOUS,'grass-previous',5,4);
+	//new GrassMapCurrent(Offsets.MAP_GRASS_PREVIOUS,'grass-previous',5,4);
 
 	/* read player data */
 	players=new Array(4);
