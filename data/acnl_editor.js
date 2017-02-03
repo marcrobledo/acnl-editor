@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170107
+	Animal Crossing: New Leaf Save Editor v20170203
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
@@ -8,8 +8,6 @@
 	 * froggestspirit for extracting acre information and item list
 	 * sprungit/shokolad-town for compiling hair style and color thumbnails
 */
-
-/* RAM address AR code: 21Fb8180 000000xx */
 
 var AUTO_INCREMENT=false; /* automatic increase item index after placing */
 
@@ -28,8 +26,8 @@ var Offsets={
 
 	MUSEUM_ROOMS:			0x80+0x0659d8,
 
-	//CURRENT_GRASS:			0x052a58,
-	MAP_GRASS:				0x80+0x053e80,
+	MAP_GRASS_CURRENT:		0x80+0x052a58,
+	MAP_GRASS_PREVIOUS:		0x80+0x053e80,
 	MAP_ACRES:				0x80+0x04da04,
 	MAP_BUILDINGS:			0x80+0x049528,
 	MAP_ITEMS:				0x80+0x04da58,
@@ -133,7 +131,8 @@ const OffsetsPlus={
 
 	MUSEUM_ROOMS:			0x06b478,
 
-	MAP_GRASS:				0x059900,
+	MAP_GRASS_CURRENT:		0x0584d8,
+	MAP_GRASS_PREVIOUS:		0x059900,
 	MAP_ACRES:				0x053484,
 	MAP_BUILDINGS:			0x04be88,
 	MAP_ITEMS:				0x0534d8,
@@ -250,7 +249,7 @@ const Constants={
 
 
 var mouseHeld=0,tempFile,tempFileLoadFunction;
-var savegame,map,island,players,buildings,town;
+var savegame,map,island,players,grassCurrent,buildings,town;
 var currentPlayer,currentTab;
 var currentEditingItem;
 var moveBuildingOverlay;
@@ -571,16 +570,33 @@ Town.prototype.maxTurnipPrices=function(){
 }
 
 Town.prototype.setGrass=function(b){
-	var MAX=((16*16)*(5*4))*2;
+	var MAX_CURRENT=(16*16)*(5*4);
+	for(var i=0; i<MAX_CURRENT; i++){
+		grassCurrent.tiles[i]=~b & 0x0f;
+		savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i, grassCurrent.tiles[i]);
+	}
+	grassCurrent.draw();
+
+	var MAX=(16*16)*(5*4) *2 ; // *2 ???
 	for(var i=0; i<MAX; i++)
-		savegame.storeByte(Offsets.MAP_GRASS+i, b);
+		savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, b);
+
 
 	MarcDialogs.close();
 }
 Town.prototype.fillGrass=function(){MarcDialogs.confirm('Do you want to revive all grass?',function(){town.setGrass(0xff)})};
 Town.prototype.fillDesert=function(){MarcDialogs.confirm('Do you want to kill all grass?',function(){town.setGrass(0x00)})};
 Town.prototype.fillStrippedGrass=function(){
-	if(confirm('Do you want to strip all grass?')){
+	MarcDialogs.confirm('Do you want to strip all grass?', function(){
+		var MAX_CURRENT=(16*16)*(5*4);
+		for(var i=0; i<MAX_CURRENT/2; i++){
+			grassCurrent.tiles[i*2+0]=0x00;
+			grassCurrent.tiles[i*2+1]=0x0f;
+			savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i*2+0, grassCurrent.tiles[i*2+0]);
+			savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i*2+1, grassCurrent.tiles[i*2+1]);
+		}
+		grassCurrent.draw();
+
 		var MAX=((16*16)*(5*4))*2;
 		for(var i=0; i<MAX; i++){
 			var b;
@@ -589,9 +605,11 @@ Town.prototype.fillStrippedGrass=function(){
 			}else{
 				b=0xff;
 			}
-			savegame.storeByte(Offsets.MAP_GRASS+i, b)
+			savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, b)
 		}
-	}
+
+		MarcDialogs.close();
+	});
 }
 
 
@@ -890,6 +908,97 @@ ItemGridMap.prototype.save=function(){
 	for(var i=0; i<this.acres.length; i++)
 		this.acres[i].save();
 }
+
+
+
+
+
+function GrassMapPrevious(offset,canvasId,width,height){
+	this.offset=offset;
+	this.canvas=el(canvasId);
+	this.width=width;
+	this.height=height;
+
+	this.canvas.width=this.width*16;
+	this.canvas.height=this.height*16;
+
+	this.tiles=new Array(width*height*16*16);
+	for(var i=0; i<this.tiles.length; i++){
+		var b=savegame.readByte1(this.offset+i);
+		this.tiles[i]=b & 0x0f;
+		if(b >> 4){
+			//alert(b);
+		}
+	}
+
+	this.draw();
+}
+GrassMapPrevious.prototype.draw=function(){
+	var tile=0;
+	var ctx=this.canvas.getContext('2d');
+	for(var i=0; i<this.height; i++){
+		for(var j=0; j<this.width; j++){
+			for(var y=0; y<16; y++){
+				for(var x=0; x<16; x++){
+					var color=255-this.tiles[tile]*17;
+					ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
+					ctx.fillRect(j*16+x, i*16+y, 1, 1);
+
+					tile++;
+				}
+			}
+		}
+	}
+}
+GrassMapPrevious.prototype.save=function(){
+}
+
+
+function GrassMapCurrent(offset,canvasId,width,height){
+	this.offset=offset;
+	this.canvas=el(canvasId);
+	this.width=width;
+	this.height=height;
+
+	this.canvas.width=this.width*16;
+	this.canvas.height=this.height*16;
+
+	this.tiles=new Array(width*height*16*16);
+	for(var i=0; i<this.tiles.length; i++){
+		var b=savegame.readByte1(this.offset+i);
+		this.tiles[i]=b;
+	}
+
+	this.draw();
+}
+GrassMapCurrent.prototype.draw=function(){
+	var tile=0;
+	var ctx=this.canvas.getContext('2d');
+	for(var i=0; i<this.height; i++){
+		for(var j=0; j<this.width; j++){
+			for(var y=0; y<16; y++){
+				for(var x=0; x<16; x++){
+					var color=255-this.tiles[tile];
+					ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
+					ctx.fillRect(j*16+x, i*16+y, 1, 1);
+
+					tile++;
+				}
+			}
+		}
+	}
+}
+GrassMapCurrent.prototype.save=function(){
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2027,7 +2136,7 @@ function changeTPCPic(){
 	el('file-load').click()
 }
 function changeTPCPic2(){
-	if(tempFile.readByte4(0)!==0xe1ffd8ff){
+	if((tempFile.readByte4(0) & 0x00ffffff)!==0x00ffd8ff){
 		MarcDialogs.alert('Invalid pic file (must be a valid JPG file. dimensions: 64x104, max size: 4kb).');
 		return false
 	}else if(tempFile.fileSize>5024){
@@ -2402,6 +2511,7 @@ function fillAll(){
 				count++
 			}
 		if(count){
+			forceMapEdited();
 			MarcDialogs.alert(count+' '+itemName+' were added.');
 			map.repaint();
 		}else{
@@ -2414,17 +2524,22 @@ function removeAll(){
 	MarcDialogs.confirm('Remove all '+itemName+' on town?', function(){
 		var count=0;
 		for(var i=0;i<map.items.length;i++)
-			if(map.items[i].id==el('items').value && map.items[i].flag1==el('flag1').value){
+			if(map.items[i].id==el('items').value){
 				map.items[i].set(0x00,0x00,0x7ffe);
 				count++
 			}
 		if(count){
+			forceMapEdited();
 			MarcDialogs.alert(count+' '+itemName+' were removed.');
 			map.repaint();
 		}else{
 			MarcDialogs.close();
 		}
 	});
+}
+function forceMapEdited(){
+	for(var i=0; i<map.itemGrids.length; i++)
+		map.itemGrids[i].itemList.edited=true;
 }
 function acceptMaintenance(){
 	var removedWeeds=0;
@@ -2453,6 +2568,7 @@ function acceptMaintenance(){
 		messages.push(perfectizedTrees+' normal trees got a single perfect fruit.');
 
 	if(messages[0]){
+		forceMapEdited();
 		MarcDialogs.alert(messages.join('<br/>'));
 		map.repaint();
 	}else
@@ -2702,6 +2818,9 @@ function initializeEverything(){
 	/* Island map */
 	island=new ItemGridMap('island');
 
+	/* Grass */
+	grassCurrent=new GrassMapPrevious(Offsets.MAP_GRASS_CURRENT,'grass-current',5,4);
+	new GrassMapCurrent(Offsets.MAP_GRASS_PREVIOUS,'grass-previous',5,4);
 
 	/* read player data */
 	players=new Array(4);
