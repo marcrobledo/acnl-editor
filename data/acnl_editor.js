@@ -570,16 +570,19 @@ Town.prototype.maxTurnipPrices=function(){
 }
 
 Town.prototype.setGrass=function(b){
-	var MAX_CURRENT=(16*16)*(5*4);
+	var MAX_CURRENT=(16*16)*(8*6);
 	for(var i=0; i<MAX_CURRENT; i++){
-		grassCurrent.tiles[i]=~b & 0x0f;
-		savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i, grassCurrent.tiles[i]);
+		if(Math.floor(i/64) < (Math.floor(i/(64*16)) + 1) * 16 - 2){
+			grassCurrent.tiles[i]=~b & 0xff;
+			savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i, grassCurrent.tiles[i]);
+        	}
 	}
-	grassCurrent.draw();
 
-	var MAX=(16*16)*(5*4) *2 ; // *2 ???
+	var MAX=(16*16)*(8*6) ; // *2 ???
 	for(var i=0; i<MAX; i++)
-		savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, b);
+		if(Math.floor(i/64) < (Math.floor(i/(64*16)) + 1) * 16 - 2)
+			savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, b);
+	grassCurrent.draw();
 
 
 	MarcDialogs.close();
@@ -919,13 +922,13 @@ function GrassMapPrevious(offset,canvasId,width,height){
 	this.width=width;
 	this.height=height;
 
-	this.canvas.width=this.width*16;
-	this.canvas.height=this.height*16;
+	this.canvas.width=this.width*32*2;
+	this.canvas.height=this.height*32*2;
 
 	this.tiles=new Array(width*height*16*16);
 	for(var i=0; i<this.tiles.length; i++){
 		var b=savegame.readByte1(this.offset+i);
-		this.tiles[i]=b & 0x0f;
+		this.tiles[i]=b & 0xff;
 		if(b >> 4){
 			//alert(b);
 		}
@@ -936,15 +939,23 @@ function GrassMapPrevious(offset,canvasId,width,height){
 GrassMapPrevious.prototype.draw=function(){
 	var tile=0;
 	var ctx=this.canvas.getContext('2d');
-	for(var i=0; i<this.height; i++){
-		for(var j=0; j<this.width; j++){
-			for(var y=0; y<16; y++){
-				for(var x=0; x<16; x++){
-					var color=255-this.tiles[tile]*17;
-					ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
-					ctx.fillRect(j*16+x, i*16+y, 1, 1);
+	for(var i=0; i<this.height*2; i++){
+		for(var j=0; j<this.width*2; j++){
+			for(var y4=0; y4<2; y4++){
+				for(var x4=0; x4<2; x4++){
+					for(var y2=0; y2<2; y2++){
+						for(var x2=0; x2<2; x2++){
+							for(var y1=0; y1<2; y1++){
+								for(var x1=0; x1<2; x1++){
+									var color=255-this.tiles[tile];
+									ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
+									ctx.fillRect((j*8+x4*4+x2*2+x1)*4-3, (i*8+y4*4+y2*2+y1)*4-3, 4, 4);
 
-					tile++;
+									tile++;
+                                }
+                            }
+                        }
+                    }
 				}
 			}
 		}
