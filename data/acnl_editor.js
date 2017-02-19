@@ -5,6 +5,7 @@
 	A lot of thanks to:
 	 * Thulinma for Pattern structure (check out his editor pattern http://www.thulinma.com/acnl/ )
 	 * NeoKamek for his work on LeafTools and other help
+	 * jexom for documenting grass deterioration
 	 * froggestspirit for extracting acre information and item list
 	 * sprungit/shokolad-town for compiling hair style and color thumbnails
 */
@@ -570,25 +571,25 @@ Town.prototype.maxTurnipPrices=function(){
 }
 
 Town.prototype.setGrass=function(b){
-	var MAX_CURRENT=(16*16)*(8*6);
+	var MAX_CURRENT=(16*16)*(5*4);
 	for(var i=0; i<MAX_CURRENT; i++){
-		if(Math.floor(i/64) < (Math.floor(i/(64*16)) + 1) * 16 - 2){
-			grassCurrent.tiles[i]=~b & 0xff;
-			savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i, grassCurrent.tiles[i]);
-        	}
+		grassCurrent.tiles[i]=b & 0x0f;
+		savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i, grassCurrent.tiles[i]);
 	}
-
-	var MAX=(16*16)*(8*6) ; // *2 ???
-	for(var i=0; i<MAX; i++)
-		if(Math.floor(i/64) < (Math.floor(i/(64*16)) + 1) * 16 - 2)
-			savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, b);
 	grassCurrent.draw();
+
+	var MAX=(8*8)*(8*6)*4;
+	for(var i=0; i<MAX; i++){
+		grassPrevious.tiles[i]=~b & 0xff;
+		savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, grassPrevious.tiles[i]);
+	}
+	grassPrevious.draw();
 
 
 	MarcDialogs.close();
 }
-Town.prototype.fillGrass=function(){MarcDialogs.confirm('Do you want to revive all grass?',function(){town.setGrass(0xff)})};
-Town.prototype.fillDesert=function(){MarcDialogs.confirm('Do you want to kill all grass?',function(){town.setGrass(0x00)})};
+Town.prototype.fillGrass=function(){MarcDialogs.confirm('Do you want to revive all grass?',function(){town.setGrass(0x00)})};
+Town.prototype.fillDesert=function(){MarcDialogs.confirm('Do you want to kill all grass?',function(){town.setGrass(0xff)})};
 Town.prototype.fillStrippedGrass=function(){
 	MarcDialogs.confirm('Do you want to strip all grass?', function(){
 		var MAX_CURRENT=(16*16)*(5*4);
@@ -916,23 +917,59 @@ ItemGridMap.prototype.save=function(){
 
 
 
+function GrassMapCurrent(offset,canvasId,width,height){
+	this.offset=offset;
+	this.canvas=el(canvasId);
+	this.width=width;
+	this.height=height;
+
+	this.canvas.width=this.width*16;
+	this.canvas.height=this.height*16;
+
+	this.tiles=new Array(width*height*16*16);
+	for(var i=0; i<this.tiles.length; i++){
+		var b=savegame.readByte1(this.offset+i);
+		this.tiles[i]=b & 0x0f;
+		if(b >> 4){
+			//alert(b);
+		}
+	}
+
+	this.draw();
+}
+GrassMapCurrent.prototype.draw=function(){
+	var tile=0;
+	var ctx=this.canvas.getContext('2d');
+	for(var i=0; i<this.height; i++){
+		for(var j=0; j<this.width; j++){
+			for(var y=0; y<16; y++){
+				for(var x=0; x<16; x++){
+					var color=255-this.tiles[tile]*17;
+					ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
+					ctx.fillRect(j*16+x, i*16+y, 1, 1);
+
+					tile++;
+				}
+			}
+		}
+	}
+}
+GrassMapCurrent.prototype.save=function(){
+}
+
+
 function GrassMapPrevious(offset,canvasId,width,height){
 	this.offset=offset;
 	this.canvas=el(canvasId);
 	this.width=width;
 	this.height=height;
 
-	this.canvas.width=this.width*32*2;
-	this.canvas.height=this.height*32*2;
+	this.canvas.width=this.width*16;
+	this.canvas.height=this.height*16;
 
 	this.tiles=new Array(width*height*16*16);
-	for(var i=0; i<this.tiles.length; i++){
-		var b=savegame.readByte1(this.offset+i);
-		this.tiles[i]=b & 0xff;
-		if(b >> 4){
-			//alert(b);
-		}
-	}
+	for(var i=0; i<this.tiles.length; i++)
+		this.tiles[i]=savegame.readByte1(this.offset+i);
 
 	this.draw();
 }
@@ -947,9 +984,9 @@ GrassMapPrevious.prototype.draw=function(){
 						for(var x2=0; x2<2; x2++){
 							for(var y1=0; y1<2; y1++){
 								for(var x1=0; x1<2; x1++){
-									var color=255-this.tiles[tile];
+									var color=this.tiles[tile];
 									ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
-									ctx.fillRect((j*8+x4*4+x2*2+x1)*4-3, (i*8+y4*4+y2*2+y1)*4-3, 4, 4);
+									ctx.fillRect((j*8+x4*4+x2*2+x1), (i*8+y4*4+y2*2+y1), 1, 1);
 
 									tile++;
                                 }
@@ -960,46 +997,6 @@ GrassMapPrevious.prototype.draw=function(){
 			}
 		}
 	}
-}
-GrassMapPrevious.prototype.save=function(){
-}
-
-
-function GrassMapCurrent(offset,canvasId,width,height){
-	this.offset=offset;
-	this.canvas=el(canvasId);
-	this.width=width;
-	this.height=height;
-
-	this.canvas.width=this.width*16;
-	this.canvas.height=this.height*16;
-
-	this.tiles=new Array(width*height*16*16);
-	for(var i=0; i<this.tiles.length; i++){
-		var b=savegame.readByte1(this.offset+i);
-		this.tiles[i]=b;
-	}
-
-	this.draw();
-}
-GrassMapCurrent.prototype.draw=function(){
-	var tile=0;
-	var ctx=this.canvas.getContext('2d');
-	for(var i=0; i<this.height; i++){
-		for(var j=0; j<this.width; j++){
-			for(var y=0; y<16; y++){
-				for(var x=0; x<16; x++){
-					var color=255-this.tiles[tile];
-					ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
-					ctx.fillRect(j*16+x, i*16+y, 1, 1);
-
-					tile++;
-				}
-			}
-		}
-	}
-}
-GrassMapCurrent.prototype.save=function(){
 }
 
 
@@ -2830,8 +2827,8 @@ function initializeEverything(){
 	island=new ItemGridMap('island');
 
 	/* Grass */
-	grassCurrent=new GrassMapPrevious(Offsets.MAP_GRASS_CURRENT,'grass-current',5,4);
-	//new GrassMapCurrent(Offsets.MAP_GRASS_PREVIOUS,'grass-previous',5,4);
+	grassCurrent=new GrassMapCurrent(Offsets.MAP_GRASS_CURRENT,'grass-current',5,4);
+	grassPrevious=new GrassMapPrevious(Offsets.MAP_GRASS_PREVIOUS,'grass-previous',8,6);
 
 	/* read player data */
 	players=new Array(4);
