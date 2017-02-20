@@ -18,7 +18,7 @@
 		<span class="logo"></span>
 		<h1>Animal Crossing: New Leaf Save Editor</h1>
 		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 19th Feb 2017)</span>
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 20th Feb 2017)</span>
 		</div>
 
 		<div id="help">
@@ -134,8 +134,8 @@
 			<hr/>
 			<canvas id="grass-previous" class="grass"></canvas>
 			<hr/>
-			<input type="button" value="Revive grass" onclick="town.fillGrass()"/>
-			<input type="button" value="Desert grass" onclick="town.fillDesert()"/>
+			<input type="button" value="Revive +" onclick="grassPrevious.alterAll(16)"/>
+			<input type="button" value="Desert -" onclick="grassPrevious.alterAll(-16)"/>
 		</div>
 	</div>
 

@@ -1,5 +1,5 @@
 /*
-	Animal Crossing:New Leaf RAM Editor v20170219
+	Animal Crossing:New Leaf RAM Editor v20170220
 	by Marc Robledo 2015-2017
 */
 @font-face{font-family:'Noto Sans';font-style:normal;font-weight:normal;src:local('Noto Sans'),local('NotoSans'),url('./NotoSans.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000}
@@ -337,20 +337,6 @@ span.sprite{display:inline-block;vertical-align:middle}
 
 .room-container .grid{margin-right:10px}
 
-
-canvas.grass{
-	width:320px;
-	border:1px dotted #ccc;
-	image-rendering:optimizeSpeed;
-	image-rendering:-moz-crisp-edges;
-	image-rendering:-webkit-optimize-contrast;
-	image-rendering:optimize-contrast;
-	image-rendering:pixelated;
-	-ms-interpolation-mode:nearest-neighbor;
-}
-#grass-previous{
-	width:384px;
-}
 
 
 

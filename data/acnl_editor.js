@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170203
+	Animal Crossing: New Leaf Save Editor v20170220
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
@@ -489,6 +489,8 @@ Town.prototype.refreshIdSpans=function(){
 	el('town-id').innerHTML='0x'+intToHex(this.townId2)+intToHex(this.townId1);
 }
 Town.prototype.save=function(){
+	grassPrevious.save();
+
 	savegame.storeByte(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
 	savegame.storeByte(Offsets.TOWN_GRASSTYPE, this.grassType);
 	savegame.storeByte(Offsets.ISLAND_GRASSTYPE, this.grassTypeIsland);
@@ -570,51 +572,6 @@ Town.prototype.maxTurnipPrices=function(){
 	})
 }
 
-Town.prototype.setGrass=function(b){
-	var MAX_CURRENT=(16*16)*(5*4);
-	for(var i=0; i<MAX_CURRENT; i++){
-		grassCurrent.tiles[i]=b & 0x0f;
-		savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i, grassCurrent.tiles[i]);
-	}
-	grassCurrent.draw();
-
-	var MAX=(8*8)*(8*6)*4;
-	for(var i=0; i<MAX; i++){
-		grassPrevious.tiles[i]=~b & 0xff;
-		savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, grassPrevious.tiles[i]);
-	}
-	grassPrevious.draw();
-
-
-	MarcDialogs.close();
-}
-Town.prototype.fillGrass=function(){MarcDialogs.confirm('Do you want to revive all grass?',function(){town.setGrass(0x00)})};
-Town.prototype.fillDesert=function(){MarcDialogs.confirm('Do you want to kill all grass?',function(){town.setGrass(0xff)})};
-Town.prototype.fillStrippedGrass=function(){
-	MarcDialogs.confirm('Do you want to strip all grass?', function(){
-		var MAX_CURRENT=(16*16)*(5*4);
-		for(var i=0; i<MAX_CURRENT/2; i++){
-			grassCurrent.tiles[i*2+0]=0x00;
-			grassCurrent.tiles[i*2+1]=0x0f;
-			savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i*2+0, grassCurrent.tiles[i*2+0]);
-			savegame.storeByte(Offsets.MAP_GRASS_CURRENT+i*2+1, grassCurrent.tiles[i*2+1]);
-		}
-		grassCurrent.draw();
-
-		var MAX=((16*16)*(5*4))*2;
-		for(var i=0; i<MAX; i++){
-			var b;
-			if(i%2==0){
-				b=0x00;
-			}else{
-				b=0xff;
-			}
-			savegame.storeByte(Offsets.MAP_GRASS_PREVIOUS+i, b)
-		}
-
-		MarcDialogs.close();
-	});
-}
 
 
 
@@ -958,24 +915,79 @@ GrassMapCurrent.prototype.save=function(){
 }
 
 
+
+
+
+
+
+
+function mouseDownGrass(evt,grassMap){
+	if(evt.which==3)
+		mouseHeld=2;
+	else if(evt.which==1)
+		mouseHeld=1;
+	else mouseHeld=0;
+
+	clickGrass(evt,grassMap,true);
+}
+
+function clickGrass(evt,grassMap,firstClick){
+	var rect=grassMap.canvas.getBoundingClientRect();
+	var x=parseInt((evt.clientX-rect.left)/grassMap._TILE_SIZE);
+	var y=parseInt((evt.clientY-rect.top)/grassMap._TILE_SIZE);
+	if(parseInt(evt.clientX-rect.left)>grassMap.canvas.width || parseInt(evt.clientY-rect.top)>grassMap.canvas.height)
+		return false;
+
+	var tile=y*grassMap.width+x;
+	if(currentEditingItem===tile && mouseHeld && !firstClick)
+		return false;
+	currentEditingItem=tile;
+
+	if(mouseHeld==1){
+		grassMap.alterSingle(x,y,64);
+		grassMap.alterSingle(x-1,y-1,64);
+		grassMap.alterSingle(x-1,y,64);
+		grassMap.alterSingle(x-1,y+1,64);
+		grassMap.alterSingle(x,y-1,64);
+		grassMap.alterSingle(x,y+1,64);
+		grassMap.alterSingle(x+1,y-1,64);
+		grassMap.alterSingle(x+1,y,64);
+		grassMap.alterSingle(x+1,y+1,64);
+		grassMap.draw();
+	}else if(mouseHeld==2){
+		grassMap.alterSingle(x,y,-128);
+		grassMap.alterSingle(x-1,y-1,-128);
+		grassMap.alterSingle(x-1,y,-128);
+		grassMap.alterSingle(x-1,y+1,-128);
+		grassMap.alterSingle(x,y-1,-128);
+		grassMap.alterSingle(x,y+1,-128);
+		grassMap.alterSingle(x+1,y-1,-128);
+		grassMap.alterSingle(x+1,y,-128);
+		grassMap.alterSingle(x+1,y+1,-128);
+		grassMap.draw();
+	}
+}
+function addGrassMapEvents(grassMap){
+	addEvent(grassMap.canvas,'click',prevent);
+	addEvent(grassMap.canvas,'mousedown',function(evt){mouseDownGrass(evt,grassMap)});
+	addEvent(grassMap.canvas,'mouseup',mouseUp);
+	addEvent(grassMap.canvas,'mousemove',function(evt){clickGrass(evt,grassMap,false)});
+}
 function GrassMapPrevious(offset,canvasId,width,height){
 	this.offset=offset;
 	this.canvas=el(canvasId);
 	this.width=width;
 	this.height=height;
+	this._TILE_SIZE=3;
 
-	this.canvas.width=this.width*16;
-	this.canvas.height=this.height*16;
+	this.canvas.width=this.width*16*this._TILE_SIZE;
+	this.canvas.height=this.height*16*this._TILE_SIZE;
 
-	this.tiles=new Array(width*height*16*16);
-	for(var i=0; i<this.tiles.length; i++)
-		this.tiles[i]=savegame.readByte1(this.offset+i);
 
-	this.draw();
-}
-GrassMapPrevious.prototype.draw=function(){
+	addGrassMapEvents(this);
+
+	this._offsets=[];
 	var tile=0;
-	var ctx=this.canvas.getContext('2d');
 	for(var i=0; i<this.height*2; i++){
 		for(var j=0; j<this.width*2; j++){
 			for(var y4=0; y4<2; y4++){
@@ -984,10 +996,7 @@ GrassMapPrevious.prototype.draw=function(){
 						for(var x2=0; x2<2; x2++){
 							for(var y1=0; y1<2; y1++){
 								for(var x1=0; x1<2; x1++){
-									var color=this.tiles[tile];
-									ctx.fillStyle='rgba('+color+','+color+','+color+',1)';
-									ctx.fillRect((j*8+x4*4+x2*2+x1), (i*8+y4*4+y2*2+y1), 1, 1);
-
+									this._offsets[(i*8+y4*4+y2*2+y1)*this.width*16+(j*8+x4*4+x2*2+x1)]=tile;
 									tile++;
                                 }
                             }
@@ -997,8 +1006,51 @@ GrassMapPrevious.prototype.draw=function(){
 			}
 		}
 	}
-}
 
+	this.tiles=new Array(width*height*16*16);
+	for(var i=0; i<this.tiles.length; i++)
+		this.tiles[i]=savegame.readByte1(this.offset+i);
+
+	this.draw();
+}
+GrassMapPrevious.prototype.draw=function(){
+	var ctx=this.canvas.getContext('2d');
+
+	ctx.fillStyle='#ebe399';
+	ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+	var width=this.width*16;
+	var height=this.height*16;
+	for(var x=0; x<width; x++){
+		for(var y=0; y<height; y++){
+			ctx.fillStyle='rgba(115,189,74,+'+(this.tiles[this._offsets[y*width+x]]/255)+')';
+			ctx.fillRect(x*this._TILE_SIZE, y*this._TILE_SIZE, this._TILE_SIZE, this._TILE_SIZE);
+		}
+	}
+}
+GrassMapPrevious.prototype.alterAll=function(v){
+	for(var i=0; i<this.tiles.length; i++){
+		this.tiles[i]+=v;
+		if(this.tiles[i]>255)
+			this.tiles[i]=255;
+		else if(this.tiles[i]<0)
+			this.tiles[i]=0;
+	}
+	this.draw();
+}
+GrassMapPrevious.prototype.alterSingle=function(x,y,v){
+	var width=this.width*16;
+	var t=this._offsets[y*width+x];
+	this.tiles[t]+=v;
+	if(this.tiles[t]>255)
+		this.tiles[t]=255;
+	else if(this.tiles[t]<0)
+		this.tiles[t]=0;
+}
+GrassMapPrevious.prototype.save=function(){
+	for(var i=0; i<this.tiles.length; i++)
+		savegame.storeByte(this.offset+i,this.tiles[i]);
+}
 
 
 
@@ -3053,7 +3105,7 @@ function initializeEverything(){
 	}
 
 	addEvent(window, 'contextmenu', prevent);
-	addEvent(window, 'mouseup', function(){mouseHeld=0});
+	addEvent(window, 'mouseup', mouseUp);
 
 	moveBuildingOverlay=document.createElement('div');
 	moveBuildingOverlay.id='move-building-overlay';
