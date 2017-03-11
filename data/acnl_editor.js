@@ -2184,8 +2184,8 @@ Player.prototype.maxIslandMedals=function(){
 	})
 }
 Player.prototype.maxMeow=function(){
-	MarcDialogs.confirm('Do you want to set 9999 Meow coupons to this player?', function(){
-		currentPlayer.meowCoupons.set(9999);
+	MarcDialogs.confirm('Do you want to set 99999 Meow coupons to this player?', function(){
+		currentPlayer.meowCoupons.set(99999);
 		MarcDialogs.alert('Meow coupons were maxed out for this player.');
 	})
 }
