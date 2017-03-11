@@ -18,7 +18,7 @@
 		<span class="logo"></span>
 		<h1>Animal Crossing: New Leaf Save Editor</h1>
 		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 20th Feb 2017)</span>
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 11th Mar 2017)</span>
 		</div>
 
 		<div id="help">
@@ -119,23 +119,20 @@
 	<input type="button" value="Remove all" onclick="removeAll()"/>
 	&nbsp;&nbsp;&nbsp;
 	<input type="button" value="Maintenance" onclick="MarcDialogs.open('maintenance')"/>
+	&nbsp;&nbsp;&nbsp;
+	<input type="button" value="Import map" onclick="tempFileLoadFunction=importMap;el('file-load').click()"/>
 
 	<div class="row">
 		<div class="column column-5">
 			<h3>Acres</h3>
-			<div id="map-acres"></div><br/>
-			<input type="button" value="Import map" onclick="tempFileLoadFunction=importMap;el('file-load').click()"/>
-			<input type="button" value="Export map" onclick="exportMap(map)"/>
+			<div id="map-acres"></div>
 		</div>
 
 		<div class="column column-5">
 			<h3>Grass</h3>
-			<canvas id="grass-current" class="grass"></canvas>
-			<hr/>
-			<canvas id="grass-previous" class="grass"></canvas>
-			<hr/>
-			<input type="button" value="Revive +" onclick="grassPrevious.alterAll(16)"/>
-			<input type="button" value="Desert -" onclick="grassPrevious.alterAll(-16)"/>
+			<div id="grass-quads"></div>
+			<input type="button" value="Revive +" onclick="grassMap.alterAll(16)"/>
+			<input type="button" value="Desert -" onclick="grassMap.alterAll(-16)"/>
 		</div>
 	</div>
 
@@ -299,7 +296,6 @@
 			<h3>Acres</h3>
 			<div id="island-acres"></div><br/>
 			<input type="button" value="Import map" onclick="tempFileLoadFunction=importIsland;el('file-load').click()"/>
-			<input type="button" value="Export map" onclick="exportMap(island)"/>
 		</div>
 
 		<div class="column column-5">
@@ -461,8 +457,10 @@
 </div>
 
 <div id="dialog-importmap" class="dialog">
-	<input type="checkbox" id="import-items" checked="checked" /> <label for="import-items">Import items</label><br/>
-	<input type="checkbox" id="import-buildings" /> <label for="import-buildings">Import building positions (may need manually fixing)</label>
+	<input type="checkbox" id="import-acres" /> <label for="import-acres">Import acres</label><br/>
+	<input type="checkbox" id="import-items" /> <label for="import-items">Import items</label><br/>
+	<input type="checkbox" id="import-grass" /> <label for="import-grass">Import grass</label><br/>
+	<input type="checkbox" id="import-buildings" /> <label for="import-buildings">Import buildings <small>(may need manually fixing)</small></label>
 
 	<div class="buttons">
 		<input type="button" class="button-accept" value="Accept" onclick="acceptImportMap()"/>
@@ -472,7 +470,7 @@
 
 <div id="dialog-acre" class="dialog">
 	Select an acre to replace.<br/>
-	<b class="warning">Warning!</b> An invalid acre structure will might freeze the game while booting. <a href="help.html#Warnings" class="help" target="_blank">More info</a>
+	<b class="warning">Warning!</b> An invalid acre structure might freeze the game while booting. <a href="help.html#Warnings" class="help" target="_blank">More info</a>
 	<div id="acre-selector"></div>
 </div>
 

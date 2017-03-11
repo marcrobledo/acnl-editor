@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170220
+	Animal Crossing: New Leaf Save Editor v20170311
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
@@ -27,8 +27,8 @@ var Offsets={
 
 	MUSEUM_ROOMS:			0x80+0x0659d8,
 
-	MAP_GRASS_CURRENT:		0x80+0x052a58,
-	MAP_GRASS_PREVIOUS:		0x80+0x053e80,
+	MAP_GRASS_TODAY:		0x80+0x052a58,
+	MAP_GRASS:				0x80+0x053e80,
 	MAP_ACRES:				0x80+0x04da04,
 	MAP_BUILDINGS:			0x80+0x049528,
 	MAP_ITEMS:				0x80+0x04da58,
@@ -132,8 +132,8 @@ const OffsetsPlus={
 
 	MUSEUM_ROOMS:			0x06b478,
 
-	MAP_GRASS_CURRENT:		0x0584d8,
-	MAP_GRASS_PREVIOUS:		0x059900,
+	MAP_GRASS_TODAY:		0x0584d8,
+	MAP_GRASS:				0x059900,
 	MAP_ACRES:				0x053484,
 	MAP_BUILDINGS:			0x04be88,
 	MAP_ITEMS:				0x0534d8,
@@ -250,7 +250,7 @@ const Constants={
 
 
 var mouseHeld=0,tempFile,tempFileLoadFunction;
-var savegame,map,island,players,grassCurrent,buildings,town;
+var savegame,map,island,players,grassMap,grassMapToday,buildings,town;
 var currentPlayer,currentTab;
 var currentEditingItem;
 var moveBuildingOverlay;
@@ -489,8 +489,6 @@ Town.prototype.refreshIdSpans=function(){
 	el('town-id').innerHTML='0x'+intToHex(this.townId2)+intToHex(this.townId1);
 }
 Town.prototype.save=function(){
-	grassPrevious.save();
-
 	savegame.storeByte(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
 	savegame.storeByte(Offsets.TOWN_GRASSTYPE, this.grassType);
 	savegame.storeByte(Offsets.ISLAND_GRASSTYPE, this.grassTypeIsland);
@@ -873,28 +871,25 @@ ItemGridMap.prototype.save=function(){
 
 
 
-
-function GrassMapCurrent(offset,canvasId,width,height){
+/* Grass Map (today): keeps track of current day grass deterioration (will be applied next day) */
+function GrassMapToday(offset,width,height){
 	this.offset=offset;
-	this.canvas=el(canvasId);
 	this.width=width;
 	this.height=height;
-
-	this.canvas.width=this.width*16;
-	this.canvas.height=this.height*16;
 
 	this.tiles=new Array(width*height*16*16);
 	for(var i=0; i<this.tiles.length; i++){
 		var b=savegame.readByte1(this.offset+i);
 		this.tiles[i]=b & 0x0f;
-		if(b >> 4){
-			//alert(b);
-		}
 	}
 
-	this.draw();
+	/*
+	this.canvas=el('grass-current');
+	this.canvas.width=this.width*16;
+	this.canvas.height=this.height*16;
+	*/
 }
-GrassMapCurrent.prototype.draw=function(){
+GrassMapToday.prototype.draw=function(){
 	var tile=0;
 	var ctx=this.canvas.getContext('2d');
 	for(var i=0; i<this.height; i++){
@@ -911,10 +906,14 @@ GrassMapCurrent.prototype.draw=function(){
 		}
 	}
 }
-GrassMapCurrent.prototype.save=function(){
+GrassMapToday.prototype.reset=function(){
+	for(var i=0; i<this.tiles.length; i++)
+		this.tiles[i]=0x00;
 }
-
-
+GrassMapToday.prototype.save=function(){
+	for(var i=0; i<this.tiles.length; i++)
+		savegame.storeByte(this.offset+i,this.tiles[i]);
+}
 
 
 
@@ -933,38 +932,29 @@ function mouseDownGrass(evt,grassMap){
 
 function clickGrass(evt,grassMap,firstClick){
 	var rect=grassMap.canvas.getBoundingClientRect();
-	var x=parseInt((evt.clientX-rect.left)/grassMap._TILE_SIZE);
-	var y=parseInt((evt.clientY-rect.top)/grassMap._TILE_SIZE);
 	if(parseInt(evt.clientX-rect.left)>grassMap.canvas.width || parseInt(evt.clientY-rect.top)>grassMap.canvas.height)
 		return false;
 
-	var tile=y*grassMap.width+x;
-	if(currentEditingItem===tile && mouseHeld && !firstClick)
+	var clickedTile=y*grassMap.width*16+x;
+	if(currentEditingItem===clickedTile && mouseHeld && !firstClick)
 		return false;
-	currentEditingItem=tile;
+	currentEditingItem=clickedTile;
 
-	if(mouseHeld==1){
-		grassMap.alterSingle(x,y,64);
-		grassMap.alterSingle(x-1,y-1,64);
-		grassMap.alterSingle(x-1,y,64);
-		grassMap.alterSingle(x-1,y+1,64);
-		grassMap.alterSingle(x,y-1,64);
-		grassMap.alterSingle(x,y+1,64);
-		grassMap.alterSingle(x+1,y-1,64);
-		grassMap.alterSingle(x+1,y,64);
-		grassMap.alterSingle(x+1,y+1,64);
-		grassMap.draw();
-	}else if(mouseHeld==2){
-		grassMap.alterSingle(x,y,-128);
-		grassMap.alterSingle(x-1,y-1,-128);
-		grassMap.alterSingle(x-1,y,-128);
-		grassMap.alterSingle(x-1,y+1,-128);
-		grassMap.alterSingle(x,y-1,-128);
-		grassMap.alterSingle(x,y+1,-128);
-		grassMap.alterSingle(x+1,y-1,-128);
-		grassMap.alterSingle(x+1,y,-128);
-		grassMap.alterSingle(x+1,y+1,-128);
-		grassMap.draw();
+	if(mouseHeld){
+		var x=parseInt((evt.clientX-rect.left)/grassMap._TILE_SIZE);
+		var y=parseInt((evt.clientY-rect.top)/grassMap._TILE_SIZE);
+
+		if(mouseHeld==1){
+			grassMap.alterSingle(x,y,255);
+			grassMap.alterSingle(x+1,y,255);
+			grassMap.alterSingle(x,y+1,255);
+			grassMap.alterSingle(x+1,y+1,255);
+		}else if(mouseHeld==2){
+			grassMap.alterSingle(x,y,-255);
+			grassMap.alterSingle(x+1,y,-255);
+			grassMap.alterSingle(x,y+1,-255);
+			grassMap.alterSingle(x+1,y+1,-255);
+		}
 	}
 }
 function addGrassMapEvents(grassMap){
@@ -973,62 +963,97 @@ function addGrassMapEvents(grassMap){
 	addEvent(grassMap.canvas,'mouseup',mouseUp);
 	addEvent(grassMap.canvas,'mousemove',function(evt){clickGrass(evt,grassMap,false)});
 }
-function GrassMapPrevious(offset,canvasId,width,height){
+
+
+var GRASS_TILES=[
+	0,	1,	4,	5,	16,	17,	20,	21,
+	2,	3,	6,	7,	18,	19,	22,	23,
+	8,	9,	12,	13,	24,	25,	28,	29,
+	10,	11,	14,	15,	26,	27,	30,	31,
+	32,	33,	36,	37,	48,	49,	52,	53,
+	34,	35,	38,	39,	50,	51,	54,	55,
+	40,	41,	44,	45,	56,	57,	60,	61,
+	42,	43,	46,	47,	58,	59,	62,	63
+];
+function GrassMap(offset,width,height){
 	this.offset=offset;
-	this.canvas=el(canvasId);
 	this.width=width;
 	this.height=height;
-	this._TILE_SIZE=3;
-
-	this.canvas.width=this.width*16*this._TILE_SIZE;
-	this.canvas.height=this.height*16*this._TILE_SIZE;
-
-
-	addGrassMapEvents(this);
-
-	this._offsets=[];
-	var tile=0;
-	for(var i=0; i<this.height*2; i++){
-		for(var j=0; j<this.width*2; j++){
-			for(var y4=0; y4<2; y4++){
-				for(var x4=0; x4<2; x4++){
-					for(var y2=0; y2<2; y2++){
-						for(var x2=0; x2<2; x2++){
-							for(var y1=0; y1<2; y1++){
-								for(var x1=0; x1<2; x1++){
-									this._offsets[(i*8+y4*4+y2*2+y1)*this.width*16+(j*8+x4*4+x2*2+x1)]=tile;
-									tile++;
-                                }
-                            }
-                        }
-                    }
-				}
-			}
-		}
-	}
+	this._TILE_SIZE=4;
 
 	this.tiles=new Array(width*height*16*16);
 	for(var i=0; i<this.tiles.length; i++)
 		this.tiles[i]=savegame.readByte1(this.offset+i);
 
+	this.canvas=document.createElement('canvas');
+	this.canvas.width=(width-1)*16*this._TILE_SIZE; //width-1 removes unused column
+	this.canvas.height=height*16*this._TILE_SIZE;
+	this.canvas.offset=this.offset+(8*8)*i;
+	el('grass-quads').appendChild(this.canvas);
+	addGrassMapEvents(this);
+
 	this.draw();
 }
-GrassMapPrevious.prototype.draw=function(){
+GrassMap.prototype._refreshBackground=function(){
+	var canvas=document.createElement('canvas');
+	var acreSize=this._TILE_SIZE*16;
+	canvas.width=acreSize*(this.width-1);
+	canvas.height=acreSize*(this.height);
+	var ctx=canvas.getContext('2d');
+
+	for(var y=0; y<this.height; y++){
+		for(var x=0; x<this.width-1; x++){
+			var acreId=map.acres[y*(this.width-1)+x].id;
+
+			var cropAcreX=(acreId%20)*64;
+			var cropAcreY=parseInt(acreId/20)*64;
+
+			var cropHeight=(acreId==0xa8 || (acreId>=0x9e && acreId<=0xa3))?40:64;
+
+			ctx.drawImage(acresImage, cropAcreX, cropAcreY, 64, cropHeight, acreSize*x, acreSize*y, acreSize, acreSize);
+		}
+	}
+
+
+	/* grayscale */
+	var imageData=ctx.getImageData(0, 0, canvas.width, canvas.height);
+	var data=imageData.data;
+	for(var i=0; i<data.length; i+=4) {
+		//var brightness=0.34*data[i] + 0.5*data[i+1] + 0.16*data[i+2];
+		//var brightness=0.44*data[i] + 0.6*data[i+1] + 0.26*data[i+2];
+		var brightness=0.54*data[i] + 0.7*data[i+1] + 0.36*data[i+2];
+		data[i]=brightness;		//red
+		data[i+1]=brightness;	//green
+		data[i+2]=brightness;	//blue
+	}
+	ctx.putImageData(imageData, 0, 0);
+
+
+
+
+	el('grass-quads').style.backgroundImage='url('+canvas.toDataURL()+')';
+}
+GrassMap.prototype.draw=function(){
+	this._refreshBackground();
+
 	var ctx=this.canvas.getContext('2d');
-
-	ctx.fillStyle='#ebe399';
-	ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-	var width=this.width*16;
-	var height=this.height*16;
-	for(var x=0; x<width; x++){
-		for(var y=0; y<height; y++){
-			ctx.fillStyle='rgba(115,189,74,+'+(this.tiles[this._offsets[y*width+x]]/255)+')';
-			ctx.fillRect(x*this._TILE_SIZE, y*this._TILE_SIZE, this._TILE_SIZE, this._TILE_SIZE);
+	ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+	for(var y=0; y<this.height*16; y++){
+		for(var x=0; x<this.width*16; x++){
+			this.drawTile(x,y);
 		}
 	}
 }
-GrassMapPrevious.prototype.alterAll=function(v){
+GrassMap.prototype.drawTile=function(x,y){
+	var ctx=this.canvas.getContext('2d');
+	ctx.clearRect(x*this._TILE_SIZE, y*this._TILE_SIZE, this._TILE_SIZE, this._TILE_SIZE);
+	ctx.fillStyle='rgba(115,189,74,+'+(this.tiles[this._getTileOffset(x,y)]/255)+')';
+	ctx.fillRect(x*this._TILE_SIZE, y*this._TILE_SIZE, this._TILE_SIZE, this._TILE_SIZE);
+}
+GrassMap.prototype._getTileOffset=function(x,y){
+	return 64*(parseInt(y/8)*this.width*2+parseInt(x/8))+GRASS_TILES[(y%8)*8+(x%8)]
+}
+GrassMap.prototype.alterAll=function(v){
 	for(var i=0; i<this.tiles.length; i++){
 		this.tiles[i]+=v;
 		if(this.tiles[i]>255)
@@ -1038,16 +1063,18 @@ GrassMapPrevious.prototype.alterAll=function(v){
 	}
 	this.draw();
 }
-GrassMapPrevious.prototype.alterSingle=function(x,y,v){
-	var width=this.width*16;
-	var t=this._offsets[y*width+x];
-	this.tiles[t]+=v;
-	if(this.tiles[t]>255)
-		this.tiles[t]=255;
-	else if(this.tiles[t]<0)
-		this.tiles[t]=0;
+GrassMap.prototype.alterSingle=function(x,y,v){
+	if(x>=0 && x<=127 && y>=0 && y<=95){
+		var t=this._getTileOffset(x,y);
+		this.tiles[t]+=v;
+		if(this.tiles[t]>255)
+			this.tiles[t]=255;
+		else if(this.tiles[t]<0)
+			this.tiles[t]=0;
+		this.drawTile(x,y);
+	}
 }
-GrassMapPrevious.prototype.save=function(){
+GrassMap.prototype.save=function(){
 	for(var i=0; i<this.tiles.length; i++)
 		savegame.storeByte(this.offset+i,this.tiles[i]);
 }
@@ -1128,77 +1155,97 @@ function clickAcre(acre){
 function importMap(){importMapOffset(map)}
 function importIsland(){importMapOffset(island)}
 function importMapOffset(mapOffset){
-	if((mapOffset===island && tempFile.fileSize==4120) || (mapOffset===map && tempFile.fileSize==20754)){
-		var firstAcre, acreGrid;
-		if(mapOffset===island){
-			firstAcre=7*6;
-			acreGrid=4*4;
-		}else{
-			firstAcre=0;
-			acreGrid=7*6;
-		}
+	var validFileName=checkPlusSavegame(savegame)?'garden_plus':'garden';
 
-		/* import acres */
-		for(var i=0; i<mapOffset.acres.length; i++){
-			mapOffset.acres[firstAcre+i].setId(tempFile.readByte1(i));
-		}
-
-		MarcDialogs.open('importmap');
+	if(!checkValidSavegame(tempFile) || checkPlusSavegame(tempFile)!==checkPlusSavegame(savegame)){
+		MarcDialogs.alert('Invalid '+validFileName+'.dat file.');
+		return false;
 	}
+
+	currentEditingItem=mapOffset;
+	MarcDialogs.open('importmap');
 }
 function acceptImportMap(){
-	var mapOffset,acreGrid, itemsGrid, firstBuilding, nBuildings, type;
-	if(tempFile.fileSize==4120){ /* map==='island' */
-		firstBuilding=58;
-		itemsGrid=2*2;
-		acreGrid=4*4;
-		nBuildings=2;
-		type='island';
-		mapOffset=island;
-	}else{
-		firstBuilding=0;
-		itemsGrid=5*4;
-		acreGrid=7*6;
-		nBuildings=58;
-		type='map';
-		mapOffset=map;
+	var editingMap=currentEditingItem;
+
+	/* import acres */
+	if(el('import-acres').checked){
+		var _OFFSET;
+		if(editingMap===island)
+			_OFFSET=Offsets.ISLAND_ACRES;
+		else
+			_OFFSET=Offsets.MAP_ACRES;
+
+		for(var i=0; i<editingMap.acres.length; i++)
+			editingMap.acres[i].setId(tempFile.readByte1(_OFFSET+i*2));
+
+		if(editingMap===map)
+			grassMap._refreshBackground();
 	}
+
 
 	/* import items */
-	var offset=acreGrid;
 	if(el('import-items').checked){
-		for(var i=0; i<mapOffset.items.length; i++){
-			var id=tempFile.readByte2(offset+i*4+0);
-			var flag1=tempFile.readByte1(offset+i*4+2);
-			var flag2=tempFile.readByte1(offset+i*4+3);
-			mapOffset.items[i].set(flag2, flag1, id);
+		var _OFFSET;
+		if(editingMap===island)
+			_OFFSET=Offsets.ISLAND_ITEMS;
+		else
+			_OFFSET=Offsets.MAP_ITEMS;
+
+		for(var i=0; i<editingMap.items.length; i++){
+			var id=tempFile.readByte2(_OFFSET+i*4+0);
+			var flag1=tempFile.readByte1(_OFFSET+i*4+2);
+			var flag2=tempFile.readByte1(_OFFSET+i*4+3);
+			editingMap.items[i].set(flag2, flag1, id);
 		}
-		for(var i=0; i<itemsGrid; i++){
-			mapOffset.itemGrids[i].itemList.edited=true;
+		for(var i=0; i<editingMap.itemGrids.length; i++){
+			editingMap.itemGrids[i].itemList.edited=true;
+			editingMap.itemGrids[i].repaintAll();
 		}
 	}
 
+
+	/* import grass */
+	if(el('import-grass').checked && editingMap===map){
+		var _OFFSET=Offsets.MAP_GRASS;
+
+		for(var i=0; i<grassMap.tiles.length; i++){
+			grassMap.tiles[i]=tempFile.readByte1(_OFFSET+i);
+		}
+		grassMap.draw();
+		grassMapToday.reset();
+	}
 
 
 	/* import buildings */
 	if(el('import-buildings').checked){
-		for(var i=0; i<nBuildings; i++){
-			var oldBuilding=buildings[firstBuilding+i];
+		var _OFFSET, FIRST_BUILDING, N_BUILDINGS;
+		if(editingMap===island){
+			_OFFSET=Offsets.ISLAND_BUILDINGS;
+			FIRST_BUILDING=58;
+			N_BUILDINGS=2;
+		}else{
+			_OFFSET=Offsets.MAP_BUILDINGS;
+			FIRST_BUILDING=0;
+			N_BUILDINGS=58;
+		}
+
+		for(var i=0; i<N_BUILDINGS; i++){
+			var oldBuilding=buildings[FIRST_BUILDING+i];
 			if(oldBuilding.id>0x11 && (oldBuilding.id!=0xf8 && oldBuilding.id!=0xfc)){
 				oldBuilding.remove();
 				oldBuilding._refreshTile(true);
 			}
 		}
 
-		offset+=itemsGrid*(16*16)*4;
-		for(var i=0; i<nBuildings; i++){
-			var newId=tempFile.readByte2(offset+i*4+0);
-			var newX=tempFile.readByte1(offset+i*4+2);
-			var newY=tempFile.readByte1(offset+i*4+3);
+		for(var i=0; i<N_BUILDINGS; i++){
+			var newId=tempFile.readByte2(_OFFSET+i*4+0);
+			var newX=tempFile.readByte1(_OFFSET+i*4+2);
+			var newY=tempFile.readByte1(_OFFSET+i*4+3);
 
 			if(newId<=0x11){
-				for(var j=0; j<nBuildings; j++){
-					var oldBuilding=buildings[firstBuilding+j];
+				for(var j=0; j<N_BUILDINGS; j++){
+					var oldBuilding=buildings[FIRST_BUILDING+j];
 					if(oldBuilding.id==newId){
 						oldBuilding.x=newX;
 						oldBuilding.y=newY;
@@ -1207,8 +1254,8 @@ function acceptImportMap(){
 					}
 				}
 			}else if(newId>=0x4c && (newId!=0xf8 && newId!=0xfc)){
-				for(var j=0; j<nBuildings; j++){
-					var oldBuilding=buildings[firstBuilding+j];
+				for(var j=0; j<N_BUILDINGS; j++){
+					var oldBuilding=buildings[FIRST_BUILDING+j];
 					if(oldBuilding.id==0xf8 || oldBuilding.id==0xfc){
 						oldBuilding.x=newX;
 						oldBuilding.y=newY;
@@ -1223,45 +1270,6 @@ function acceptImportMap(){
 
 	MarcDialogs.close();
 }
-function exportMap(mapOffset){
-	var nBuildings, firstBuilding, fileSuffix;
-	
-	if(mapOffset===island){
-		fileSuffix='islandmap';
-		nBuildings=2;
-		firstBuilding=58;
-	}else{
-		fileSuffix='map';
-		nBuildings=58;
-		firstBuilding=0;
-	}
-	var newFile=new HexFile((mapOffset.acres.length)+(mapOffset.items.length*4)+(nBuildings*4));
-
-	/* export acres */
-	var offset=0;
-	for(var i=0; i<mapOffset.acres.length; i++)
-		newFile.storeByte(offset+i, mapOffset.acres[i].id);
-
-	/* export items */
-	offset+=mapOffset.acres.length;
-	for(var i=0; i<mapOffset.items.length; i++){
-		newFile.storeByte2(offset+i*4+0, mapOffset.items[i].id);
-		newFile.storeByte(offset+i*4+2, mapOffset.items[i].flag1);
-		newFile.storeByte(offset+i*4+3, mapOffset.items[i].flag2);
-	}
-
-	/* export buildings */
-	offset+=mapOffset.items.length*4;
-	for(var i=0; i<nBuildings; i++){
-		newFile.storeByte2(offset+i*4+0, buildings[firstBuilding+i].id);
-		newFile.storeByte(offset+i*4+2, buildings[firstBuilding+i].x);
-		newFile.storeByte(offset+i*4+3, buildings[firstBuilding+i].y);
-	}
-
-	newFile.fileName=town.name.toString()+' '+fileSuffix+'.acnlmap';
-	newFile.save();
-}
-
 
 
 
@@ -2672,6 +2680,16 @@ function loadSavegameFromFile(file){
 
 	savegame=new HexFile(file, initializeEverything);
 }
+
+function checkValidSavegame(file){
+	return(
+		(file.fileSize==522752 && file.readByte4(0x80)==0x98d1ed64 && file.readByte4(0x84)==0x000200f8) || //garden.dat
+		(file.fileSize==563968 && file.readByte4(0x80)==0x46d03a33 && file.readByte4(0x84)==0x0002009e) //garden_plus.dat
+	)
+}
+function checkPlusSavegame(file){
+	return file.fileSize==563968
+}
 function initializeEverything(){
 	if(!el('home'))
 		return false;
@@ -2696,13 +2714,7 @@ function initializeEverything(){
 	}
 
 	/* check valid ACNL savegame */
-	if(
-		(savegame.fileSize!=522752 && savegame.fileSize!=563968) ||
-		(
-			(savegame.readByte4(0x80)!=0x98d1ed64 || savegame.readByte4(0x84)!=0x000200f8) &&
-			(savegame.readByte4(0x80)!=0x46d03a33 || savegame.readByte4(0x84)!=0x0002009e)
-		)
-	){
+	if(!checkValidSavegame(savegame)){
 		MarcDialogs.alert('Invalid AC:NL savegame file.');
 		return null;
 	}
@@ -2710,7 +2722,7 @@ function initializeEverything(){
 
 
 	/* check plus mode */
-	if(savegame.fileSize==563968){
+	if(checkPlusSavegame(savegame)){
 		plusMode=true;
 
 		Offsets=OffsetsPlus;
@@ -2879,8 +2891,8 @@ function initializeEverything(){
 	island=new ItemGridMap('island');
 
 	/* Grass */
-	grassCurrent=new GrassMapCurrent(Offsets.MAP_GRASS_CURRENT,'grass-current',5,4);
-	grassPrevious=new GrassMapPrevious(Offsets.MAP_GRASS_PREVIOUS,'grass-previous',8,6);
+	grassMap=new GrassMap(Offsets.MAP_GRASS,8,6);
+	grassMapToday=new GrassMapToday(Offsets.MAP_GRASS_TODAY,5,4);
 
 	/* read player data */
 	players=new Array(4);
@@ -3240,8 +3252,11 @@ function saveChanges(){
 
 	map.save();
 	island.save();
+	grassMap.save();
+	grassMapToday.save();
 	
 	town.save();
+
 
 	/* recalculate checksums */
 	if(plusMode){
