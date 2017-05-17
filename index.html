@@ -18,7 +18,7 @@
 		<span class="logo"></span>
 		<h1>Animal Crossing: New Leaf Save Editor</h1>
 		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 11th Mar 2017)</span>
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 17th May 2017)</span>
 		</div>
 
 		<div id="help">
@@ -196,11 +196,24 @@
 					<td><select id="select-registration-day"></select> <select id="select-registration-month"></select> <select id="select-registration-year"></select></td>
 				</tr>
 				<tr>
+					<td><label for="input-bells">Bells:</label></td>
+					<td><input type="text" id="input-bells"/></td>
+				</tr>
+				<tr>
+					<td><label for="input-bank">Bank:</label></td>
+					<td><input type="text" id="input-bank"/></td>
+				</tr>
+				<tr>
+					<td><label for="input-medals">Island medals:</label></td>
+					<td><input type="text" id="input-medals"/></td>
+				</tr>
+				<tr id="tr-meowcoupons">
+					<td><label for="input-meow">MEOW coupons:</label></td>
+					<td><input type="text" id="input-meow"/></td>
+				</tr>
+				<tr>
 					<td>Cheats:</td>
 					<td id="player-cheats">
-						<input type="button" value="Bank" onclick="currentPlayer.maxBank()"/>
-						<input type="button" value="Island medals" onclick="currentPlayer.maxIslandMedals()"/>
-						<input type="button" value="MEOW coupons" onclick="currentPlayer.maxMeow()" id="button-meow"/>
 						<input type="button" value="Encyclopedia" onclick="currentPlayer.fillEncyclopedia()"/>
 						<input type="button" value="Emotions" onclick="currentPlayer.unlockEmotions()"/>
 						<input type="button" value="Change TPC pic" onclick="changeTPCPic()"/>
@@ -323,6 +336,22 @@
 		<tr><td>Lost &amp; found:</td><td><div id="lostfound"></div></td></tr>
 		<tr><td>Club LOL gyroids:</td><td><div id="lol-gyroids"></div></td></tr>
 		<tr id="tr-shop-harvey"><td>Harvey:</td><td><div id="shop-harvey"></div></td></tr>
+		<tr>
+			<td>Turnip  prices:</td>
+			<td>
+				<table>
+					<tr><th></th><th>AM</th><th>PM</th></tr>
+					<tbody id="table-turnip-prices">
+						<tr><td>Monday</td></tr>
+						<tr><td>Tuesday</td></tr>
+						<tr><td>Wednesday</td></tr>
+						<tr><td>Thursday</td></tr>
+						<tr><td>Friday</td></tr>
+						<tr><td>Saturday</td></tr>
+					</tbody>
+				</table>
+			</td>
+		</tr>
 	</table>
 </div>
 
@@ -391,7 +420,6 @@
 					<td>Cheats:</td>
 					<td>
 						<input type="button" value="Unlock all PWPs" onclick="town.unlockAllPWPs()"/>
-						<input type="button" value="Turnip prices" onclick="town.maxTurnipPrices()"/>
 					</td>
 				</tr>
 			</table>

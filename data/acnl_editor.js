@@ -1,8 +1,9 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170311
+	Animal Crossing: New Leaf Save Editor v20170517
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
+	 * SciresM for breaking the numeric encryption used in the game
 	 * Thulinma for Pattern structure (check out his editor pattern http://www.thulinma.com/acnl/ )
 	 * NeoKamek for his work on LeafTools and other help
 	 * jexom for documenting grass deterioration
@@ -256,26 +257,13 @@ var currentEditingItem;
 var moveBuildingOverlay;
 
 var plusMode=false;
-var Offsets;
 
 function el(e){return document.getElementById(e)}
 function show(e){el(e).style.display='block'}
 function hide(e){el(e).style.display='none'}
 function toggle(e){if(el(e).style.display=='block')hide(e);else show(e)}
 function addEvent(e,ev,f){if(e.addEventListener){e.addEventListener(ev,f,false);return true}else if(e.attachEvent)e.attachEvent('on'+ev,f)}
-function addNumericInputEvent(e,min,max){
-	//e.type='number';
-	e.min=min;
-	e.max=max;
-	var cleanInput=function(){
-		e.value=e.value.replace(/[^0-9]/i,'');
-		var val=parseInt(e.value);
-		if(e<min || e>max)
-			e.value=min;
-	}
-	addEvent(e,'input',cleanInput);
-	addEvent(e,'change',cleanInput);
-}
+
 function prevent(evt){evt.stopPropagation();evt.preventDefault()}
 function stopPropagation(e){if(typeof e.stopPropagation!='undefined')e.stopPropagation();else e.cancelBubble=true}
 function setCookie(k,v,w){var exp;if(w){exp=new Date((new Date()).getTime()+1000*60*60*24*7).toGMTString()}else{exp='Thu, 31 Dec 2020 12:00:00 UTC'}document.cookie='acnleditor'+k+'='+v+'; expires='+exp}
@@ -283,6 +271,7 @@ function getCookie(k){var cs=document.cookie.split(';');for(var i=0;i<cs.length;
 function getString(o){if(o[el('lang-selector').value])return o[el('lang-selector').value];else return o[0]}
 function intToHex(i,b){var h=i.toString(16);while(h.length<b*2)h='0'+h;return h}
 function range(min,max){var a=[];for(i=min;i<=max;i++)a.push(i);return a}
+function random(v){return Math.floor((Math.random()*v))}
 function showTab(evt){var newTab=evt.target.tabInfo;if(newTab.id!==currentTab.id){hide('tab-'+currentTab.id);currentTab.button.className='';show('tab-'+newTab.id);newTab.button.className='active';currentTab=newTab}}
 function updateLangIcon(l){el('lang-flag').className='sprite flag flag-'+l}
 function acceptDisclaimer(updateCookie){setCookie('nodisclaimer',1,true);MarcDialogs.close()}
@@ -310,35 +299,93 @@ function createEditStringButton(s,name){
 }
 
 
+function addNumericInputEvent(e,min,max){
+	//e.type='number'; //do not use, getting value from input[type=number] with an invalid value returns null
+	e.min=min;
+	e.max=max;
 
-/* this is the unknown 64bit variable, hardcode values for now */
+	addEvent(e,'change',_cleanInputEvent);
+}
+function _cleanInputEvent(){
+	this.value=this.value.replace(/[^0-9]/i,'');
+	var val=parseInt(this.value);
+	if(isNaN(val)){
+		val=this.min;
+	}else if(val<this.min){
+		val=this.min;
+	}else if(val>this.max){
+		val=this.max;
+	}
+	this.value=val;
+}
+
+
+/* NumericValue - documented by SciresM (https://gist.github.com/SciresM/0ecc3c2b8c93922d3b21f7c4e552626c) */
 function NumericValue(offset){
 	this.offset=offset;
 	this.int1=savegame.readByte4(offset);
 	this.int2=savegame.readByte4(offset+4);
+
+	this.changed=false;
+	this.value=this.decrypt();
 }
-NumericValue.prototype.set=function(newVal){
-	if(newVal===49){
-		this.int1=0x1876918f;this.int2=0x6804022e
-	}else if(newVal===661){
-		this.int1=0x1ea36532;this.int2=0x0abc0512
-	}else if(newVal===990){
-		this.int1=0x848f1963;this.int2=0x4914eb74
-	}else if(newVal===9999){
-		this.int1=0xe3911e31;this.int2=0x7d0d5687
-	}else if(newVal===99999){
-		this.int1=0x5d1e3420;this.int2=0x8915155d
-	}else if(newVal===999999999){
-		this.int1=0x8cf95678;this.int2=0x0d118636
+NumericValue.prototype.decrypt=function(){
+	// Unpack 64-bit value into (u32, u16, u8, u8) values.
+	var enc = this.int1;
+	var adjust = this.int2 & 0xffff;
+	var shift_val = (this.int2 >>> 16) & 0xff;
+	var chk = (this.int2 >>> 24) & 0xff;
+
+	// Validate 8-bit checksum
+	if ((((enc >>> 0) + (enc >>> 8) + (enc >>> 16) + (enc >>> 24) + 0xba) & 0xff) != chk){
+		console.error('invalid numeric value checksum');
+		return 0;
+	}
+	var left_shift = (0x1c - shift_val) & 0xff;
+	var right_shift = 0x20 - left_shift;
+	if (left_shift < 0x20){
+		/* general case */
+		return ((((enc << left_shift)>>>0) + (enc >>> right_shift)) - (adjust + 0x8f187432));
 	}else{
-		alert('Unknown value');
+		/* handle error case: Invalid shift value */
+		console.error('invalid shift for numeric value');
+		return 0 + ((enc << right_shift) >>> 0) - ((adjust + 0x8f187432) >>> 0);
 	}
 }
-NumericValue.prototype.save=function(){
-	savegame.storeByte4(this.offset, this.int1);
-	savegame.storeByte4(this.offset+4, this.int2)
-}
+NumericValue.prototype.set=function(newVal){
+	// Generate random adjustment, shift values.
+	var adjust = random(0x10000) & 0xffff;
+	var shift_val = random(0x1a) & 0xff;
 
+	// Encipher value
+	var enc = newVal + adjust + 0x8f187432;
+	enc = (enc >>> (0x1c - shift_val)) + ((enc << (shift_val + 4))>>>0);
+	// Calculate Checksum
+	var chk = (((enc >>> 0) + (enc >>> 8) + (enc >>> 16) + (enc >>> 24) + 0xba) & 0xff) & 0xff;
+	// Pack result
+	this.int1=enc;
+	this.int2=(adjust & 0xffff) + ((shift_val & 0xff) << 16) + ((chk & 0xff) << 24);
+	this.value=this.decrypt();
+	if(this.value!==newVal){
+		console.error('numeric value was not successfully encrypted/decrypted');
+		MarcDialogs.alert('<b>Unexpected error: </b>numeric value was not successfully encrypted/decrypted');
+	}
+	this.changed=true;
+}
+NumericValue.prototype.save=function(){
+	if(this.changed){
+		savegame.storeByte4(this.offset, this.int1 >>> 0);
+		savegame.storeByte4(this.offset+4, this.int2 >>> 0)
+	}
+}
+function findNumericValue(min, max){
+	for(var i=0x040000; i<savegame.fileSize-4; i+=2){
+		var val=(new NumericValue(i)).value;
+		if(val && val>=min && val<=max){
+			console.log('found '+val+' at '+intToHex(i));
+		}
+	}
+}
 
 var showDebug=function(){show('debug')};
 var hideDebug=function(){hide('debug')};
@@ -442,8 +489,8 @@ function Town(){
 	this.turnipPrices=[];
 	for(var i=0;i<6;i++){
 		this.turnipPrices[i]={
-			AM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16),
-			PM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16+8)
+			AM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16, 990),
+			PM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16+8, 990)
 		}
 	}
 }
@@ -560,15 +607,6 @@ Town.prototype.unlockAllPWPs=function(){
 	});
 }
 
-Town.prototype.maxTurnipPrices=function(){
-	MarcDialogs.confirm('Do you want to set turnip prices to 990 for the current week?<br/>'+getWarningMessage(), function(){
-		for(var i=0; i<6; i++){
-			town.turnipPrices[i].AM.set(990);
-			town.turnipPrices[i].PM.set(990);
-		}
-		MarcDialogs.alert('Turnip prices were set to 990 for the current week.');
-	})
-}
 
 
 
@@ -2018,12 +2056,12 @@ function Player(n){
 	this.shoes=savegame.readByte2(this.offset+Offsets.PLAYER_SHOES);
 	this.heldItem=savegame.readByte2(this.offset+Offsets.PLAYER_HELDITEM);
 
-	//unknown numeric
-	this.bank=new NumericValue(this.offset+Offsets.PLAYER_BANK);
-	this.islandMedals=new NumericValue(this.offset+Offsets.PLAYER_MEDALS);
+	//numeric values
+	this.bank=new NumericValue(this.offset+Offsets.PLAYER_BANK, 999999999);
+	this.islandMedals=new NumericValue(this.offset+Offsets.PLAYER_MEDALS, 99999);
 	if(plusMode)
-		this.meowCoupons=new NumericValue(this.offset+Offsets.PLAYER_MEOW);
-	this.wallet=new NumericValue(this.offset+Offsets.PLAYER_WALLET);
+		this.meowCoupons=new NumericValue(this.offset+Offsets.PLAYER_MEOW, 99999);
+	this.wallet=new NumericValue(this.offset+Offsets.PLAYER_WALLET, 999999);
 	//this.dreamSuiteUsed=new NumericValue(this.offset+0x6e38); //NO
 }
 
@@ -2170,24 +2208,6 @@ Player.prototype.unlockEmotions=function(){
 		}
 		MarcDialogs.alert('Emotions were unlocked for this player.');
 	});
-}
-Player.prototype.maxBank=function(){
-	MarcDialogs.confirm('Do you want to set 999.999.999 bells to this player\'s bank?', function(){
-		currentPlayer.bank.set(999999999);
-		MarcDialogs.alert('Bank was maxed out for this player.');
-	})
-}
-Player.prototype.maxIslandMedals=function(){
-	MarcDialogs.confirm('Do you want to set 9999 island medals to this player?<br/>'+getWarningMessage(), function(){
-		currentPlayer.islandMedals.set(9999);
-		MarcDialogs.alert('Island medals were maxed out for this player.');
-	})
-}
-Player.prototype.maxMeow=function(){
-	MarcDialogs.confirm('Do you want to set 9999 Meow coupons to this player?', function(){
-		currentPlayer.meowCoupons.set(9999);
-		MarcDialogs.alert('Meow coupons were maxed out for this player.');
-	})
 }
 Player.prototype.fillEncyclopedia=function(){
 	MarcDialogs.confirm('Do you want to fill encyclopedia up for this player?<br/>'+getWarningMessage(), function(){
@@ -2440,6 +2460,17 @@ function addBadgeEvents(li){
 	});
 }
 
+
+
+function addTurnipEvents(dow, AMinput, PMinput){
+	AMinput.style.width='35px';
+	PMinput.style.width='35px';
+
+	addNumericInputEvent(AMinput, 0, 990);
+	addNumericInputEvent(PMinput, 0, 990);
+	addEvent(AMinput, 'change', function(){town.turnipPrices[dow].AM.set(parseInt(this.value))});
+	addEvent(PMinput, 'change', function(){town.turnipPrices[dow].PM.set(parseInt(this.value))});
+}
 
 var currentItemGroup=null;
 function buildFlagsSelects(f1,f2){
@@ -2729,7 +2760,7 @@ function initializeEverything(){
 	}else{
 		hide('tr-shop-harvey');
 		hide('column-storage');
-		hide('button-meow');
+		hide('tr-meowcoupons');
 	}
 
 	addEvent(window, 'click', hideSearchResults);
@@ -2964,7 +2995,14 @@ function initializeEverything(){
 
 
 
-
+	addNumericInputEvent(el('input-bells'), 0, 999999);
+	addNumericInputEvent(el('input-bank'), 0, 999999999);
+	addNumericInputEvent(el('input-medals'), 0, 99999);
+	addNumericInputEvent(el('input-meow'), 0, 99999);
+	addEvent(el('input-bells'), 'change', function(){currentPlayer.wallet.set(parseInt(this.value))});
+	addEvent(el('input-bank'), 'change', function(){currentPlayer.bank.set(parseInt(this.value))});
+	addEvent(el('input-medals'), 'change', function(){currentPlayer.islandMedals.set(parseInt(this.value))});
+	addEvent(el('input-meow'), 'change', function(){currentPlayer.meowCoupons.set(parseInt(this.value))});
 
 
 
@@ -3014,6 +3052,19 @@ function initializeEverything(){
 	el('lol-gyroids').appendChild(town.lolGyroids.canvas);
 	if(plusMode)
 		el('shop-harvey').appendChild(town.shopHarvey.canvas);
+	for(var i=0; i<6; i++){
+		var td0=document.createElement('td');
+		var td1=document.createElement('td');
+		var input0=createInput(town.turnipPrices[i].AM.value);
+		var input1=createInput(town.turnipPrices[i].PM.value);
+		td0.appendChild(input0);
+		td1.appendChild(input1);
+
+		var tr=el('table-turnip-prices').children[i];
+		tr.appendChild(td0);
+		tr.appendChild(td1);
+		addTurnipEvents(i, input0, input1);
+	}
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -3167,6 +3218,12 @@ function selectPlayer(p){
 		refreshHairColorIcon();
 		refreshHairStyleIcon();
 		refreshFaceIcon();
+
+		el('input-bells').value=currentPlayer.wallet.value;
+		el('input-bank').value=currentPlayer.bank.value;
+		el('input-medals').value=currentPlayer.islandMedals.value;
+		if(plusMode)
+			el('input-meow').value=currentPlayer.meowCoupons.value;
 
 		el('select-house-style').value=currentPlayer.houseStyle;
 		el('select-house-doorshape').value=currentPlayer.houseDoorShape;
@@ -3417,6 +3474,18 @@ function HexFile(source, func){
 HexFile.prototype.readByte1=function(pos){return this.fileReader.dataView.getUint8(pos)}
 HexFile.prototype.readByte2=function(pos){return this.readByte1(pos+1)*0x0100+this.readByte1(pos)}
 HexFile.prototype.readByte4=function(pos){return this.readByte1(pos+3)*0x01000000+this.readByte1(pos+2)*0x010000+this.readByte1(pos+1)*0x0100+this.readByte1(pos)}
+HexFile.prototype.readByte8=function(pos){
+	return(
+		this.readByte1(pos+7)*0x0100000000000000+
+		this.readByte1(pos+6)*0x01000000000000+
+		this.readByte1(pos+5)*0x010000000000+
+		this.readByte1(pos+4)*0x0100000000+
+		this.readByte1(pos+3)*0x01000000+
+		this.readByte1(pos+2)*0x010000+
+		this.readByte1(pos+1)*0x0100+
+		this.readByte1(pos)
+	) >>> 0;
+}
 HexFile.prototype.readBytes=function(pos,nBytes){var bytes=new Array(nBytes);for(var i=0;i<nBytes;i++)bytes[i]=this.readByte1(pos+i);return bytes}
 HexFile.prototype.readU16String=function(pos,maxLength){var cs=new Array(maxLength);for(var i=0;i<maxLength;i++)cs[i]=this.readByte2(pos+i*2);return new U16String(pos,maxLength,cs)}
 HexFile.prototype.storeByte=function(pos,byte){this.fileReader.dataView.setUint8(pos, byte)}
