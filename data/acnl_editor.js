@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170517
+	Animal Crossing: New Leaf Save Editor v20170728
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
@@ -1918,6 +1918,7 @@ Letter.prototype.save=function(){
 function Room(offset){
 	this.offset=offset;
 
+	this.size=savegame.readByte(this.offset-0x44); /* UNTESTED!: 2:4x4, 3:6x6, 4:8x8 */
 	this.itemsRoom=new ItemGrid(this.offset, 10, 10, true);
 	this.itemsOver=new ItemGrid(this.offset+400, 8, 8, true);
 	this.itemsWall=new ItemGrid(this.offset+656, 1, 1, false, Offsets.MIN_WALL, Offsets.MAX_WALL);
@@ -1933,6 +1934,7 @@ function Room(offset){
 	this.itemsOver.canvas.style.marginBottom='16px';
 }
 Room.prototype.save=function(){
+	savegame.storeByte(this.offset-0x44, this.size);
 	this.itemsRoom.save();
 	this.itemsOver.save();
 	this.itemsWall.save();
