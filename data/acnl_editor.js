@@ -1918,7 +1918,7 @@ Letter.prototype.save=function(){
 function Room(offset){
 	this.offset=offset;
 
-	this.size=savegame.readByte(this.offset-0x44); /* UNTESTED!: 2:4x4, 3:6x6, 4:8x8 */
+	this.size=savegame.readByte1(this.offset-0x44); /* UNTESTED!: 2:4x4, 3:6x6, 4:8x8 */
 	this.itemsRoom=new ItemGrid(this.offset, 10, 10, true);
 	this.itemsOver=new ItemGrid(this.offset+400, 8, 8, true);
 	this.itemsWall=new ItemGrid(this.offset+656, 1, 1, false, Offsets.MIN_WALL, Offsets.MAX_WALL);
