@@ -1,11 +1,12 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170728
+	Animal Crossing: New Leaf Save Editor v20170826
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
 	 * SciresM for breaking the numeric encryption used in the game
 	 * Thulinma for Pattern structure (check out his editor pattern http://www.thulinma.com/acnl/ )
 	 * NeoKamek for his work on LeafTools and other help
+	 * slattz for various contributions
 	 * jexom for documenting grass deterioration
 	 * froggestspirit for extracting acre information and item list
 	 * sprungit/shokolad-town for compiling hair style and color thumbnails
@@ -69,7 +70,7 @@ var Offsets={
 	PLAYER_TPCTEXT:			0x6b24,
 	PLAYER_PLAYTIME:		0x6b90,
 	PLAYER_POCKETS:			0x6bb0,
-	PLAYER_ENCYCLOPEDIA:	0x6c00,
+	PLAYER_CATALOG:			0x6c00, //starts with encyclopedia
 	PLAYER_BANK:			0x6b6c,
 	PLAYER_MEDALS:			0x6b7c,
 	PLAYER_WALLET:			0x6e38,
@@ -174,7 +175,7 @@ const OffsetsPlus={
 	PLAYER_TPCTEXT:			0x6b38,
 	PLAYER_PLAYTIME:		0x6bb0,
 	PLAYER_POCKETS:			0x6bd0,
-	PLAYER_ENCYCLOPEDIA:	0x6c20,
+	PLAYER_CATALOG:			0x6c20, //starts with encyclopedia
 	PLAYER_BANK:			0x6b8c,
 	PLAYER_MEDALS:			0x6b9c,
 	PLAYER_WALLET:			0x6f08,
@@ -422,6 +423,8 @@ addEvent(window,'load',function(){
 
 
 function Town(){
+	this.maxBuildings=savegame.readByte1(Offsets.MAP_BUILDINGS-4);
+
 	this.treeSize=savegame.readByte1(parseInt(Offsets.TOWN_TREESIZE)); //01-07
 	this.grassType=savegame.readByte1(Offsets.TOWN_GRASSTYPE); //00-02
 	this.grassTypeIsland=savegame.readByte1(Offsets.ISLAND_GRASSTYPE); //00-02
@@ -434,8 +437,6 @@ function Town(){
 	el('town-sessions').innerHTML=this.daysPlayed;
 
 	this.nativeFruit=savegame.readByte1(Offsets.TOWN_NATIVEFRUIT);
-
-
 
 
 	this.townId1=savegame.readByte1(Offsets.TOWN_ID1);
@@ -535,7 +536,9 @@ Town.prototype.searchTownIdReferences=function(){
 Town.prototype.refreshIdSpans=function(){
 	el('town-id').innerHTML='0x'+intToHex(this.townId2)+intToHex(this.townId1);
 }
-Town.prototype.save=function(){
+Town.prototype.save=function(){	
+	savegame.storeByte(Offsets.MAP_BUILDINGS-4, this.maxBuildings);
+
 	savegame.storeByte(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
 	savegame.storeByte(Offsets.TOWN_GRASSTYPE, this.grassType);
 	savegame.storeByte(Offsets.ISLAND_GRASSTYPE, this.grassTypeIsland);
@@ -797,7 +800,11 @@ function click(evt,itemGridObj,firstClick){
 	currentEditingItem=itemSlot;
 
 	if(mouseHeld==1){
-		if(el('items').value>=itemGridObj.minItem && el('items').value<=itemGridObj.maxItem){
+		if(
+			(el('items').value>=itemGridObj.minItem && el('items').value<=itemGridObj.maxItem)
+			||
+			(el('items').value==0x33a7 && itemGridObj.nItems===1 && itemGridObj.minItem!==Offsets.MIN_SONG)
+		){
 			if(itemGridObj.inside && itemSlot.id==el('items').value && itemSlot.flag1==el('flag1').decimalValue && itemSlot.flag2==el('flag2').decimalValue){
 				var rotation=itemSlot.flag2>>4;
 
@@ -1369,10 +1376,10 @@ Building.prototype.set=function(newId){
 		this.y=0;
 
 		if(this.tr){
-			if(this.type==='island')
-				el('buildings-island').removeChild(this.tr);
-			else
+			if(this.type==='map'){
 				el('buildings').removeChild(this.tr);
+				town.maxBuildings--; //not tested yet
+			}
 			this.tr=null;
 		}
 	}else if(this.tr){
@@ -1544,6 +1551,7 @@ function addBuilding(){
 			for(var i=0; i<allBuildings.length; i++)
 				allBuildings[i].disabled=(allBuildings[i].group!==0);
 
+			town.maxBuildings++;
 			MarcDialogs.open('building')
 		}
 		slot--;
@@ -2213,10 +2221,19 @@ Player.prototype.unlockEmotions=function(){
 }
 Player.prototype.fillEncyclopedia=function(){
 	MarcDialogs.confirm('Do you want to fill encyclopedia up for this player?<br/>'+getWarningMessage(), function(){
-		var encyclopediaOffset=currentPlayer.offset+Offsets.PLAYER_ENCYCLOPEDIA;
+		var encyclopediaOffset=currentPlayer.offset+Offsets.PLAYER_CATALOG;
 		for(var i=0; i<Constants.FULL_ENCYCLOPEDIA.length; i++)
 			savegame.storeByte(encyclopediaOffset+i, Constants.FULL_ENCYCLOPEDIA[i]);
 		MarcDialogs.alert('Encyclopedia was filled for this player.');
+	});
+}
+Player.prototype.fillCatalog=function(){
+	MarcDialogs.confirm('Do you want to fill catalog up for this player?<br/>'+getWarningMessage(), function(){
+		var catalogOffset=currentPlayer.offset+Offsets.PLAYER_CATALOG;
+		var maxInts=plusMode?180:136;
+		for(var i=0; i<maxInts; i++)
+			savegame.storeByte4(catalogOffset+i*4, 0xffffffff);
+		MarcDialogs.alert('Catalog was filled for this player.');
 	});
 }
 

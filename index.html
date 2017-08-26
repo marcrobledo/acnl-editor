@@ -18,7 +18,7 @@
 		<span class="logo"></span>
 		<h1>Animal Crossing: New Leaf Save Editor</h1>
 		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 28th Jul 2017)</span>
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 26th Aug 2017)</span>
 		</div>
 
 		<div id="help">
@@ -108,7 +108,10 @@
 	<div style="float:right;width:360px">
 		<h3 class="no-separation">Buildings</h3>
 		<ul id="buildings" class="building-list">
-			<li id="buildings-sort-button" style="text-align:center"><input type="button" value="Sort by type" onclick="sortMapBuildings()"/></li>
+			<li id="buildings-sort-button" style="text-align:center">
+				<input type="button" value="Sort by type" onclick="sortMapBuildings()"/>
+				<input type="button" value="Add building" onclick="addBuilding()"/>
+			</li>
 		</ul>
 	</div>
 	<div id="map-map" class="map"></div>
@@ -216,6 +219,7 @@
 					<td id="player-cheats">
 						<input type="button" value="Encyclopedia" onclick="currentPlayer.fillEncyclopedia()"/>
 						<input type="button" value="Emotions" onclick="currentPlayer.unlockEmotions()"/>
+						<input type="button" value="Fill catalog" onclick="currentPlayer.fillCatalog()"/>
 						<input type="button" value="Change TPC pic" onclick="changeTPCPic()"/>
 					</td>
 				</tr>
@@ -681,6 +685,7 @@
 
 	<div class="buttons">
 		<input type="button" class="button-accept" value="Accept" onclick="acceptBuilding()"/>
+		<!-- <input type="button" class="red" value="Remove" onclick="removeBuilding()"/> -->
 		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
 	</div>
 </div>
