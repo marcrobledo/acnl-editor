@@ -129,9 +129,10 @@ You will only need to do this once.
 		<a href="https://www.google.com/search?q=tutorial+installing+homebrew+3ds" target="_blank">Install Homebrew Launcher</a> from <a href="http://smealum.github.io/3ds/" target="_blank">smealum</a> using any of your available entrypoints (depending on your firmware version).<br/>
 		Recommended entrypoints:
 		<ul>
-			<li><b>9.x/10.x/11.0 users:</b> use browserhax+menuhax or soundhax</li>
-			<li><b>11.1/11.2/11.x users:</b> use soundhax</li>
-			<li><b>CFW users:</b> use <a href="https://github.com/yellows8/hblauncher_loader/releases" target="_blank">hblauncher_loader</a></li>
+			<li><b>9.x-11.0 users:</b> use browserhax+menuhax or soundhax</li>
+			<li><b>11.1-11.3 users:</b> use soundhax</li>
+			<li><b>11.4-11.5 users:</b> use RPwnG</li>
+			<li><b>CFW users:</b> use Luma 8.1+Rosalina+<a href="https://github.com/Phalk/JKSM/releases" target="_blank">JKSM</a></li>
 		</ul>
 	<li>Download <a href="acnl_save_manager.zip">AC:NL Save Manager</a> and extract it to the root of your SD card <small>(so the included 3ds folder stays on root, overwrite files if needed)</small></li>
 </ol>
@@ -142,9 +143,7 @@ You will only need to do this once.
 <ol>
 	<li>Open Homebrew Launcher using your entrypoint</li>
 	<li>Run <span class="app-icon"></span> AC:NL save manager</li>
-	<li>Wait a few seconds, and a black with white text screen will appear</li>
-	<li>Press A to dump savegame</li>
-	<li>Press X to exit</li>
+	<li>Select Export savegame and type a name for the savegame backup</li>
 	<li>Power down the console, take out the SD card and put in the PC</li>
 </ol>
 
@@ -152,26 +151,22 @@ You will only need to do this once.
 
 <h3>Inject savegame</h3>
 <ol>
-	<li>Open <b>saveDataBackup/garden.dat (or garden_plus.dat)</b> file with <a href="./">AC:NL Save Editor</a> and edit it to your desire</li>
-	<li>Save the edited town as <b>saveDataBackup/garden.dat (or garden_plus.dat)</b> in the SD <small>(make sure you are overwriting the original file and not creating a copy)</small></li>
-	<li>Make sure the <b>saveDataBackup</b> folder does not contain save files from other games <small>(you will be safe if you didn't use Save Data Manager to dump any other game save)</small></li>
-	<li>If you recently updated to Welcome amiibo version, you will need to the delete the old <b>saveDataBackup/garden.dat</b> file</li>
+	<li>Open <b>JKSM/Savegames/[your_savegame_name]/garden.dat (or garden_plus.dat)</b> file with <a href="./">AC:NL Save Editor</a> and edit it to your desire</li>
+	<li>Save the edited town as <b>JKSM/Savegames/[your_savegame_name]/garden.dat (or garden_plus.dat)</b> in the SD <small>(make sure you are overwriting the original file and not creating a copy)</small></li>
 	<li>Insert the SD card in the console</li>
 	<li>Open Homebrew Launcher using your entrypoint</li>
 	<li>Run <span class="app-icon"></span> AC:NL save manager</li>
-	<li>Wait a few seconds, and a black with white text screen will appear</li>
-	<li>Press B to inject the edited savegame</li>
-	<li>Press X to exit</li>
+	<li>Select Import savegame and choose [your_savegame_name] folder</li>
 	<li>Run AC:NL and get ingame, your changes should be there!</li>
 </ol>
 
 
-
+<!--
 <h3>Important note</h3>
 The game has an anti-cheat protection, so you cannot inject an old savegame or another's player savegame.<br/>
 Make sure you always inject the latest savegame, dump it before editing as it's explained here and you will be fine.<br/>
 Alternatively you can use <span class="app-icon purple"></span> svdt which skips the anti-cheat protection for you.
-
+-->
 
 
 
@@ -244,7 +239,7 @@ Also, do not inject a RAM that was dumped using another player. Always inject on
 <h2 id="FAQ">FAQ</h2>
 
 <h3>I get a <i>Missing target title</i> error when trying to dump/inject.</h3>
-It happens to a few people for some reason. Just open the normal save_manager instead, and browse using the d-pad through your games until you find AC:NL.
+It happens to a few people for some reason. Just open the normal JKSM instead, and browse using the d-pad through your games until you find AC:NL.
 
 <!-- <h3>I cannot play online because the console asks for an update, and I don't want to lose my homebrew entrypoint. Can I play online?</h3>
 Yes, use <a href="http://gbatemp.net/threads/httpwn-bypass-system-update-blocks.420041" target="_blank">HTTPwn</a>.<br/> -->
@@ -259,9 +254,9 @@ Right click on the desired furniture then left click to rotate it.
 Select the desired tree in the Current item dropdown menu, then choose Perfect 4 in the Flag 1 dropdown menu. You can even put non-native perfect fruit trees!<br/>
 You can also place rare mixed perfect fruit trees (2 normal fruit+1 perfect fruit). Right click on any of your normal fruit trees in your town, choose 0x01 mixed perfect in the Flag 2 dropdown menu then overwrite it in the map (or whever you want to place it).
 
-<h3>Can I add new buildings with the editor?</h3>
+<!-- <h3>Can I add new buildings with the editor?</h3>
 No. The option was disabled since it lead to some glitches at a later point.
-It's better to let the game do it by itself. Just add any new PWP (street lamp, for example) in-game with Isabelle, pay it, then wait for the next day so you can edit it in the editor.
+It's better to let the game do it by itself. Just add any new PWP (street lamp, for example) in-game with Isabelle, pay it, then wait for the next day so you can edit it in the editor. -->
 
 <h3>I've injected Holden/Filly RVs, but they do not ask me to come to the town.</h3>
 Both Holden and Filly are RV locked, so they cannot come to your town as villagers legally.<br/>
@@ -322,17 +317,17 @@ Do not worry, you can still restore it. You will need to update its secure NAND 
 	<li>Go to the Other tab, click on the pencil next to Secure Value and load the <b>newest</b> garden.dat/garden_plus.dat here.<br/>
 	That will turn your old savegame into a valid savegame for the console.</li>
 </ol>
-Alternatively you can use <span class="app-icon purple"></span> svdt which updates the NAND value for you.
+<!-- Alternatively you can use <span class="app-icon purple"></span> svdt which updates the NAND value for you. -->
 
 <h3>What happened to the RAM hacking method?</h3>
 Support for RAM method has been dropped for Welcome amiibo update. And <b>it will never be back</b>, sorry.<br/>
 The reason is that the RAM method was only available for some outdated consoles. The amiibo update requires the console firmware to be on 11.x, which automatically kills the browser exploit that allows the AC:NL RAM hacking method.<br/><br/>
 Basically, Nintendo killed the RAM hacking method unintentionally.
 
-<h3>Can I inject an old acnlram.bin / gardenram.dat savegame?</h3>
+<!-- <h3>Can I inject an old acnlram.bin / gardenram.dat savegame?</h3>
 Yes, but only if you haven't updated to Welcome amiibo.<br/>
 The editor will convert your old format savegame into a valid garden.dat, but it still needs a valid secure NAND value.
-Just follow the steps for recovering old savegames (see above).
+Just follow the steps for recovering old savegames (see above). -->
 
 
 </div></body>
