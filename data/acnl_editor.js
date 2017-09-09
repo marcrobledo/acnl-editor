@@ -1,9 +1,10 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170826
+	Animal Crossing: New Leaf Save Editor v20170909
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
 	 * SciresM for breaking the numeric encryption used in the game
+	 * kwsch and Mega-Mew for their work in NLSE
 	 * Thulinma for Pattern structure (check out his editor pattern http://www.thulinma.com/acnl/ )
 	 * NeoKamek for his work on LeafTools and other help
 	 * slattz for various contributions
@@ -65,6 +66,8 @@ var Offsets={
 	PLAYER_REGYEAR:			0x55d6,
 	PLAYER_REGMONTH:		0x55d8,
 	PLAYER_REGDAY:			0x55d9,
+	PLAYER_BADGE11_VALUE:	0x6b84,
+	PLAYER_BADGES_VALUES:	0x55dc,
 	PLAYER_BADGES:			0x569c,
 	PLAYER_TPCPIC:			0x5724,
 	PLAYER_TPCTEXT:			0x6b24,
@@ -171,6 +174,8 @@ const OffsetsPlus={
 	PLAYER_REGYEAR:			0x55d6,
 	PLAYER_REGMONTH:		0x55d8,
 	PLAYER_REGDAY:			0x55d9,
+	PLAYER_BADGE11_VALUE:	0x6ba4,
+	PLAYER_BADGES_VALUES:	0x55dc,
 	PLAYER_BADGES:			0x569c,
 	PLAYER_TPCPIC:			0x5738,
 	PLAYER_TPCTEXT:			0x6b38,
@@ -224,6 +229,8 @@ const OffsetsPlus={
 	SHOP_LOLGYROIDS:		0x6ad92,
 	SHOP_ISLAND:			0x6adb8,
 
+	HHD_UNLOCK:				0x621dc,
+
 	MIN_WALL:		0x234c,	MAX_WALL:		0x23ea,
 	MIN_FLOOR:		0x23eb,	MAX_FLOOR:		0x2492,
 	MIN_SONG:		0x212b,	MAX_SONG:		0x2185,
@@ -234,7 +241,8 @@ const OffsetsPlus={
 const Constants={
 	Strings:{
 		PERSONALITIES:['&#9794; lazy','&#9794; jock','&#9794; cranky','&#9794; smug','&#9792; normal','&#9792; peppy','&#9792; snooty','&#9792; uchi'],
-		BADGES:['Fishes','Bugs','Marine','Fish collection','Bug collection','Marine collection','Balloons','Visiting other towns','Being visited','Watering flowers','Bank','Turnips','Medals','StreetPass','Weeds','Shopping','Letters','Refurbishing','Catalog','K.K. Slider','Home points','Time played','Helping neighbors','Dream Suite']
+		BADGES:['Fishes','Bugs','Marine','Fish collection','Bug collection','Marine collection','Balloons','Visiting other towns','Being visited','Watering flowers','Bank','Turnips','Medals','StreetPass','Weeds','Shopping','Letters','Refurbishing','Catalog','K.K. Slider','Home points','Time played','Helping neighbors','Dream Suite'],
+		WARNING_MESSAGE:'<small><b class="warning">Warning!</b> this feature is experimental.<br/>Use it at your own risk.</small>'
 	},
 
 	FULL_ENCYCLOPEDIA:[0xcc,0xfc,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xd0,0x9a],
@@ -246,6 +254,33 @@ const Constants={
 	ALL_PWPS:[0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff],
 
 	TOWN_PLAYTIME_FROM_TREESIZE:[1,5,20,50,100,180,300,500],
+
+	BADGE_MIN_VALUES:[
+		[500,2000,5000],
+		[500,2000,5000],
+		[100,200,1000],
+		[0,0,0],
+		[0,0,0],
+		[0,0,0],
+		[30,100,200],
+		[100,250,500],
+		[50,200,500],
+		[100,250,500],
+		[0,0,0],
+		[500000,3000000,10000000],
+		[300,1500,5000],
+		[100,300,1000],
+		[500,2000,5000],
+		[500000,2000000,5000000],
+		[50,100,200],
+		[30,100,200],
+		[0,0,0],
+		[20,50,100],
+		[0,0,0],
+		[0,0,0],
+		[50,100,300],
+		[50,200,500]	
+	],
 
 	HAIR_COLORS:['593a38','935929','ef572e','41a6dc','ffe779','8bcf62','ee798b','fff8de','171806','550601','bb0c07','001449','dea70f','015a22','ad75bc','7a795a'],
 	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd']
@@ -326,8 +361,8 @@ function _cleanInputEvent(){
 /* NumericValue - documented by SciresM (https://gist.github.com/SciresM/0ecc3c2b8c93922d3b21f7c4e552626c) */
 function NumericValue(offset){
 	this.offset=offset;
-	this.int1=savegame.readByte4(offset);
-	this.int2=savegame.readByte4(offset+4);
+	this.int1=savegame.readInt(offset);
+	this.int2=savegame.readInt(offset+4);
 
 	this.changed=false;
 	this.value=this.decrypt();
@@ -377,18 +412,11 @@ NumericValue.prototype.set=function(newVal){
 }
 NumericValue.prototype.save=function(){
 	if(this.changed){
-		savegame.storeByte4(this.offset, this.int1 >>> 0);
-		savegame.storeByte4(this.offset+4, this.int2 >>> 0)
+		savegame.writeInt(this.offset, this.int1 >>> 0);
+		savegame.writeInt(this.offset+4, this.int2 >>> 0)
 	}
 }
-function findNumericValue(min, max){
-	for(var i=0x040000; i<savegame.fileSize-4; i+=2){
-		var val=(new NumericValue(i)).value;
-		if(val && val>=min && val<=max){
-			console.log('found '+val+' at '+intToHex(i));
-		}
-	}
-}
+
 
 var showDebug=function(){show('debug')};
 var hideDebug=function(){hide('debug')};
@@ -425,24 +453,24 @@ addEvent(window,'load',function(){
 
 
 function Town(){
-	this.maxBuildings=savegame.readByte1(Offsets.MAP_BUILDINGS-4);
+	this.maxBuildings=savegame.readByte(Offsets.MAP_BUILDINGS-4);
 
-	this.treeSize=savegame.readByte1(parseInt(Offsets.TOWN_TREESIZE)); //01-07
-	this.grassType=savegame.readByte1(Offsets.TOWN_GRASSTYPE); //00-02
-	this.grassTypeIsland=savegame.readByte1(Offsets.ISLAND_GRASSTYPE); //00-02
+	this.treeSize=savegame.readByte(parseInt(Offsets.TOWN_TREESIZE)); //01-07
+	this.grassType=savegame.readByte(Offsets.TOWN_GRASSTYPE); //00-02
+	this.grassTypeIsland=savegame.readByte(Offsets.ISLAND_GRASSTYPE); //00-02
 
 	this.playTime=new PlayTime(Offsets.TOWN_PLAYTIME);
 
 	el('town-playtime').appendChild(this.playTime.span);
 
-	this.daysPlayed=savegame.readByte2(Offsets.TOWN_DAYSPLAYED);
+	this.daysPlayed=savegame.readShort(Offsets.TOWN_DAYSPLAYED);
 	el('town-sessions').innerHTML=this.daysPlayed;
 
-	this.nativeFruit=savegame.readByte1(Offsets.TOWN_NATIVEFRUIT);
+	this.nativeFruit=savegame.readByte(Offsets.TOWN_NATIVEFRUIT);
 
 
-	this.townId1=savegame.readByte1(Offsets.TOWN_ID1);
-	this.townId2=savegame.readByte1(Offsets.TOWN_ID2);
+	this.townId1=savegame.readByte(Offsets.TOWN_ID1);
+	this.townId2=savegame.readByte(Offsets.TOWN_ID2);
 	this.name=savegame.readU16String(Offsets.TOWN_NAME, 9);
 	el('town-name').appendChild(createEditStringButton(this.name, 'town name'));
 
@@ -492,8 +520,8 @@ function Town(){
 	this.turnipPrices=[];
 	for(var i=0;i<6;i++){
 		this.turnipPrices[i]={
-			AM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16, 990),
-			PM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16+8, 990)
+			AM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16),
+			PM:new NumericValue(Offsets.TOWN_TURNIP_PRICES+i*16+8)
 		}
 	}
 }
@@ -518,13 +546,13 @@ Town.prototype.searchTownIdReferences=function(){
 	if(!this.townIdReferences){
 		var townId=new Array(5); // 5*4=20 bytes
 		for(var i=0; i<5; i++)
-			townId[i]=savegame.readByte4(Offsets.TOWN_ID1+i*4);
+			townId[i]=savegame.readInt(Offsets.TOWN_ID1+i*4);
 
 		this.townIdReferences=new Array();
 		for(var offset=0; offset<522624-5*4; offset+=2){
 			var found=true;
 			for(var i=0; i<5 && found; i++){
-				if(savegame.readByte4(offset+i*4)!=townId[i]){
+				if(savegame.readInt(offset+i*4)!=townId[i]){
 					found=false;
 				}
 			}
@@ -539,23 +567,23 @@ Town.prototype.refreshIdSpans=function(){
 	el('town-id').innerHTML='0x'+intToHex(this.townId2)+intToHex(this.townId1);
 }
 Town.prototype.save=function(){	
-	savegame.storeByte(Offsets.MAP_BUILDINGS-4, this.maxBuildings);
+	savegame.writeByte(Offsets.MAP_BUILDINGS-4, this.maxBuildings);
 
-	savegame.storeByte(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
-	savegame.storeByte(Offsets.TOWN_GRASSTYPE, this.grassType);
-	savegame.storeByte(Offsets.ISLAND_GRASSTYPE, this.grassTypeIsland);
+	savegame.writeByte(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
+	savegame.writeByte(Offsets.TOWN_GRASSTYPE, this.grassType);
+	savegame.writeByte(Offsets.ISLAND_GRASSTYPE, this.grassTypeIsland);
 
-	savegame.storeByte(Offsets.TOWN_TREESIZE, this.treeSize);
+	savegame.writeByte(Offsets.TOWN_TREESIZE, this.treeSize);
 
 	this.playTime.save();
-	savegame.storeByte2(Offsets.TOWN_DAYSPLAYED, this.daysPlayed);
+	savegame.writeShort(Offsets.TOWN_DAYSPLAYED, this.daysPlayed);
 
 	/* fix town ID references */
 	if(this.townIdReferences)
 		for(var i=0; i<this.townIdReferences.length; i++){
-			savegame.storeByte(this.townIdReferences[i], this.townId1);
-			savegame.storeByte(this.townIdReferences[i]+1, this.townId2);
-			savegame.storeU16String(this.townIdReferences[i]+2, this.name);
+			savegame.writeByte(this.townIdReferences[i], this.townId1);
+			savegame.writeByte(this.townIdReferences[i]+1, this.townId2);
+			savegame.writeU16String(this.townIdReferences[i]+2, this.name);
 		}
 
 	for(var i=0; i<16; i++)
@@ -605,15 +633,28 @@ function generateTownRoofColorIds(townIdX){
 }
 
 Town.prototype.unlockAllPWPs=function(){
-	MarcDialogs.confirm('Do you want to unlock all PWPs?<br/>'+getWarningMessage(), function(){
+	MarcDialogs.confirm('Do you want to unlock all PWPs?<br/>'+Constants.Strings.WARNING_MESSAGE, function(){
 		for(var i=0; i<Constants.ALL_PWPS.length; i++)
-			savegame.storeByte(Offsets.TOWN_AVAILABLEPWPS+i, Constants.ALL_PWPS[i])
+			savegame.writeByte(Offsets.TOWN_AVAILABLEPWPS+i, Constants.ALL_PWPS[i])
 		MarcDialogs.alert('All PWPs have been unlocked.');
 	});
 }
+Town.prototype.checkHHDStatus=function(){
+	var b=savegame.readByte(Offsets.HHD_UNLOCK);
+	return b & 0x04
+}
+Town.prototype.unlockHHDContent=function(){
+	var b=savegame.readByte(Offsets.HHD_UNLOCK);
+	savegame.writeByte(Offsets.HHD_UNLOCK, b | 0x04);
+}
 
-
-
+function unlockHHDContent(){
+	MarcDialogs.confirm('Do you want to unlock HHD content?', function(){
+		town.unlockHHDContent();
+		MarcDialogs.close();
+		el('button-unlockahhd').disabled=true;
+	});
+}
 
 
 
@@ -926,7 +967,7 @@ function GrassMapToday(offset,width,height){
 
 	this.tiles=new Array(width*height*16*16);
 	for(var i=0; i<this.tiles.length; i++){
-		var b=savegame.readByte1(this.offset+i);
+		var b=savegame.readByte(this.offset+i);
 		this.tiles[i]=b & 0x0f;
 	}
 
@@ -959,7 +1000,7 @@ GrassMapToday.prototype.reset=function(){
 }
 GrassMapToday.prototype.save=function(){
 	for(var i=0; i<this.tiles.length; i++)
-		savegame.storeByte(this.offset+i,this.tiles[i]);
+		savegame.writeByte(this.offset+i,this.tiles[i]);
 }
 
 
@@ -1030,7 +1071,7 @@ function GrassMap(offset,width,height){
 
 	this.tiles=new Array(width*height*16*16);
 	for(var i=0; i<this.tiles.length; i++)
-		this.tiles[i]=savegame.readByte1(this.offset+i);
+		this.tiles[i]=savegame.readByte(this.offset+i);
 
 	this.canvas=document.createElement('canvas');
 	this.canvas.width=(width-1)*16*this._TILE_SIZE; //width-1 removes unused column
@@ -1123,7 +1164,7 @@ GrassMap.prototype.alterSingle=function(x,y,v){
 }
 GrassMap.prototype.save=function(){
 	for(var i=0; i<this.tiles.length; i++)
-		savegame.storeByte(this.offset+i,this.tiles[i]);
+		savegame.writeByte(this.offset+i,this.tiles[i]);
 }
 
 
@@ -1144,7 +1185,7 @@ function Acre(type, n, itemGrid){
 		this.offset=Offsets.ISLAND_ACRES+n*2;
 
 
-	this.id=savegame.readByte1(this.offset);
+	this.id=savegame.readByte(this.offset);
 
 	if(itemGrid)
 		this.itemGrid=itemGrid;
@@ -1171,7 +1212,7 @@ Acre.prototype.setId=function(newId){
 	this.refreshThumbnail();
 }
 Acre.prototype.save=function(){
-	savegame.storeByte2(this.offset, this.id)
+	savegame.writeShort(this.offset, this.id)
 }
 Acre.prototype.refreshThumbnail=function(){
 	var normalModeFix=0;
@@ -1224,7 +1265,7 @@ function acceptImportMap(){
 			_OFFSET=Offsets.MAP_ACRES;
 
 		for(var i=0; i<editingMap.acres.length; i++)
-			editingMap.acres[i].setId(tempFile.readByte1(_OFFSET+i*2));
+			editingMap.acres[i].setId(tempFile.readByte(_OFFSET+i*2));
 
 		if(editingMap===map)
 			grassMap._refreshBackground();
@@ -1240,9 +1281,9 @@ function acceptImportMap(){
 			_OFFSET=Offsets.MAP_ITEMS;
 
 		for(var i=0; i<editingMap.items.length; i++){
-			var id=tempFile.readByte2(_OFFSET+i*4+0);
-			var flag1=tempFile.readByte1(_OFFSET+i*4+2);
-			var flag2=tempFile.readByte1(_OFFSET+i*4+3);
+			var id=tempFile.readShort(_OFFSET+i*4+0);
+			var flag1=tempFile.readByte(_OFFSET+i*4+2);
+			var flag2=tempFile.readByte(_OFFSET+i*4+3);
 			editingMap.items[i].set(flag2, flag1, id);
 		}
 		for(var i=0; i<editingMap.itemGrids.length; i++){
@@ -1257,7 +1298,7 @@ function acceptImportMap(){
 		var _OFFSET=Offsets.MAP_GRASS;
 
 		for(var i=0; i<grassMap.tiles.length; i++){
-			grassMap.tiles[i]=tempFile.readByte1(_OFFSET+i);
+			grassMap.tiles[i]=tempFile.readByte(_OFFSET+i);
 		}
 		grassMap.draw();
 		grassMapToday.reset();
@@ -1286,9 +1327,9 @@ function acceptImportMap(){
 		}
 
 		for(var i=0; i<N_BUILDINGS; i++){
-			var newId=tempFile.readByte2(_OFFSET+i*4+0);
-			var newX=tempFile.readByte1(_OFFSET+i*4+2);
-			var newY=tempFile.readByte1(_OFFSET+i*4+3);
+			var newId=tempFile.readShort(_OFFSET+i*4+0);
+			var newX=tempFile.readByte(_OFFSET+i*4+2);
+			var newY=tempFile.readByte(_OFFSET+i*4+3);
 
 			if(newId<=0x11){
 				for(var j=0; j<N_BUILDINGS; j++){
@@ -1343,9 +1384,9 @@ function Building(type, n){
 		this._MAXWIDTH=112;
 		this._MAXHEIGHT=96;
 	}
-	this.id=savegame.readByte2(this.offset);
-	this.x=savegame.readByte1(this.offset+2);
-	this.y=savegame.readByte1(this.offset+3);
+	this.id=savegame.readShort(this.offset);
+	this.x=savegame.readByte(this.offset+2);
+	this.y=savegame.readByte(this.offset+3);
 
 	buildings.push(this);
 
@@ -1466,9 +1507,9 @@ Building.prototype._createEditRow=function(){
 	}
 }
 Building.prototype.save=function(){
-	savegame.storeByte2(this.offset, this.id);
-	savegame.storeByte(this.offset+2, this.x);
-	savegame.storeByte(this.offset+3, this.y);
+	savegame.writeShort(this.offset, this.id);
+	savegame.writeByte(this.offset+2, this.x);
+	savegame.writeByte(this.offset+3, this.y);
 }
 Building.prototype.setX=function(x){
 	this._refreshTile(false);
@@ -1623,7 +1664,7 @@ function SimpleVillager(type,n){
 		this.offset=Offsets.CAMPSITE_VILLAGER;
 	}
 
-	this.id=savegame.readByte2(this.offset);
+	this.id=savegame.readShort(this.offset);
 
 	if(isValidVillagerId(this.id) || type==='campsite' || (plusMode && this.isCaravan && this.id==0xffff)){
 		this.spanName=createSpan('?');
@@ -1654,7 +1695,7 @@ function SimpleVillager(type,n){
 	}
 }
 SimpleVillager.prototype.save=function(){
-	savegame.storeByte2(this.offset, this.id);
+	savegame.writeShort(this.offset, this.id);
 }
 SimpleVillager.prototype.setVillager=function(newId){
 	this.id=newId;
@@ -1673,10 +1714,10 @@ function Villager(n){
 	this.n=n;
 	this.offset=Offsets.VILLAGERS+Offsets.VILLAGER_SIZE*n;
 
-	this.id=savegame.readByte2(this.offset+Offsets.VILLAGER_ID);
-	this.personality=savegame.readByte1(this.offset+Offsets.VILLAGER_PERSONALITY); // 00-05
+	this.id=savegame.readShort(this.offset+Offsets.VILLAGER_ID);
+	this.personality=savegame.readByte(this.offset+Offsets.VILLAGER_PERSONALITY); // 00-05
 
-	this.status=savegame.readByte4(this.offset+Offsets.VILLAGER_STATUS);
+	this.status=savegame.readInt(this.offset+Offsets.VILLAGER_STATUS);
 	this.catchphrase=savegame.readU16String(this.offset+Offsets.VILLAGER_CATCHPHRASE, 11);
 
 	this.letter=new Letter(this.offset+Offsets.VILLAGER_STOREDLETTER);
@@ -1756,9 +1797,9 @@ function Villager(n){
 }
 Villager.prototype.save=function(){
 	if(isValidVillagerId(this.id)){
-		savegame.storeByte2(this.offset+Offsets.VILLAGER_ID, this.id);
-		savegame.storeByte(this.offset+Offsets.VILLAGER_PERSONALITY, this.personality);
-		savegame.storeU16String(this.offset+Offsets.VILLAGER_CATCHPHRASE, this.catchphrase);
+		savegame.writeShort(this.offset+Offsets.VILLAGER_ID, this.id);
+		savegame.writeByte(this.offset+Offsets.VILLAGER_PERSONALITY, this.personality);
+		savegame.writeU16String(this.offset+Offsets.VILLAGER_CATCHPHRASE, this.catchphrase);
 
 
 		this.itemGridShirt.save();
@@ -1769,10 +1810,10 @@ Villager.prototype.save=function(){
 		this.itemGridFurniture.save();
 
 		//store status
-		savegame.storeByte(this.offset+Offsets.VILLAGER_STATUS+0, (this.status & 0x000000ff));
-		//savegame.storeByte(this.offset+Offsets.VILLAGER_STATUS+1, (this.status & 0x0000ff00) >> 8);
-		//savegame.storeByte(this.offset+Offsets.VILLAGER_STATUS+2, (this.status & 0x00ff0000) >> 16);
-		//savegame.storeByte(this.offset+Offsets.VILLAGER_STATUS+3, (this.status & 0xff000000) >> 24);
+		savegame.writeByte(this.offset+Offsets.VILLAGER_STATUS+0, (this.status & 0x000000ff));
+		//savegame.writeByte(this.offset+Offsets.VILLAGER_STATUS+1, (this.status & 0x0000ff00) >> 8);
+		//savegame.writeByte(this.offset+Offsets.VILLAGER_STATUS+2, (this.status & 0x00ff0000) >> 16);
+		//savegame.writeByte(this.offset+Offsets.VILLAGER_STATUS+3, (this.status & 0xff000000) >> 24);
 	}
 }
 Villager.prototype.setVillager=function(newId,defaultBytes){
@@ -1811,7 +1852,7 @@ Villager.prototype.setVillager=function(newId,defaultBytes){
 			}
 
 			//unknown last 4 bytes
-			savegame.storeByte4(this.offset+Offsets.VILLAGER_SHIRT+4*21, data[21]);
+			savegame.writeInt(this.offset+Offsets.VILLAGER_SHIRT+4*21, data[21]);
 		}
 
 		if(villagerInfo.catchphrase){
@@ -1916,9 +1957,9 @@ function Letter(offset){
 	this.end=savegame.readU16String(this.offset+104+0x01c4, 64);
 }
 Letter.prototype.save=function(){
-	savegame.storeU16String(this.offset, this.intro);
-	savegame.storeU16String(this.offset+0x42, this.body);
-	savegame.storeU16String(this.offset+0x01c4, this.end);
+	savegame.writeU16String(this.offset, this.intro);
+	savegame.writeU16String(this.offset+0x42, this.body);
+	savegame.writeU16String(this.offset+0x01c4, this.end);
 }
 
 
@@ -1928,7 +1969,7 @@ Letter.prototype.save=function(){
 function Room(offset){
 	this.offset=offset;
 
-	this.size=savegame.readByte1(this.offset-0x44); /* UNTESTED!: 2:4x4, 3:6x6, 4:8x8 */
+	this.size=savegame.readByte(this.offset-0x44); /* UNTESTED!: 2:4x4, 3:6x6, 4:8x8 */
 	this.itemsRoom=new ItemGrid(this.offset, 10, 10, true);
 	this.itemsOver=new ItemGrid(this.offset+400, 8, 8, true);
 	this.itemsWall=new ItemGrid(this.offset+656, 1, 1, false, Offsets.MIN_WALL, Offsets.MAX_WALL);
@@ -1944,7 +1985,7 @@ function Room(offset){
 	this.itemsOver.canvas.style.marginBottom='16px';
 }
 Room.prototype.save=function(){
-	savegame.storeByte(this.offset-0x44, this.size);
+	savegame.writeByte(this.offset-0x44, this.size);
 	this.itemsRoom.save();
 	this.itemsOver.save();
 	this.itemsWall.save();
@@ -1962,15 +2003,15 @@ function Player(n){
 
 	this.playTime=new PlayTime(this.offset+Offsets.PLAYER_PLAYTIME);
 
-	this.hairStyle=savegame.readByte1(this.offset+Offsets.PLAYER_HAIRSTYLE);
-	this.hairColor=savegame.readByte1(this.offset+Offsets.PLAYER_HAIRCOLOR);
-	this.face=savegame.readByte1(this.offset+Offsets.PLAYER_FACE);
-	this.eyeColor=savegame.readByte1(this.offset+Offsets.PLAYER_EYECOLOR);
-	this.tan=savegame.readByte1(this.offset+Offsets.PLAYER_TAN);
-	this.gender=savegame.readByte1(this.offset+Offsets.PLAYER_GENDER); //00: male, 01:female
+	this.hairStyle=savegame.readByte(this.offset+Offsets.PLAYER_HAIRSTYLE);
+	this.hairColor=savegame.readByte(this.offset+Offsets.PLAYER_HAIRCOLOR);
+	this.face=savegame.readByte(this.offset+Offsets.PLAYER_FACE);
+	this.eyeColor=savegame.readByte(this.offset+Offsets.PLAYER_EYECOLOR);
+	this.tan=savegame.readByte(this.offset+Offsets.PLAYER_TAN);
+	this.gender=savegame.readByte(this.offset+Offsets.PLAYER_GENDER); //00: male, 01:female
 
-	this.playerId1=savegame.readByte1(this.offset+Offsets.PLAYER_ID1);
-	this.playerId2=savegame.readByte1(this.offset+Offsets.PLAYER_ID2);
+	this.playerId1=savegame.readByte(this.offset+Offsets.PLAYER_ID1);
+	this.playerId2=savegame.readByte(this.offset+Offsets.PLAYER_ID2);
 
 	this.name=savegame.readU16String(this.offset+Offsets.PLAYER_NAME, 9);
 	var div=document.createElement('div');
@@ -1980,46 +2021,46 @@ function Player(n){
 
 	this.playerIdReferences=false;
 
-	//this.townId1=savegame.readByte1(this.offset+0x55bc);
-	//this.townId2=savegame.readByte1(this.offset+0x55bc+1);
+	//this.townId1=savegame.readByte(this.offset+0x55bc);
+	//this.townId2=savegame.readByte(this.offset+0x55bc+1);
 	//this.townName=savegame.readU16String(this.offset+0x55bc+2, 9);
 
 
-	this.TPCregion=savegame.readByte1(this.offset+Offsets.PLAYER_TPCREGION);
+	this.TPCregion=savegame.readByte(this.offset+Offsets.PLAYER_TPCREGION);
 	this.TPCtext=savegame.readU16String(this.offset+Offsets.PLAYER_TPCTEXT, 32); //40?
 	var div2=document.createElement('div');
 	div2.id='player-tpctext-'+this.n;
 	div2.appendChild(createEditStringButton(this.TPCtext, 'player TPC text'));
 	el('player-tpctext').appendChild(div2);
 
-	this.birthdayMonth=savegame.readByte1(this.offset+Offsets.PLAYER_BIRTHDAYMONTH);
-	this.birthdayDay=savegame.readByte1(this.offset+Offsets.PLAYER_BIRTHDAYDAY);
-	this.registrationYear=savegame.readByte2(this.offset+Offsets.PLAYER_REGYEAR);
-	this.registrationMonth=savegame.readByte1(this.offset+Offsets.PLAYER_REGMONTH);
-	this.registrationDay=savegame.readByte1(this.offset+Offsets.PLAYER_REGDAY);
+	this.birthdayMonth=savegame.readByte(this.offset+Offsets.PLAYER_BIRTHDAYMONTH);
+	this.birthdayDay=savegame.readByte(this.offset+Offsets.PLAYER_BIRTHDAYDAY);
+	this.registrationYear=savegame.readShort(this.offset+Offsets.PLAYER_REGYEAR);
+	this.registrationMonth=savegame.readByte(this.offset+Offsets.PLAYER_REGMONTH);
+	this.registrationDay=savegame.readByte(this.offset+Offsets.PLAYER_REGDAY);
 
 
 
 	var EXTERIOR_OFFSET=Offsets.PLAYER_EXTERIORS+0x1228*n;
-	this.houseSize=savegame.readByte1(EXTERIOR_OFFSET);
-	this.houseStyle=savegame.readByte1(EXTERIOR_OFFSET+1);
-	this.houseDoorShape=savegame.readByte1(EXTERIOR_OFFSET+2);
-	this.houseBrick=savegame.readByte1(EXTERIOR_OFFSET+3);
-	this.houseRoof=savegame.readByte1(EXTERIOR_OFFSET+4);
-	this.houseDoor=savegame.readByte1(EXTERIOR_OFFSET+5);
-	this.houseFence=savegame.readByte1(EXTERIOR_OFFSET+6);
-	this.housePavement=savegame.readByte1(EXTERIOR_OFFSET+7);
-	this.houseMailbox=savegame.readByte1(EXTERIOR_OFFSET+8);
+	this.houseSize=savegame.readByte(EXTERIOR_OFFSET);
+	this.houseStyle=savegame.readByte(EXTERIOR_OFFSET+1);
+	this.houseDoorShape=savegame.readByte(EXTERIOR_OFFSET+2);
+	this.houseBrick=savegame.readByte(EXTERIOR_OFFSET+3);
+	this.houseRoof=savegame.readByte(EXTERIOR_OFFSET+4);
+	this.houseDoor=savegame.readByte(EXTERIOR_OFFSET+5);
+	this.houseFence=savegame.readByte(EXTERIOR_OFFSET+6);
+	this.housePavement=savegame.readByte(EXTERIOR_OFFSET+7);
+	this.houseMailbox=savegame.readByte(EXTERIOR_OFFSET+8);
 	// all house size and style properties are also stored twice at +9?
-	this.houseSize2=savegame.readByte1(EXTERIOR_OFFSET+9);
-	this.houseStyle2=savegame.readByte1(EXTERIOR_OFFSET+1+9);
-	this.houseDoorShape2=savegame.readByte1(EXTERIOR_OFFSET+2+9);
-	this.houseBrick2=savegame.readByte1(EXTERIOR_OFFSET+3+9);
-	this.houseRoof2=savegame.readByte1(EXTERIOR_OFFSET+4+9);
-	this.houseDoor2=savegame.readByte1(EXTERIOR_OFFSET+5+9);
-	this.houseFence2=savegame.readByte1(EXTERIOR_OFFSET+6+9);
-	this.housePavement2=savegame.readByte1(EXTERIOR_OFFSET+7+9);
-	this.houseMailbox2=savegame.readByte1(EXTERIOR_OFFSET+8+9);
+	this.houseSize2=savegame.readByte(EXTERIOR_OFFSET+9);
+	this.houseStyle2=savegame.readByte(EXTERIOR_OFFSET+1+9);
+	this.houseDoorShape2=savegame.readByte(EXTERIOR_OFFSET+2+9);
+	this.houseBrick2=savegame.readByte(EXTERIOR_OFFSET+3+9);
+	this.houseRoof2=savegame.readByte(EXTERIOR_OFFSET+4+9);
+	this.houseDoor2=savegame.readByte(EXTERIOR_OFFSET+5+9);
+	this.houseFence2=savegame.readByte(EXTERIOR_OFFSET+6+9);
+	this.housePavement2=savegame.readByte(EXTERIOR_OFFSET+7+9);
+	this.houseMailbox2=savegame.readByte(EXTERIOR_OFFSET+8+9);
 
 	this.rooms=new Array(6);
 	for(var i=0;i<6;i++){	
@@ -2054,19 +2095,26 @@ function Player(n){
 	}
 
 	this.badges=new Array(24);
-	for(var i=0; i<24; i++)
-		this.badges[i]=savegame.readByte1(this.offset+Offsets.PLAYER_BADGES+i);
+	this.badgeValues=new Array(24);
+	for(var i=0; i<24; i++){
+		this.badges[i]=savegame.readByte(this.offset+Offsets.PLAYER_BADGES+i);
+		if(i===11)
+			this.badgeValues[i]=new NumericValue(this.offset+Offsets.PLAYER_BADGE11_VALUE);
+		else
+			this.badgeValues[i]=new NumericValue(this.offset+Offsets.PLAYER_BADGES_VALUES+i*8);
+	}
+
 
 	this.refreshJPG();
 
-	this.hat=savegame.readByte2(this.offset+Offsets.PLAYER_HAT);
-	this.accessory=savegame.readByte2(this.offset+Offsets.PLAYER_ACCESSORY);
-	this.wetSuit=savegame.readByte2(this.offset+Offsets.PLAYER_WETSUIT);
-	this.topWear=savegame.readByte2(this.offset+Offsets.PLAYER_TOPWEAR);
-	this.bottomWear=savegame.readByte2(this.offset+Offsets.PLAYER_BOTTOMWEAR);
-	this.socks=savegame.readByte2(this.offset+Offsets.PLAYER_SOCKS);
-	this.shoes=savegame.readByte2(this.offset+Offsets.PLAYER_SHOES);
-	this.heldItem=savegame.readByte2(this.offset+Offsets.PLAYER_HELDITEM);
+	this.hat=savegame.readShort(this.offset+Offsets.PLAYER_HAT);
+	this.accessory=savegame.readShort(this.offset+Offsets.PLAYER_ACCESSORY);
+	this.wetSuit=savegame.readShort(this.offset+Offsets.PLAYER_WETSUIT);
+	this.topWear=savegame.readShort(this.offset+Offsets.PLAYER_TOPWEAR);
+	this.bottomWear=savegame.readShort(this.offset+Offsets.PLAYER_BOTTOMWEAR);
+	this.socks=savegame.readShort(this.offset+Offsets.PLAYER_SOCKS);
+	this.shoes=savegame.readShort(this.offset+Offsets.PLAYER_SHOES);
+	this.heldItem=savegame.readShort(this.offset+Offsets.PLAYER_HELDITEM);
 
 	//numeric values
 	this.bank=new NumericValue(this.offset+Offsets.PLAYER_BANK, 999999999);
@@ -2087,7 +2135,7 @@ Player.prototype.searchPlayerIdReferences=function(){
 		/* search all player ID references */
 		var playerId=new Array(11); // 11*2=22 bytes
 		for(var i=0; i<11; i++){
-			playerId[i]=savegame.readByte2(this.offset+0x55a6+i*2);
+			playerId[i]=savegame.readShort(this.offset+0x55a6+i*2);
 		}
 
 		this.playerIdReferences=new Array();
@@ -2095,7 +2143,7 @@ Player.prototype.searchPlayerIdReferences=function(){
 			for(var offset=0; offset<522624-11*2; offset+=2){
 				var found=true;
 				for(var i=0; i<11 && found; i++){
-					if(savegame.readByte2(offset+i*2)!=playerId[i]){
+					if(savegame.readShort(offset+i*2)!=playerId[i]){
 						found=false;
 					}
 				}
@@ -2109,14 +2157,15 @@ Player.prototype.searchPlayerIdReferences=function(){
 Player.prototype.save=function(){
 	this.playTime.save();
 
-	savegame.storeByte(this.offset+Offsets.PLAYER_HAIRSTYLE, this.hairStyle);
-	savegame.storeByte(this.offset+Offsets.PLAYER_HAIRCOLOR, this.hairColor);
-	savegame.storeByte(this.offset+Offsets.PLAYER_FACE, this.face);
-	savegame.storeByte(this.offset+Offsets.PLAYER_EYECOLOR, this.eyeColor);
-	savegame.storeByte(this.offset+Offsets.PLAYER_TAN, this.tan);
+	savegame.writeByte(this.offset+Offsets.PLAYER_HAIRSTYLE, this.hairStyle);
+	savegame.writeByte(this.offset+Offsets.PLAYER_HAIRCOLOR, this.hairColor);
+	savegame.writeByte(this.offset+Offsets.PLAYER_FACE, this.face);
+	savegame.writeByte(this.offset+Offsets.PLAYER_EYECOLOR, this.eyeColor);
+	savegame.writeByte(this.offset+Offsets.PLAYER_TAN, this.tan);
 
 	for(var i=0;i<24;i++){
-		savegame.storeByte(this.offset+Offsets.PLAYER_BADGES+i, this.badges[i]);
+		savegame.writeByte(this.offset+Offsets.PLAYER_BADGES+i, this.badges[i]);
+		this.badgeValues[i].save();
 	}
 
 
@@ -2126,8 +2175,8 @@ Player.prototype.save=function(){
 	/* fix player ID references when changing gender/name */
 	if(this.playerIdReferences){
 		for(var i=0; i<this.playerIdReferences.length; i++){
-			savegame.storeByte(this.playerIdReferences[i]+20, this.gender);
-			savegame.storeU16String(this.playerIdReferences[i]+2, this.name);
+			savegame.writeByte(this.playerIdReferences[i]+20, this.gender);
+			savegame.writeU16String(this.playerIdReferences[i]+2, this.name);
 		}
 	}
 
@@ -2143,40 +2192,40 @@ Player.prototype.save=function(){
 		this.itemsStorage3.save();
 	}
 
-	savegame.storeByte(this.offset+Offsets.PLAYER_TPCREGION, this.TPCregion);
-	savegame.storeByte(this.offset+Offsets.PLAYER_BIRTHDAYMONTH, this.birthdayMonth);
-	savegame.storeByte(this.offset+Offsets.PLAYER_BIRTHDAYDAY, this.birthdayDay);
-	savegame.storeByte2(this.offset+Offsets.PLAYER_REGYEAR, this.registrationYear);
-	savegame.storeByte(this.offset+Offsets.PLAYER_REGMONTH, this.registrationMonth);
-	savegame.storeByte(this.offset+Offsets.PLAYER_REGDAY, this.registrationDay);
+	savegame.writeByte(this.offset+Offsets.PLAYER_TPCREGION, this.TPCregion);
+	savegame.writeByte(this.offset+Offsets.PLAYER_BIRTHDAYMONTH, this.birthdayMonth);
+	savegame.writeByte(this.offset+Offsets.PLAYER_BIRTHDAYDAY, this.birthdayDay);
+	savegame.writeShort(this.offset+Offsets.PLAYER_REGYEAR, this.registrationYear);
+	savegame.writeByte(this.offset+Offsets.PLAYER_REGMONTH, this.registrationMonth);
+	savegame.writeByte(this.offset+Offsets.PLAYER_REGDAY, this.registrationDay);
 
 
 
 	var EXTERIOR_OFFSET=Offsets.PLAYER_EXTERIORS+0x1228*this.n;
-	savegame.storeByte(EXTERIOR_OFFSET+1, this.houseStyle);
-	savegame.storeByte(EXTERIOR_OFFSET+2, this.houseDoorShape);
-	savegame.storeByte(EXTERIOR_OFFSET+3, this.houseBrick);
-	savegame.storeByte(EXTERIOR_OFFSET+4, this.houseRoof);
-	savegame.storeByte(EXTERIOR_OFFSET+5, this.houseDoor);
-	savegame.storeByte(EXTERIOR_OFFSET+6, this.houseFence);
-	savegame.storeByte(EXTERIOR_OFFSET+7, this.housePavement);
-	savegame.storeByte(EXTERIOR_OFFSET+8, this.houseMailbox);
+	savegame.writeByte(EXTERIOR_OFFSET+1, this.houseStyle);
+	savegame.writeByte(EXTERIOR_OFFSET+2, this.houseDoorShape);
+	savegame.writeByte(EXTERIOR_OFFSET+3, this.houseBrick);
+	savegame.writeByte(EXTERIOR_OFFSET+4, this.houseRoof);
+	savegame.writeByte(EXTERIOR_OFFSET+5, this.houseDoor);
+	savegame.writeByte(EXTERIOR_OFFSET+6, this.houseFence);
+	savegame.writeByte(EXTERIOR_OFFSET+7, this.housePavement);
+	savegame.writeByte(EXTERIOR_OFFSET+8, this.houseMailbox);
 	// all house size and style properties are also stored twice at +9?
-	savegame.storeByte(EXTERIOR_OFFSET+1+9, this.houseStyle2);
-	savegame.storeByte(EXTERIOR_OFFSET+2+9, this.houseDoorShape2);
-	savegame.storeByte(EXTERIOR_OFFSET+3+9, this.houseBrick2);
-	savegame.storeByte(EXTERIOR_OFFSET+4+9, this.houseRoof2);
-	savegame.storeByte(EXTERIOR_OFFSET+5+9, this.houseDoor2);
-	savegame.storeByte(EXTERIOR_OFFSET+6+9, this.houseFence2);
-	savegame.storeByte(EXTERIOR_OFFSET+7+9, this.housePavement2);
-	savegame.storeByte(EXTERIOR_OFFSET+8+9, this.houseMailbox2);
+	savegame.writeByte(EXTERIOR_OFFSET+1+9, this.houseStyle2);
+	savegame.writeByte(EXTERIOR_OFFSET+2+9, this.houseDoorShape2);
+	savegame.writeByte(EXTERIOR_OFFSET+3+9, this.houseBrick2);
+	savegame.writeByte(EXTERIOR_OFFSET+4+9, this.houseRoof2);
+	savegame.writeByte(EXTERIOR_OFFSET+5+9, this.houseDoor2);
+	savegame.writeByte(EXTERIOR_OFFSET+6+9, this.houseFence2);
+	savegame.writeByte(EXTERIOR_OFFSET+7+9, this.housePavement2);
+	savegame.writeByte(EXTERIOR_OFFSET+8+9, this.houseMailbox2);
 
 	this.bank.save();
 	this.islandMedals.save();
 	if(plusMode)
 		this.meowCoupons.save();
 
-	savegame.storeU16String(this.offset+Offsets.PLAYER_TPCTEXT, this.TPCtext);
+	savegame.writeU16String(this.offset+Offsets.PLAYER_TPCTEXT, this.TPCtext);
 }
 
 
@@ -2184,10 +2233,10 @@ Player.prototype.save=function(){
 Player.prototype.refreshJPG=function(){
 	var offset=this.offset+Offsets.PLAYER_TPCPIC;
 
-	if((savegame.readByte4(offset) & 0x00ffffff)==0x00ffd8ff){
+	if((savegame.readInt(offset) & 0x00ffffff)==0x00ffd8ff){
 		var base64='';
-		for(var j=0; j<0x1400 && (savegame.readByte2(offset+j)!=0xffd9); j++){
-			base64+=String.fromCharCode(savegame.readByte1(offset+j));
+		for(var j=0; j<0x1400 && (savegame.readShort(offset+j)!=0xffd9); j++){
+			base64+=String.fromCharCode(savegame.readByte(offset+j));
 		}
 		base64+=String.fromCharCode(0xff);
 		base64+=String.fromCharCode(0xd9);
@@ -2203,38 +2252,35 @@ Player.prototype.importJPG=function(image){
 	}
 	var offset=this.offset+Offsets.PLAYER_TPCPIC;
 	for(var i=0;i<tempFile.fileSize;i++)
-		savegame.storeByte(offset+i,tempFile.readByte1(i));
+		savegame.writeByte(offset+i,tempFile.readByte(i));
 	this.refreshJPG()
 }
 
 
-function getWarningMessage(){
-	return '<small><b class="warning">Warning!</b> this feature is experimental.<br/>Use it at your own risk.</small>';
-}
 
 Player.prototype.unlockEmotions=function(){
-	MarcDialogs.confirm('Do you want to unlock all emotions for this player?<br/>'+getWarningMessage(), function(){
+	MarcDialogs.confirm('Do you want to unlock all emotions for this player?', function(){
 		var emotionsOffset=currentPlayer.offset+Offsets.PLAYER_EMOTIONS;
 		for(var i=0; i<Constants.ALL_EMOTIONS.length; i++){
-			savegame.storeByte(emotionsOffset+i, Constants.ALL_EMOTIONS[i]);
+			savegame.writeByte(emotionsOffset+i, Constants.ALL_EMOTIONS[i]);
 		}
 		MarcDialogs.alert('Emotions were unlocked for this player.');
 	});
 }
 Player.prototype.fillEncyclopedia=function(){
-	MarcDialogs.confirm('Do you want to fill encyclopedia up for this player?<br/>'+getWarningMessage(), function(){
+	MarcDialogs.confirm('Do you want to fill encyclopedia up for this player?', function(){
 		var encyclopediaOffset=currentPlayer.offset+Offsets.PLAYER_ENCYCLOPEDIA;
 		for(var i=0; i<Constants.FULL_ENCYCLOPEDIA.length; i++)
-			savegame.storeByte(encyclopediaOffset+i, Constants.FULL_ENCYCLOPEDIA[i]);
+			savegame.writeByte(encyclopediaOffset+i, Constants.FULL_ENCYCLOPEDIA[i]);
 		MarcDialogs.alert('Encyclopedia was filled for this player.');
 	});
 }
 Player.prototype.fillCatalog=function(){
-	MarcDialogs.confirm('Do you want to fill catalog up for this player?<br/>'+getWarningMessage(), function(){
+	MarcDialogs.confirm('Do you want to fill catalog up for this player?', function(){
 		var catalogOffset=currentPlayer.offset+Offsets.PLAYER_CATALOG;
 		var maxInts=plusMode?106:56; //Non PlusMode size is only estimate
 		for(var i=0; i<maxInts; i++)
-			savegame.storeByte4(catalogOffset+i*4, 0xffffffff);
+			savegame.writeInt(catalogOffset+i*4, 0xffffffff);
 		MarcDialogs.alert('Catalog was filled for this player.');
 	});
 }
@@ -2245,7 +2291,7 @@ function changeTPCPic(){
 	el('file-load').click()
 }
 function changeTPCPic2(){
-	if((tempFile.readByte4(0) & 0x00ffffff)!==0x00ffd8ff){
+	if((tempFile.readInt(0) & 0x00ffffff)!==0x00ffd8ff){
 		MarcDialogs.alert('Invalid pic file (must be a valid JPG file. dimensions: 64x104, max size: 4kb).');
 		return false
 	}else if(tempFile.fileSize>5024){
@@ -2390,11 +2436,11 @@ Pattern.prototype.refreshCanvas=function(){
 	var ctx=this.canvas.getContext('2d');
 	var palette=new Array(15);
 	for(var i=0; i<palette.length; i++)
-		palette[i]=savegame.readByte1(this.offset+0x58+i);
+		palette[i]=savegame.readByte(this.offset+0x58+i);
 
 	for(var y=0; y<32; y++){
 		for(var x=0; x<16; x++){
-			var bothColors=savegame.readByte1(this.offset+0x6c+y*16+x);
+			var bothColors=savegame.readByte(this.offset+0x6c+y*16+x);
 
 			ctx.fillStyle='#'+PATTERN_COLORS[palette[bothColors & 0x0f]]; //leftColor
 			ctx.fillRect(x*2, y, 1, 1);
@@ -2410,14 +2456,14 @@ Pattern.prototype.refreshCanvas=function(){
 }
 Pattern.prototype.importFromTempFile=function(){
 	for(var i=0; i<tempFile.fileSize && i<2160; i++){
-		savegame.storeByte(this.offset+i, tempFile.readByte1(i));
+		savegame.writeByte(this.offset+i, tempFile.readByte(i));
 	}
 	this.refreshCanvas();
 	MarcDialogs.close();
 }
 Pattern.prototype.export=function(){
 	var size;
-	if(savegame.readByte1(this.offset+0x69)==0x09){
+	if(savegame.readByte(this.offset+0x69)==0x09){
 		size=620;
 	}else{
 		size=2160;
@@ -2425,7 +2471,7 @@ Pattern.prototype.export=function(){
 
 	var newFile=new HexFile(size);
 	for(var i=0; i<size; i++){
-		newFile.storeByte(i, savegame.readByte1(this.offset+i));
+		newFile.writeByte(i, savegame.readByte(this.offset+i));
 	}
 	newFile.fileName=this.title+'.acnl';
 	newFile.save();
@@ -2572,15 +2618,15 @@ function setFlagDecimal(f){el('flag'+f).decimalValue=parseInt(el('flag'+f).value
 function Item(offset, n){
 	this.offset=offset+n*4;
 
-	this.id=savegame.readByte2(this.offset);
-	this.flag1=savegame.readByte1(this.offset+2);
-	this.flag2=savegame.readByte1(this.offset+3);
+	this.id=savegame.readShort(this.offset);
+	this.flag1=savegame.readByte(this.offset+2);
+	this.flag2=savegame.readByte(this.offset+3);
 	this.refreshName();
 }
 Item.prototype.save=function(){
-	savegame.storeByte2(this.offset, this.id);
-	savegame.storeByte(this.offset+2, this.flag1);
-	savegame.storeByte(this.offset+3, this.flag2);
+	savegame.writeShort(this.offset, this.id);
+	savegame.writeByte(this.offset+2, this.flag1);
+	savegame.writeByte(this.offset+3, this.flag2);
 }
 Item.prototype.isWeed=function(){return (this.id>=0x7c && this.id<=0x7f) || (this.id>=0xcb && this.id<=0xcd) || (this.id==0xf8)}
 Item.prototype.isBuried=function(){return (this.flag2>>4)==0x08}
@@ -2710,14 +2756,14 @@ function getHouseExteriorNames(startId,len){
 function changeSecureNANDValue(){
 	if(tempFile.fileSize==522752 || tempFile.fileSize==563968){
 		for(var i=0; i<8; i++)
-			savegame.storeByte(i, tempFile.readByte1(i), 1);
+			savegame.writeByte(i, tempFile.readByte(i), 1);
 		refreshSecureValue();
 	}
 }
 function refreshSecureValue(){
 	var secureValue='0x';
 	for(var i=0; i<8; i++)
-		secureValue+=intToHex(savegame.readByte1(i), 1);
+		secureValue+=intToHex(savegame.readByte(i), 1);
 
 	el('nand-value').innerHTML=secureValue
 }
@@ -2735,8 +2781,8 @@ function loadSavegameFromFile(file){
 
 function checkValidSavegame(file){
 	return(
-		(file.fileSize==522752 && file.readByte4(0x80)==0x98d1ed64 && file.readByte4(0x84)==0x000200f8) || //garden.dat
-		(file.fileSize==563968 && file.readByte4(0x80)==0x46d03a33 && file.readByte4(0x84)==0x0002009e) //garden_plus.dat
+		(file.fileSize==522752 && file.readInt(0x80)==0x98d1ed64 && file.readInt(0x84)==0x000200f8) || //garden.dat
+		(file.fileSize==563968 && file.readInt(0x80)==0x46d03a33 && file.readInt(0x84)==0x0002009e) //garden_plus.dat
 	)
 }
 function checkPlusSavegame(file){
@@ -2757,10 +2803,10 @@ function initializeEverything(){
 		fixedSavegame.fileName='gardenram.dat';
 		fixedSavegame.fileType=savegame.fileType;
 		for(var i=0; i<0x80; i++)
-			fixedSavegame.storeByte(i, 0x00);
+			fixedSavegame.writeByte(i, 0x00);
 
 		for(var i=0; i<522624; i++)
-			fixedSavegame.storeByte(0x80+i, savegame.readByte1(i));
+			fixedSavegame.writeByte(0x80+i, savegame.readByte(i));
 
 		savegame=fixedSavegame;
 	}
@@ -2782,6 +2828,7 @@ function initializeEverything(){
 		hide('tr-shop-harvey');
 		hide('column-storage');
 		hide('tr-meowcoupons');
+		hide('button-unlockahhd');
 	}
 
 	addEvent(window, 'click', hideSearchResults);
@@ -3055,7 +3102,9 @@ function initializeEverything(){
 	addSelectEvent('towntreesize', function(){town.treeSize=this.value;town.fixTownPlayTimeFromTreeSize()});
 	el('select-towntreesize').value=town.treeSize;
 
-
+	/* check HHD content status */
+	if(town.checkHHDStatus())
+		el('button-unlockahhd').disabled=true;
 
 	/* shops & lost and found */
 	el('shop-retail').appendChild(town.shopRetail.canvas);
@@ -3379,13 +3428,13 @@ var crc32=function(bytes){
 function updateChecksum(offset, length){
 	var bytes=new Array(length);
 	for(var i=0;i<length;i++)
-		bytes[i]=savegame.readByte1(offset+4+i);
+		bytes[i]=savegame.readByte(offset+4+i);
 
 	var checksum=crc32(bytes);
-	savegame.storeByte(offset, checksum%256);
-	savegame.storeByte(offset+1, (checksum >> 8)%256);
-	savegame.storeByte(offset+2, (checksum >> 16)%256);
-	savegame.storeByte(offset+3, (checksum >> 24)%256);
+	savegame.writeByte(offset, checksum%256);
+	savegame.writeByte(offset+1, (checksum >> 8)%256);
+	savegame.writeByte(offset+2, (checksum >> 16)%256);
+	savegame.writeByte(offset+3, (checksum >> 24)%256);
 
 }
 
@@ -3393,7 +3442,7 @@ var crc32Quick=function(bytes,len){var crc=0 ^ (-1);for(var i=0; i<len; i++){crc
 function checkChecksums(offset){
 	var LEN_START=0x04;
 	var LEN_MAX=0x030000;
-	var chec=savegame.readByte4(offset);
+	var chec=savegame.readInt(offset);
 	var bytes=savegame.readBytes(offset+4,LEN_MAX);
 	var found=false;
 	for(var i=LEN_START; i<LEN_MAX && !found; i+=4){
@@ -3415,7 +3464,7 @@ function checkChecksums(offset){
 /* PlayTime */
 function PlayTime(offset){
 	this.offset=offset;
-	this.time=savegame.readByte4(offset);
+	this.time=savegame.readInt(offset);
 	this.span=document.createElement('span');
 	this.toString();
 }
@@ -3434,7 +3483,7 @@ PlayTime.prototype.toString=function(){
 	this.span.innerHTML=s;
 	return s
 }
-PlayTime.prototype.save=function(){savegame.storeByte4(this.offset, this.getTime())}
+PlayTime.prototype.save=function(){savegame.writeInt(this.offset, this.getTime())}
 
 
 
@@ -3492,27 +3541,27 @@ function HexFile(source, func){
 	}
 
 }
-HexFile.prototype.readByte1=function(pos){return this.fileReader.dataView.getUint8(pos)}
-HexFile.prototype.readByte2=function(pos){return this.readByte1(pos+1)*0x0100+this.readByte1(pos)}
-HexFile.prototype.readByte4=function(pos){return this.readByte1(pos+3)*0x01000000+this.readByte1(pos+2)*0x010000+this.readByte1(pos+1)*0x0100+this.readByte1(pos)}
+HexFile.prototype.readByte=function(pos){return this.fileReader.dataView.getUint8(pos)}
+HexFile.prototype.readShort=function(pos){return this.readByte(pos+1)*0x0100+this.readByte(pos)}
+HexFile.prototype.readInt=function(pos){return this.readByte(pos+3)*0x01000000+this.readByte(pos+2)*0x010000+this.readByte(pos+1)*0x0100+this.readByte(pos)}
 HexFile.prototype.readByte8=function(pos){
 	return(
-		this.readByte1(pos+7)*0x0100000000000000+
-		this.readByte1(pos+6)*0x01000000000000+
-		this.readByte1(pos+5)*0x010000000000+
-		this.readByte1(pos+4)*0x0100000000+
-		this.readByte1(pos+3)*0x01000000+
-		this.readByte1(pos+2)*0x010000+
-		this.readByte1(pos+1)*0x0100+
-		this.readByte1(pos)
+		this.readByte(pos+7)*0x0100000000000000+
+		this.readByte(pos+6)*0x01000000000000+
+		this.readByte(pos+5)*0x010000000000+
+		this.readByte(pos+4)*0x0100000000+
+		this.readByte(pos+3)*0x01000000+
+		this.readByte(pos+2)*0x010000+
+		this.readByte(pos+1)*0x0100+
+		this.readByte(pos)
 	) >>> 0;
 }
-HexFile.prototype.readBytes=function(pos,nBytes){var bytes=new Array(nBytes);for(var i=0;i<nBytes;i++)bytes[i]=this.readByte1(pos+i);return bytes}
-HexFile.prototype.readU16String=function(pos,maxLength){var cs=new Array(maxLength);for(var i=0;i<maxLength;i++)cs[i]=this.readByte2(pos+i*2);return new U16String(pos,maxLength,cs)}
-HexFile.prototype.storeByte=function(pos,byte){this.fileReader.dataView.setUint8(pos, byte)}
-HexFile.prototype.storeByte2=function(pos,bytes){this.storeByte(pos,bytes&0x000000ff);this.storeByte(pos+1,(bytes&0x0000ff00)>>8)}
-HexFile.prototype.storeByte4=function(pos,bytes){this.storeByte(pos,bytes&0x000000ff);this.storeByte(pos+1,(bytes&0x0000ff00)>>8);this.storeByte(pos+2,(bytes&0x00ff0000)>>16);this.storeByte(pos+3,(bytes&0xff000000)>>24)}
-HexFile.prototype.storeU16String=function(pos,str){for(var i=0;i<str.maxLength;i++)savegame.storeByte2(pos+i*2,str.chars[i])}
+HexFile.prototype.readBytes=function(pos,nBytes){var bytes=new Array(nBytes);for(var i=0;i<nBytes;i++)bytes[i]=this.readByte(pos+i);return bytes}
+HexFile.prototype.readU16String=function(pos,maxLength){var cs=new Array(maxLength);for(var i=0;i<maxLength;i++)cs[i]=this.readShort(pos+i*2);return new U16String(pos,maxLength,cs)}
+HexFile.prototype.writeByte=function(pos,byte){this.fileReader.dataView.setUint8(pos, byte)}
+HexFile.prototype.writeShort=function(pos,bytes){this.writeByte(pos,bytes&0x000000ff);this.writeByte(pos+1,(bytes&0x0000ff00)>>8)}
+HexFile.prototype.writeInt=function(pos,bytes){this.writeByte(pos,bytes&0x000000ff);this.writeByte(pos+1,(bytes&0x0000ff00)>>8);this.writeByte(pos+2,(bytes&0x00ff0000)>>16);this.writeByte(pos+3,(bytes&0xff000000)>>24)}
+HexFile.prototype.writeU16String=function(pos,str){for(var i=0;i<str.maxLength;i++)savegame.writeShort(pos+i*2,str.chars[i])}
 HexFile.prototype.save=function(){
 	var blob;
 	try{
