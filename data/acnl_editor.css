@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170309
+	Animal Crossing: New Leaf Save Editor v20170911
 	by Marc Robledo 2015-2017
 */
 @font-face{font-family:'Noto Sans';font-style:normal;font-weight:normal;src:local('Noto Sans'),local('NotoSans'),url('./NotoSans.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000}
@@ -90,11 +90,6 @@ span.sprite{display:inline-block;vertical-align:middle}
 	width:16px;height:11px;
 	background-position:0px 0px;
 }
-.sprite.flag-1{background-position:-16px 0px}
-.sprite.flag-2{background-position:-32px 0px}
-.sprite.flag-3{background-position:-48px 0px}
-.sprite.flag-4{background-position:-64px 0px}
-.sprite.flag-5{background-position:-80px 0px}
 .sprite.save-icon{width:16px;height:12px;background-position:-96px -720px}
 .sprite.edit-icon{width:16px;height:16px;background-position:-144px -720px}
 .sprite.edit-icon2{width:16px;height:16px;background-position:-160px -720px;margin-right:4px;}

@@ -39,13 +39,14 @@
 
 		<div class="block">
 			<label for="lang-selector">Select item language:</label> <span id="lang-flag" class="sprite flag flag-en"></span>
-			<select onchange="setCookie('lang',this.value); updateLangIcon(this.value)" id="lang-selector">
+			<select onchange="setCookie('lang',this.selectedIndex); updateLangIcon(this.selectedIndex)" id="lang-selector">
 				<option value="0" selected="selected">English</option>
-				<option value="5">English (UK)</option>
-				<option value="1">Français</option>
-				<option value="2">Deutsch</option>
-				<option value="3">Italiano</option>
-				<option value="4">Español</option>
+				<option value="enu">English (UK)</option>
+				<option value="fr">Français</option>
+				<option value="de">Deutsch</option>
+				<option value="it">Italiano</option>
+				<option value="es">Español</option>
+				<option value="jp">Japanese</option>
 			</select>
 
 			<hr/>

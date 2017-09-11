@@ -289,6 +289,7 @@ const Constants={
 
 
 var mouseHeld=0,tempFile,tempFileLoadFunction;
+var cleanSearch;
 var savegame,map,island,players,grassMap,grassMapToday,buildings,town;
 var currentPlayer,currentTab;
 var currentEditingItem;
@@ -311,7 +312,7 @@ function intToHex(i,b){var h=i.toString(16);while(h.length<b*2)h='0'+h;return h}
 function range(min,max){var a=[];for(i=min;i<=max;i++)a.push(i);return a}
 function random(v){return Math.floor((Math.random()*v))}
 function showTab(evt){var newTab=evt.target.tabInfo;if(newTab.id!==currentTab.id){hide('tab-'+currentTab.id);currentTab.button.className='';show('tab-'+newTab.id);newTab.button.className='active';currentTab=newTab}}
-function updateLangIcon(l){el('lang-flag').className='sprite flag flag-'+l}
+function updateLangIcon(l){el('lang-flag').style.backgroundPosition='-'+(l*16)+'px 0px'}
 function acceptDisclaimer(updateCookie){setCookie('nodisclaimer',1,true);MarcDialogs.close()}
 
 function createInput(defValue){var input=document.createElement('input');input.type='text';input.value=defValue;return input}
@@ -442,7 +443,7 @@ addEvent(window,'load',function(){
 
 	var cookieLang=getCookie('lang');
 	if(cookieLang && typeof cookieLang==='string'){
-		el('lang-selector').value=parseInt(cookieLang);
+		el('lang-selector').selectedIndex=parseInt(cookieLang);
 		updateLangIcon(parseInt(cookieLang));
 	}
 
@@ -2318,7 +2319,8 @@ function searchItem(q){
 		el('search-results').removeChild(el('search-results').firstChild);
 	}
 
-	q=q.clean();
+	if(cleanSearch)
+		q=q.clean();
 	if(!q || q.length<2){
 		return 0
 	}
@@ -2500,7 +2502,7 @@ function refreshHairColorIcon(){
 	el('span-hair-color').style.backgroundColor='#'+Constants.HAIR_COLORS[currentPlayer.hairColor];
 }
 function refreshHairStyleIcon(){
-	el('span-hair-style').style.backgroundPosition='-'+((currentPlayer.hairStyle<=16)?96:140)+'px -'+((currentPlayer.hairStyle%17)*42)+'px';
+	el('span-hair-style').style.backgroundPosition='-'+((currentPlayer.hairStyle<=16)?96:140)+'px -'+((currentPlayer.hairStyle%17)*42+16)+'px';
 }
 function refreshFaceIcon(){
 	el('span-face').style.backgroundPosition='-'+((currentPlayer.gender==0)?0:40)+'px -'+(688+(currentPlayer.face%12)*16)+'px';
@@ -2818,6 +2820,25 @@ function initializeEverything(){
 	}
 
 
+	if(el('lang-selector').selectedIndex){
+		var script=document.createElement('script');
+		script.type='text/javascript';
+		script.async=true;
+		script.onload=function(){
+			initializeEverything2();
+		};
+		script.onerror=function(){
+			console.warn('can\'t load language file');
+			initializeEverything2();
+		};
+		script.src='./data/acnl_items_'+el('lang-selector').value+'.js';
+		document.getElementsByTagName('head')[0].appendChild(script);
+	}else{
+		initializeEverything2();
+	}
+}
+function initializeEverything2(){
+	cleanSearch=!(el('lang-selector').value==='jp');
 
 	/* check plus mode */
 	if(checkPlusSavegame(savegame)){
@@ -2894,11 +2915,18 @@ function initializeEverything(){
 		//var onlyMap=itemGroup.onlyMap;
 		//var onlyPockets=itemGroup.onlyPockets;
 		var items;
-		var copyText=false;
+		var copyText,copyOf;
 		var itemsLength;
 		if(!itemGroup.items && itemGroup.copyOf && itemGroup.copyText){
 			items=ITEM_GROUPS[i+itemGroup.copyOf].items;
-			copyText=getString(itemGroup.copyText);
+			//copyText=getString(itemGroup.copyText);
+			copyText=itemGroup.copyText;
+			if(typeof ITEM_GROUPS_TRANSLATED!=='undefined' && ITEM_GROUPS_TRANSLATED[i]){
+				copyText=ITEM_GROUPS_TRANSLATED[i];
+			}else{
+				copyText=itemGroup.copyText;
+			}
+			copyOf=itemGroup.copyOf;
 			if(itemGroup.copyLimit){
 				itemsLength=itemGroup.copyLimit;
 			}else{
@@ -2906,25 +2934,43 @@ function initializeEverything(){
 			}
 		}else{
 			items=ITEM_GROUPS[i].items;
-			copytext=false;
+			copyText=false;
+			copyOf=0;
 			itemsLength=items.length;
 		}
 		
-		for(var j=0; j<itemsLength; j++){
-			if((!plusMode && items[j][6]===true))
+		for(var j=0; j<itemsLength; j+=2){
+			if((!plusMode && items[j+1]===true))
 				continue;
 
 			var itemId=firstId+itemCounter;
 
-			var text=getString(items[j]);
-			if(copyText){
-				text+=' ('+copyText+')';
-			}
 
-			if(items[j][0]){
+			if(items[j]){
+				var text;
+				if(copyOf){
+					if(typeof ITEM_GROUPS_TRANSLATED!=='undefined' && ITEM_GROUPS_TRANSLATED[i+copyOf][j/2]){
+						text=ITEM_GROUPS_TRANSLATED[i+copyOf][j/2];
+					}else{
+						text=items[j];
+					}
+
+					text+=' ('+copyText+')';
+				}else{
+					if(typeof ITEM_GROUPS_TRANSLATED!=='undefined' && ITEM_GROUPS_TRANSLATED[i][j/2]){
+						text=ITEM_GROUPS_TRANSLATED[i][j/2];
+					}else{
+						text=items[j];
+					}
+				}
+
 				var newOption=createOption(itemId, text);
 				newOption.id='item_'+itemId;
-				newOption.cleanName=text.clean();
+				if(cleanSearch){
+					newOption.cleanName=text.clean();
+				}else{
+					newOption.cleanName=text;
+				}
 				optGroup.appendChild(newOption);
 			}
 
