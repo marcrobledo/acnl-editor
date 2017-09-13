@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170909
+	Animal Crossing: New Leaf Save Editor v20170913
 	by Marc Robledo 2015-2017
 
 	A lot of thanks to:
@@ -27,6 +27,7 @@ var Offsets={
 	TOWN_NAME:				0x80+0x05c73a,
 	TOWN_AVAILABLEPWPS:		0x80+0x04d9c8,
 	TOWN_TURNIP_PRICES:		0x80+0x06535c,
+	TOWN_MULTVARS:			0x05c7d6,
 
 	MUSEUM_ROOMS:			0x80+0x0659d8,
 
@@ -135,6 +136,7 @@ const OffsetsPlus={
 	TOWN_NAME:				0x0621ba,
 	TOWN_AVAILABLEPWPS:		0x050328,
 	TOWN_TURNIP_PRICES:		0x06ade0,
+	TOWN_MULTVARS:			0x0621d6,
 
 	MUSEUM_ROOMS:			0x06b478,
 
@@ -461,6 +463,8 @@ function Town(){
 	this.grassTypeIsland=savegame.readByte(Offsets.ISLAND_GRASSTYPE); //00-02
 
 	this.playTime=new PlayTime(Offsets.TOWN_PLAYTIME);
+
+	this.visitsReceived=(savegame.readShort(Offsets.TOWN_MULTVARS)>>3) & 0xff;
 
 	el('town-playtime').appendChild(this.playTime.span);
 
