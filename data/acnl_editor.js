@@ -2229,6 +2229,7 @@ Player.prototype.save=function(){
 	this.islandMedals.save();
 	if(plusMode)
 		this.meowCoupons.save();
+	this.wallet.save();
 
 	savegame.writeU16String(this.offset+Offsets.PLAYER_TPCTEXT, this.TPCtext);
 }
