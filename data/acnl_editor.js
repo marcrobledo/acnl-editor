@@ -288,8 +288,6 @@ const Constants={
 	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd']
 };
 
-
-
 var mouseHeld=0,tempFile,tempFileLoadFunction;
 var cleanSearch;
 var savegame,map,island,players,grassMap,grassMapToday,buildings,town;
@@ -309,7 +307,20 @@ function prevent(evt){evt.stopPropagation();evt.preventDefault()}
 function stopPropagation(e){if(typeof e.stopPropagation!='undefined')e.stopPropagation();else e.cancelBubble=true}
 function setCookie(k,v,w){var exp;if(w){exp=new Date((new Date()).getTime()+1000*60*60*24*7).toGMTString()}else{exp='Thu, 31 Dec 2020 12:00:00 UTC'}document.cookie='acnleditor'+k+'='+v+'; expires='+exp}
 function getCookie(k){var cs=document.cookie.split(';');for(var i=0;i<cs.length;i++){var f=cs[i].indexOf(k+'=');if(f>-1)return cs[i].substring(f+(k+'=').length)}return false}
-function getString(o){if(o[el('lang-selector').value])return o[el('lang-selector').value];else return o[0]}
+function getString(o){
+	if(el('lang-selector').value==='fr')
+		return o[1] || o[0];
+	else if(el('lang-selector').value==='de')
+		return o[2] || o[0];
+	else if(el('lang-selector').value==='it')
+		return o[3] || o[0];
+	else if(el('lang-selector').value==='es')
+		return o[4] || o[0];
+	else if(el('lang-selector').value==='enu')
+		return o[5] || o[0];
+	else
+		return o[0]
+}
 function intToHex(i,b){var h=i.toString(16);while(h.length<b*2)h='0'+h;return h}
 function range(min,max){var a=[];for(i=min;i<=max;i++)a.push(i);return a}
 function random(v){return Math.floor((Math.random()*v))}
