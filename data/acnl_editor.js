@@ -2400,7 +2400,9 @@ function addSelectEvent(e,f){addEvent(el('select-'+e),'change',f)}
 /* Pattern structure (borrowed from Thulinma http://www.thulinma.com/acnl/)
 0x 00 - 0x 29 ( 42) = Pattern Title
 0x 2A - 0x 2B (  2) = User ID
-0x 2C - 0x 3F ( 20) = User Name
+0x 2C - 0x 3D ( 18) = User Name
+0x 3E         (  1) = User Gender
+0x 3F         (  1) = ZeroFiller
 0x 40 - 0x 41 (  2) = Town ID
 0x 42 - 0x 55 ( 20) = Town Name
 0x 56 - 0x 57 (  2) = Unknown (values are usually random - changing seems to have no effect)
