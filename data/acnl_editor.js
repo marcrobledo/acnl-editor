@@ -1,6 +1,6 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170913
-	by Marc Robledo 2015-2017
+	Animal Crossing: New Leaf Save Editor v20180427
+	by Marc Robledo 2015-2018
 
 	A lot of thanks to:
 	 * SciresM for breaking the numeric encryption used in the game
@@ -448,6 +448,12 @@ function enableDebugOnElement(e){addEvent(e,'mouseenter',showDebug);addEvent(e,'
 
 /* Initialize ACNL editor */
 addEvent(window,'load',function(){
+	/* service worker */
+	if('serviceWorker' in navigator)
+		navigator.serviceWorker.register('_cache_service_worker.js');
+
+
+
 	if(!getCookie('nodisclaimer')){
 		MarcDialogs.open('disclaimer');
 	}else{
