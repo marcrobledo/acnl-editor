@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20180427
+	Animal Crossing: New Leaf Save Editor v20180517
 	by Marc Robledo 2015-2018
 
 	A lot of thanks to:
@@ -449,6 +449,8 @@ function enableDebugOnElement(e){addEvent(e,'mouseenter',showDebug);addEvent(e,'
 /* Initialize ACNL editor */
 addEvent(window,'load',function(){
 	/* service worker */
+	if(location.protocol==='http:')
+		location.href=window.location.href.replace('http:','https:');
 	if('serviceWorker' in navigator)
 		navigator.serviceWorker.register('_cache_service_worker.js');
 
@@ -1105,43 +1107,46 @@ function GrassMap(offset,width,height){
 	this.draw();
 }
 GrassMap.prototype._refreshBackground=function(){
-	var canvas=document.createElement('canvas');
-	var acreSize=this._TILE_SIZE*16;
-	canvas.width=acreSize*(this.width-1);
-	canvas.height=acreSize*(this.height);
-	var ctx=canvas.getContext('2d');
+	try{
+		var canvas=document.createElement('canvas');
+		var acreSize=this._TILE_SIZE*16;
+		canvas.width=acreSize*(this.width-1);
+		canvas.height=acreSize*(this.height);
+		var ctx=canvas.getContext('2d');
 
-	for(var y=0; y<this.height; y++){
-		for(var x=0; x<this.width-1; x++){
-			var acreId=map.acres[y*(this.width-1)+x].id;
+		for(var y=0; y<this.height; y++){
+			for(var x=0; x<this.width-1; x++){
+				var acreId=map.acres[y*(this.width-1)+x].id;
 
-			var cropAcreX=(acreId%20)*64;
-			var cropAcreY=parseInt(acreId/20)*64;
+				var cropAcreX=(acreId%20)*64;
+				var cropAcreY=parseInt(acreId/20)*64;
 
-			var cropHeight=(acreId==0xa8 || (acreId>=0x9e && acreId<=0xa3))?40:64;
+				var cropHeight=(acreId==0xa8 || (acreId>=0x9e && acreId<=0xa3))?40:64;
 
-			ctx.drawImage(acresImage, cropAcreX, cropAcreY, 64, cropHeight, acreSize*x, acreSize*y, acreSize, acreSize);
+				ctx.drawImage(acresImage, cropAcreX, cropAcreY, 64, cropHeight, acreSize*x, acreSize*y, acreSize, acreSize);
+			}
 		}
+
+
+		/* grayscale */
+		var imageData=ctx.getImageData(0, 0, canvas.width, canvas.height);
+		var data=imageData.data;
+		for(var i=0; i<data.length; i+=4) {
+			//var brightness=0.34*data[i] + 0.5*data[i+1] + 0.16*data[i+2];
+			//var brightness=0.44*data[i] + 0.6*data[i+1] + 0.26*data[i+2];
+			var brightness=0.54*data[i] + 0.7*data[i+1] + 0.36*data[i+2];
+			data[i]=brightness;		//red
+			data[i+1]=brightness;	//green
+			data[i+2]=brightness;	//blue
+		}
+		ctx.putImageData(imageData, 0, 0);
+
+
+
+
+		el('grass-quads').style.backgroundImage='url('+canvas.toDataURL()+')';
+	}catch(e){
 	}
-
-
-	/* grayscale */
-	var imageData=ctx.getImageData(0, 0, canvas.width, canvas.height);
-	var data=imageData.data;
-	for(var i=0; i<data.length; i+=4) {
-		//var brightness=0.34*data[i] + 0.5*data[i+1] + 0.16*data[i+2];
-		//var brightness=0.44*data[i] + 0.6*data[i+1] + 0.26*data[i+2];
-		var brightness=0.54*data[i] + 0.7*data[i+1] + 0.36*data[i+2];
-		data[i]=brightness;		//red
-		data[i+1]=brightness;	//green
-		data[i+2]=brightness;	//blue
-	}
-	ctx.putImageData(imageData, 0, 0);
-
-
-
-
-	el('grass-quads').style.backgroundImage='url('+canvas.toDataURL()+')';
 }
 GrassMap.prototype.draw=function(){
 	this._refreshBackground();
