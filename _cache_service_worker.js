@@ -12,7 +12,7 @@ limitations under the License.
 mod by marcrobledo, original from: https://github.com/GoogleChrome/samples/blob/gh-pages/service-worker/basic/service-worker.js
 */
 
-const PRECACHE_ID='v20180517b';
+const PRECACHE_ID='v20180611';
 const PRECACHE_FILES=[
 'index.html','./',
 'help.html',
@@ -20,6 +20,9 @@ const PRECACHE_FILES=[
 'data/acnl_editor.js',
 'data/acnl_editor_logo.png',
 'data/acnl_editor_sprites.png',
+'data/checksum.js',
+'data/data-types.js',
+'data/patterns.js',
 'data/acnl_items.js',
 'data/acres.png',
 'data/favicon.png',

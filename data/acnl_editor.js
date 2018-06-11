@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20180517
+	Animal Crossing: New Leaf Save Editor v20180611
 	by Marc Robledo 2015-2018
 
 	A lot of thanks to:
@@ -3406,8 +3406,13 @@ function selectPlayer(p){
 
 
 		var badges=el('badges').children;
-		for(var i=0;i<24;i++)
+		for(var i=0;i<24;i++){
 			refreshBadge(badges[i]);
+			if(currentPlayer.badgeValues[i].value)
+				badges[i].title='Current value progress: '+currentPlayer.badgeValues[i].value;
+			else
+				badges[i].title='';
+		}
 	}
 }
 
