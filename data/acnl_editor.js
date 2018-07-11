@@ -25,6 +25,8 @@ var Offsets={
 	TOWN_ID1:				0x80+0x05c738,
 	TOWN_ID2:				0x80+0x05c739,
 	TOWN_NAME:				0x80+0x05c73a,
+	TOWN_ORDINANCES:		0x80+0x05c74f,
+	TOWN_ORDINANCES_SET:	0x80+0x05c753,
 	TOWN_AVAILABLEPWPS:		0x80+0x04d9c8,
 	TOWN_TURNIP_PRICES:		0x80+0x06535c,
 	TOWN_MULTVARS:			0x05c7d6,
@@ -134,6 +136,8 @@ const OffsetsPlus={
 	TOWN_ID1:				0x0621b8,
 	TOWN_ID2:				0x0621b9,
 	TOWN_NAME:				0x0621ba,
+	TOWN_ORDINANCES:		0x0621cf,
+	TOWN_ORDINANCES_SET:	0x0621d3,
 	TOWN_AVAILABLEPWPS:		0x050328,
 	TOWN_TURNIP_PRICES:		0x06ade0,
 	TOWN_MULTVARS:			0x0621d6,
@@ -497,6 +501,28 @@ function Town(){
 	this.townId2=savegame.readByte(Offsets.TOWN_ID2);
 	this.name=savegame.readU16String(Offsets.TOWN_NAME, 9);
 	el('town-name').appendChild(createEditStringButton(this.name, 'town name'));
+	
+	var ordinances = savegame.readByte(Offsets.TOWN_ORDINANCES) & 0x1e;
+	this.currentOrdinances = new Array(4);
+	
+	for (var i = 0; i < 4; i++){
+		this.currentOrdinances[i] = ((ordinances >> (i + 1)) & 1) == 1;
+		if (i == 0){
+			el('checkbox-earlybird').checked = this.currentOrdinances[i];
+		}
+		else if (i == 1){
+			el('checkbox-nightowl').checked = this.currentOrdinances[i];
+		}
+		else if (i == 2){
+			el('checkbox-bellboom').checked = this.currentOrdinances[i];
+		}
+		else{
+			el('checkbox-keeptownbeautiful').checked = this.currentOrdinances[i];
+		}
+	}
+	
+	this.setOrdinance = savegame.readByte(Offsets.TOWN_ORDINANCES_SET) & 0x70;
+	
 
 	this.townIdReferences=false;
 
@@ -614,8 +640,23 @@ Town.prototype.save=function(){
 		this.pastVillagers[i].save();
 	this.campsiteVillager.save();
 
-
-
+	var currentlySetOrdinances = 0;
+	var newSetOrdinance = 0x40; // 0x40 is the value set when no ordinances are enabled.
+	var ordinancesEnabled = 0;
+	for (var i = 0; i < 4; i++){
+		currentlySetOrdinances |= ((this.currentOrdinances[i] ? 1 : 0) << (i + 1));
+		if (this.currentOrdinances[i]){
+			newSetOrdinance = i * 0x10;
+			ordinancesEnabled++;
+		}
+	}
+	
+	if (ordinancesEnabled > 1){
+		newSetOrdinance = 0x70; // 0x70 will prevent the ordinance from being reset every day.
+	}
+	
+	savegame.writeByte(Offsets.TOWN_ORDINANCES, (savegame.readByte(Offsets.TOWN_ORDINANCES) & (~0x1e)) | (currentlySetOrdinances & 0x1e));
+	savegame.writeByte(Offsets.TOWN_ORDINANCES_SET, (savegame.readByte(Offsets.TOWN_ORDINANCES_SET) & (~0x70)) | (newSetOrdinance & 0x70));
 
 	this.shopRetail.save();
 	this.shopNook.save();
@@ -671,6 +712,11 @@ Town.prototype.unlockHHDContent=function(){
 	var b=savegame.readByte(Offsets.HHD_UNLOCK);
 	savegame.writeByte(Offsets.HHD_UNLOCK, b | 0x04);
 }
+Town.prototype.setOrdinances=function(index, enabled){
+	if (index > -1 && index < 4){
+		this.currentOrdinances[index] = enabled;
+	}
+}
 
 function unlockHHDContent(){
 	MarcDialogs.confirm('Do you want to unlock HHD content?', function(){
@@ -680,7 +726,9 @@ function unlockHHDContent(){
 	});
 }
 
-
+function setOrdinances(index, enabled){
+	town.setOrdinances(index, enabled);
+}
 
 function ItemList(offset, nItems){
 	//this.offset=offset;
