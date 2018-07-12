@@ -714,6 +714,9 @@ Town.prototype.unlockHHDContent=function(){
 }
 Town.prototype.setOrdinances=function(index, enabled){
 	if (index > -1 && index < 4){
+		if ((index == 0 && enabled && this.currentOrdinances[1]) || (index == 1 && enabled && this.currentOrdinances[0])){
+			MarcDialogs.alert("Early Bird will override Night Owl when they are both enabled!");
+		}
 		this.currentOrdinances[index] = enabled;
 	}
 }
