@@ -67,7 +67,7 @@ var Offsets={
 	PLAYER_REGYEAR:			0x55d6,
 	PLAYER_REGMONTH:		0x55d8,
 	PLAYER_REGDAY:			0x55d9,
-	PLAYER_BADGE11_VALUE:	0x6b84,
+	PLAYER_BELLSFROMREESE:	0x6b84,
 	PLAYER_BADGES_VALUES:	0x55dc,
 	PLAYER_BADGES:			0x569c,
 	PLAYER_TPCPIC:			0x5724,
@@ -176,7 +176,7 @@ const OffsetsPlus={
 	PLAYER_REGYEAR:			0x55d6,
 	PLAYER_REGMONTH:		0x55d8,
 	PLAYER_REGDAY:			0x55d9,
-	PLAYER_BADGE11_VALUE:	0x6ba4,
+	PLAYER_BELLSFROMREESE:	0x6ba4,
 	PLAYER_BADGES_VALUES:	0x55dc,
 	PLAYER_BADGES:			0x569c,
 	PLAYER_TPCPIC:			0x5738,
@@ -2114,10 +2114,7 @@ function Player(n){
 	this.badgeValues=new Array(24);
 	for(var i=0; i<24; i++){
 		this.badges[i]=savegame.readByte(this.offset+Offsets.PLAYER_BADGES+i);
-		if(i===11)
-			this.badgeValues[i]=new NumericValue(this.offset+Offsets.PLAYER_BADGE11_VALUE);
-		else
-			this.badgeValues[i]=new NumericValue(this.offset+Offsets.PLAYER_BADGES_VALUES+i*8);
+		this.badgeValues[i]=new NumericValue(this.offset+Offsets.PLAYER_BADGES_VALUES+i*8);
 	}
 
 
