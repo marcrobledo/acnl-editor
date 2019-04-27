@@ -2,13 +2,19 @@
 <html>
 <head>
 	<title>Animal Crossing: New Leaf Save Editor</title>
-	<link rel="shortcut icon" href="./data/favicon.png"/>
+	<link rel="shortcut icon" href="./resources/favicon.png"/>
 	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
 	<meta name="description" content="An Animal Crossing: New Leaf savegame editor. It lets you edit your town, items, villagers and more!"/>
 	<meta name="keywords" content="animal, crossing, new, leaf, save, editor, ram, town, pockets, items, hack, exploit"/>
-	<link type="text/css" rel="stylesheet" href="./data/acnl_editor.css" media="all"/>
-	<script type="text/javascript" src="./data/acnl_items.js"></script>
-	<script type="text/javascript" src="./data/acnl_editor.js"></script>
+	<link type="text/css" rel="stylesheet" href="./resources/acnl_editor.css" media="all"/>
+	<script type="text/javascript" src="./js/checksum.js"></script>
+	<script type="text/javascript" src="./js/patterns.js"></script>
+	<script type="text/javascript" src="./js/data_types.js"></script>
+	<script type="text/javascript" src="./js/items.js"></script>
+	<script type="text/javascript" src="./js/buildings.js"></script>
+	<script type="text/javascript" src="./js/villagers.js"></script>
+	<script type="text/javascript" src="./js/libraries.js"></script>
+	<script type="text/javascript" src="./js/editor_garden.js"></script>
 </head>
 <body>
 
@@ -18,7 +24,7 @@
 		<span class="logo"></span>
 		<h1>Animal Crossing: New Leaf Save Editor</h1>
 		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 11th June 2018)</span>
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 27th April 2019)</span>
 		</div>
 
 		<div id="help">
@@ -50,10 +56,10 @@
 			</select>
 
 			<hr/>
-			<span id="loading">Loading item database, please wait...</span>
+			<span id="loading">Loading editor, please wait...</span>
 			<form id="loadform" style="display:none">
 				Open your <u>garden.dat</u> or <u>garden_plus.dat</u> file here:<br/>
-				<input type="file" onchange="loadSavegameFromFile(this.files[0])"/>
+				<input type="file" accept=".dat" onchange="loadSavegameFromFile(this.files[0])"/>
 			</form>
 		</div>
 	</div>
@@ -65,7 +71,7 @@
 	<div id="itemsribbon">
 		<input type="text" id="search-input" onkeyup="searchItem(this.value)" onfocus="showSearchResults();" placeholder="Search item..." />
 		<ul id="search-results"></ul>
-		<label for="items">Current item:</label> <select id="items" onchange="buildFlagsSelects(0,0);"><option value="32766" id="item_32766">-</option><option value="32764" id="item_32764">- (empty room space) -</option><option value="32766" id="item_unk">unknown item</option></select>
+		<label for="items">Current item:</label> <select id="items" onchange="buildFlagsSelects(0,0);"><option value="32766" id="item_32766">-</option><option value="32764" id="item_32764">- (occupied room tile) -</option><option value="32766" id="item_unk">unknown item</option></select>
 		<label for="flag1">Flag 1:</label>
 		<input type="text" id="flag1" disabled="disabled" length="2" oninput="cleanFlagInput(1)" maxlength="2"/>
 		<select id="select-flag1" onchange="setFlag(1, parseInt(this.value))">
@@ -94,7 +100,7 @@
 
 
 
-<form id="file-form" class="hidden"><input type="file" id="file-load" onchange="tempFile=new HexFile(this.files[0], tempFileLoadFunction), el('file-form').reset();"/></form>
+<form id="file-form" class="hidden"><input type="file" id="file-load" onchange="tempFile=new MarcFile(this.files[0], tempFileLoadFunction), el('file-form').reset();"/></form>
 
 
 
@@ -124,7 +130,8 @@
 	&nbsp;&nbsp;&nbsp;
 	<input type="button" value="Maintenance" onclick="MarcDialogs.open('maintenance')"/>
 	&nbsp;&nbsp;&nbsp;
-	<input type="button" value="Import map" onclick="tempFileLoadFunction=importMap;el('file-load').click()"/>
+	<input type="button" value="Import map" onclick="tempFileLoadFunction=importMap;
+	el('file-load').accept='.dat';el('file-load').click()"/>
 
 	<div class="row">
 		<div class="column column-5">
@@ -313,7 +320,8 @@
 		<div class="column column-5">
 			<h3>Acres</h3>
 			<div id="island-acres"></div><br/>
-			<input type="button" value="Import map" onclick="tempFileLoadFunction=importIsland;el('file-load').click()"/>
+			<input type="button" value="Import map" onclick="tempFileLoadFunction=importIsland;
+	el('file-load').accept='.dat';el('file-load').click()"/>
 		</div>
 
 		<div class="column column-5">
@@ -408,6 +416,15 @@
 				<tr>
 					<td><label for="trainstationcolor">Train station color:</label></td><td><select id="select-trainstationcolor"></select></td>
 				</tr>
+				<tr>
+					<td>Town ordinances</td>
+					<td>
+						<input id="checkbox-ordinance0" type="checkbox" onchange="town.currentOrdinances[0]=this.checked;if(town.currentOrdinances[0] && town.currentOrdinances[1]){town.currentOrdinances[1]=false;el('checkbox-ordinance1').checked=false;}"/> <label for="checkbox-ordinance0">Early bird</label><br/>
+						<input id="checkbox-ordinance1" type="checkbox" onchange="town.currentOrdinances[1]=this.checked;if(town.currentOrdinances[0] && town.currentOrdinances[0]){town.currentOrdinances[0]=false;el('checkbox-ordinance0').checked=false;}"/> <label for="checkbox-ordinance1">Night owl</label><br/>
+						<input id="checkbox-ordinance2" type="checkbox" onchange="town.currentOrdinances[2]=this.checked"/> <label for="checkbox-ordinance2">Bell boom</label><br/>
+						<input id="checkbox-ordinance3" type="checkbox" onchange="town.currentOrdinances[3]=this.checked"/> <label for="checkbox-ordinance3">Keep town beautiful</label>
+					</td>
+				</tr>
 			</table>
 		</div>
 		<div class="column column-5">
@@ -424,29 +441,15 @@
 				<tr id="town-cheats">
 					<td>Cheats:</td>
 					<td>
-						<input type="button" value="Unlock all PWPs" onclick="town.unlockAllPWPs()"/>
 						<input id="button-unlockahhd" type="button" value="Unlock HHD content" onclick="unlockHHDContent()"/>
 					</td>
 				</tr>
-			</table>
-		</div>
-	</div>
-
-	<div class="row">
-		<div id="town-ordinances" class="column column-5">
-			<h3>Town Ordinances</h3>
-			<table>
 				<tr>
-					<td>Early Bird:</td><td><input id="checkbox-earlybird" type="checkbox" value="Early Bird" onclick="setOrdinances(0, checked)"/><td/>
-				</tr>
-				<tr>
-					<td>Night Owl:</td><td><input id="checkbox-nightowl" type="checkbox" value="Night Owl" onclick="setOrdinances(1, checked)"/></td>
-				</tr>
-				<tr>
-					<td>Bell Boom:</td><td><input id="checkbox-bellboom" type="checkbox" value="Bell Boom" onclick="setOrdinances(2, checked)"/></td>
-				</tr>
-				<tr>
-					<td>Keep Town Beautiful:</td><td><input id="checkbox-keeptownbeautiful" type="checkbox" value="Keep Town Beautiful" onclick="setOrdinances(3, checked)"/></td>
+					<td>Available PWPs:</td>
+					<td>
+						<ul id="pwps-available" class="binary-list"></ul>
+						<input type="button" value="Unlock all" onclick="town.availablePWPs.setAll(true)"/>
+					</td>
 				</tr>
 			</table>
 		</div>
@@ -492,7 +495,8 @@
 	<b class="warning">Warning!</b> Use this at your own risk.
 
 	<div class="buttons">
-		<input type="button" class="red" value="Update secure NAND value" onclick="tempFileLoadFunction=changeSecureNANDValue;el('file-load').click();MarcDialogs.close()"/>
+		<input type="button" class="red" value="Update secure NAND value" onclick="tempFileLoadFunction=changeSecureNANDValue;
+	el('file-load').accept='.dat';el('file-load').click();MarcDialogs.close()"/>
 		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
 	</div>
 </div>
@@ -695,7 +699,8 @@
 	<span id="pattern-preview-title"></span>
 
 	<div class="buttons">
-		<input type="button" value="Import pattern" onclick="el('file-load').click()"/>
+		<input type="button" value="Import pattern" onclick="
+	el('file-load').accept='.acnl';el('file-load').click()"/>
 		<input type="button" value="Export pattern" onclick="currentEditingItem.export()"/>	
 		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
 	</div>

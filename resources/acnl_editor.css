@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20170911
+	Animal Crossing: New Leaf Save Editor v20181219
 	by Marc Robledo 2015-2017
 */
 @font-face{font-family:'Noto Sans';font-style:normal;font-weight:normal;src:local('Noto Sans'),local('NotoSans'),url('./NotoSans.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000}
@@ -84,7 +84,7 @@ td.count{color:#ddd;font-size:80%;font-weight:bold;text-align:right}
 
 
 /* SPRITES */
-.sprite{background-image:url('acnl_editor_sprites.png');background-repeat:no-repeat}
+.sprite{background-image:url('sprites.png');background-repeat:no-repeat}
 span.sprite{display:inline-block;vertical-align:middle}
 .sprite.flag{
 	width:16px;height:11px;
@@ -94,7 +94,7 @@ span.sprite{display:inline-block;vertical-align:middle}
 .sprite.edit-icon{width:16px;height:16px;background-position:-144px -720px}
 .sprite.edit-icon2{width:16px;height:16px;background-position:-160px -720px;margin-right:4px;}
 .sprite.heart{width:24px;height:22px;background-position:-112px -720px}
-.logo{background-image:url('acnl_editor_logo.png');display:inline-block;background-size:100% 100%;background-repeat:no-repeat}
+.logo{background-image:url('logo.png');display:inline-block;background-size:100% 100%;background-repeat:no-repeat}
 
 
 /* HOME */
@@ -218,7 +218,13 @@ span.sprite{display:inline-block;vertical-align:middle}
 
 
 
-
+.binary-list{
+	max-height:250px;
+	overflow-y:scroll;
+	list-style:none;
+	padding:0;
+	margin:0;
+}
 
 
 
@@ -307,7 +313,7 @@ span.sprite{display:inline-block;vertical-align:middle}
 #search-results li{padding:4px 6px}
 #search-results li:hover{cursor:pointer;background-color:#467845;color:white}
 #search-input{
-	background-image:url(acnl_editor_sprites.png);
+	background-image:url(sprites.png);
 	background-repeat:no-repeat;
 	background-position:right bottom;
 	margin-right:10px;
@@ -526,7 +532,7 @@ li:hover>.edit-icon,tr:hover .edit-icon,div:hover>.edit-icon{opacity:1}
 	display:inline-block;
 	width:44px;
 	height:42px;
-	background-image:url('./acnl_editor_sprites.png');
+	background-image:url('./sprites.png');
 	vertical-align:middle;
 }
 #span-hair-color,#span-eye-color{
@@ -540,7 +546,7 @@ li:hover>.edit-icon,tr:hover .edit-icon,div:hover>.edit-icon{opacity:1}
 	display:inline-block;
 	width:40px;
 	height:16px;
-	background-image:url('./acnl_editor_sprites.png');
+	background-image:url('./sprites.png');
 	vertical-align:middle;
 	border-radius:4px;
 }
@@ -563,7 +569,7 @@ li:hover>.edit-icon,tr:hover .edit-icon,div:hover>.edit-icon{opacity:1}
 	cursor:pointer;
 	background-color:#eee
 }
-.badge-icon{background-image:url('./acnl_editor_sprites.png');width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:4px}
+.badge-icon{background-image:url('./sprites.png');width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:4px}
 
 
 
