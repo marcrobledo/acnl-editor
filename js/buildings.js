@@ -17,11 +17,12 @@
 
 const BUILDING_MASK_NONE=[];
 const BUILDING_MASK_1x1=[0x00];
-//const BUILDING_MASK_1x2=[0x00,0x09];
+const BUILDING_MASK_1x2=[0x00,0x09];
 const BUILDING_MASK_2x1=[0x00,0x10];
 const BUILDING_MASK_2x2=[0x00,0x10,0x09,0x19];
 const BUILDING_MASK_2x3=[0x0a,0x1a,0x09,0x19,0x00,0x10];
 const BUILDING_MASK_3x1=[0x90,0x00,0x10];
+const BUILDING_MASK_3x2=[0x99,0x09,0x19,0x90,0x00,0x10];
 const BUILDING_MASK_3x3=[0x9a,0x0a,0x1a,0x99,0x09,0x19,0x90,0x00,0x10];
 const BUILDING_MASK_BUS_STOP=[0x99,0x09,0x19,0x29,0x90,0x20];
 const BUILDING_MASK_BRIDGE_N_S=[0x0a,0x1a,0x09,0x19,0x00,0x10,0x01,0x11];
@@ -110,7 +111,7 @@ var BUILDINGS=[
 [0x7e,0x7e,0,BUILDING_MASK_NONE,["face cutout standee - Winter Solstice"]],
 /* from 0x7f to 0x8b - glitchy doors */
 [0x8c,0x8e,0,BUILDING_MASK_NONE,["Main Street lamp","Lampe centre-ville"]],
-[0x8d,0x8f,0,BUILDING_MASK_NONE,["Main Street bench (vertical)"]],
+[0x8d,0x8f,0,BUILDING_MASK_1x2,["Main Street bench (vertical)"]],
 [0x8e,0x90,6,BUILDING_MASK_BRIDGE_N_S,["cobblestone bridge (N-S)","pont en pierre (N-S)","Steinbrücke (N-S)","ponte di pietra (N-S)","puente de piedra (N-S)"]],
 [0x8f,0x91,7,BUILDING_MASK_BRIDGE_SW_NE,["cobblestone bridge (SW-NE)","pont en pierre (SO-NE)","Steinbrücke (SW-NE)","ponte di pietra (SW-NE)","puente de piedra (SO-NE)"]],
 [0x90,0x92,8,BUILDING_MASK_BRIDGE_NW_SE,["cobblestone bridge (NW-SE)","pont en pierre (NO-SE)","Steinbrücke (NW-SE)","ponte di pietra (NW-SE)","puente de piedra (NO-SE)"]],
@@ -173,7 +174,7 @@ var BUILDINGS=[
 [0xc9,0xcb,0,BUILDING_MASK_1x1,["outdoor chair","chaise de jardin","Liegestuhl","sdraio","tumbona"]],
 [0xca,0xcc,0,BUILDING_MASK_1x1,["torch","torche","Fackel","torcia","antorcha"]],
 [0xcb,0xcd,0,BUILDING_MASK_3x3,["zen garden","jardin zen","Fernostgarten","giardino zen","jardín zen"]],
-[0xcc,0xce,0,BUILDING_MASK_2x3,["hot spring","source d&#39;eau chaude","Thermalbad","sorgente termale","fuente termal"]],
+[0xcc,0xce,0,BUILDING_MASK_3x2,["hot spring","source d&#39;eau chaude","Thermalbad","sorgente termale","fuente termal"]],
 [0xcd,0xcf,0,BUILDING_MASK_2x2,["geyser","geyser","Geysir","geyser","géiser"]],
 [0xce,0xd0,0,BUILDING_MASK_2x2,["statue fountain","statue fontaine","Skulpturbrunnen","fontana con statua","fuente con estatua"]],
 [0xcf,0xd1,0,BUILDING_MASK_1x1,["stone tablet","pierre gravée","Gedenkstein","stele incisa","placa de piedra"]],

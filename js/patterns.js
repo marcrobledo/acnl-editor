@@ -89,7 +89,7 @@ Pattern.prototype.refreshCanvas=function(){
 }
 Pattern.prototype.importFromTempFile=function(){
 	for(var i=0; i<tempFile.fileSize && i<2160; i++){
-		savegame.writeByte(this.offset+i, tempFile.readU8(i));
+		savegame.writeU8(this.offset+i, tempFile.readU8(i));
 	}
 	this.refreshCanvas();
 	MarcDialogs.close();
@@ -104,7 +104,7 @@ Pattern.prototype.export=function(){
 
 	var newFile=new MarcFile(size);
 	for(var i=0; i<size; i++){
-		newFile.writeByte(i, savegame.readU8(this.offset+i));
+		newFile.writeU8(i, savegame.readU8(this.offset+i));
 	}
 	newFile.fileName=this.title+'.acnl';
 	newFile.save();
