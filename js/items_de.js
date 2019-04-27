@@ -898,7 +898,7 @@ var ITEM_GROUPS_TRANSLATED=[
 "Hello-Kitty-Tapete",
 "My-Melody-Tapete",
 "Pompompurin-Tapete",
-"Kika-&-Lala-Tapete",
+"Kiki-&-Lala-Tapete",
 "Cinnamoroll-Tapete",
 "Teich-Wand",
 "Hyrule-Tapete",
