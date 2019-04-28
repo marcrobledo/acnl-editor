@@ -13,6 +13,7 @@ function MarcFile(source, onLoad){
 		this.fileName=source.name;
 		this.fileType=source.type;
 		this.fileSize=source.size;
+		this.file=source;
 
 
 	}else if(typeof source==='number'){ /* is new empty file */
