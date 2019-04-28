@@ -76,10 +76,10 @@ MarcFile.prototype.readU8=function(offset){
 	return this._u8array[offset]
 }
 MarcFile.prototype.readU16=function(offset){
-	return (this._u8array[offset+1] << 8)+this._u8array[offset]
+	return ((this._u8array[offset+1] << 8)+this._u8array[offset]) >>> 0
 }
 MarcFile.prototype.readU32=function(offset){
-	return (this._u8array[offset+3] << 24)+(this._u8array[offset+2] << 16)+(this._u8array[offset+1] << 8)+this._u8array[offset]
+	return ((this._u8array[offset+3] << 24)+(this._u8array[offset+2] << 16)+(this._u8array[offset+1] << 8)+this._u8array[offset]) >>> 0
 }
 MarcFile.prototype.readBytes=function(offset,nBytes){
 	var bytes=new Array(nBytes);
