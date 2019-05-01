@@ -15,7 +15,7 @@
 
 /* service worker */
 if(location.protocol==='http:')
-	location.href=window.location.href.replace('http:','https:');
+	location.replace(window.location.href.replace('http:','https:'));
 else if(location.protocol==='https:' && 'serviceWorker' in navigator)
 	navigator.serviceWorker.register('/acnl-editor/_cache_service_worker.js', {scope: '/acnl-editor/'});
 
@@ -35,7 +35,7 @@ var Offsets={
 	TOWN_NAME:				0x80+0x05c73a,
 	TOWN_ORDINANCES:        0x80+0x05c74f,
 	TOWN_ORDINANCES_SET:    0x80+0x05c753,
-	TOWN_AVAILABLEPWPS:		0x80+0x04d9c8,
+	TOWN_AVAILABLEPWPS:		0x80+0x04d9d0,
 	TOWN_TURNIP_PRICES:		0x80+0x06535c,
 	TOWN_MULTVARS:			0x05c7d6,
 
@@ -44,6 +44,8 @@ var Offsets={
 	MAP_GRASS_TODAY:		0x80+0x052a58,
 	MAP_GRASS:				0x80+0x053e80,
 	MAP_ACRES:				0x80+0x04da04,
+	MAP_N_BUILDINGS:		0x80+0x049524,
+	MAP_N_BUILDINGS_EVENT:	0x80+0x049525,
 	MAP_BUILDINGS:			0x80+0x049528,
 	MAP_ITEMS:				0x80+0x04da58,
 
@@ -146,7 +148,7 @@ const OffsetsPlus={
 	TOWN_NAME:				0x0621ba,
 	TOWN_ORDINANCES:        0x0621cf,
 	TOWN_ORDINANCES_SET:    0x0621d3,
-	TOWN_AVAILABLEPWPS:		0x050328,
+	TOWN_AVAILABLEPWPS:		0x050330,
 	TOWN_TURNIP_PRICES:		0x06ade0,
 	TOWN_MULTVARS:			0x0621d6,
 
@@ -155,6 +157,8 @@ const OffsetsPlus={
 	MAP_GRASS_TODAY:		0x0584d8,
 	MAP_GRASS:				0x059900,
 	MAP_ACRES:				0x053484,
+	MAP_N_BUILDINGS:		0x04be84,
+	MAP_N_BUILDINGS_EVENT:	0x04be85,
 	MAP_BUILDINGS:			0x04be88,
 	MAP_ITEMS:				0x0534d8,
 
@@ -419,7 +423,8 @@ addEvent(window,'load',function(){
 
 
 function Town(){
-	this.maxBuildings=savegame.readU8(Offsets.MAP_BUILDINGS-4);
+	this.nBuildings=savegame.readU8(Offsets.MAP_N_BUILDINGS);
+	this.nBuildingsEvent=savegame.readU8(Offsets.MAP_N_BUILDINGS_EVENT);
 
 	this.treeSize=savegame.readU8(parseInt(Offsets.TOWN_TREESIZE)); //01-07
 	this.grassType=savegame.readU8(Offsets.TOWN_GRASSTYPE); //00-02
@@ -508,6 +513,27 @@ function Town(){
 	/* read unlocked PWPs */
 	this.availablePWPs=new BitArray(Offsets.TOWN_AVAILABLEPWPS, el('pwps-available'), PWPS_INGAME_LIST, 80);
 }
+Town.prototype.fixBuildingCounters=function(){
+	var nBuildings=0;
+	var nBuildingsEvent=0;
+	for(var i=0; i<58; i++){
+		if(!buildings[i].isEmpty()){
+			if(i<56)
+				nBuildings++;
+			else
+				nBuildingsEvent++;
+		}
+	}
+	
+	if(nBuildings!==this.nBuildings){
+		MarcDialogs.alert('Building counter has been fixed ('+this.nBuildings+' &raquo; '+nBuildings+').');
+		this.nBuildings=nBuildings;
+	}
+	if(nBuildingsEvent!==this.nBuildingsEvent){
+		MarcDialogs.alert('Building counter has been fixed ('+this.nBuildingsEvent+' &raquo; '+nBuildingsEvent+').');
+		this.nBuildingsEvent=nBuildingsEvent;
+	}
+}
 Town.prototype.fixTownPlayTimeFromTreeSize=function(){
 	MarcDialogs.confirm('Do you want to fix your town play time in order to match the tree size?', function(){
 		var time=Constants.TOWN_PLAYTIME_FROM_TREESIZE[town.treeSize];
@@ -550,7 +576,8 @@ Town.prototype.refreshIdSpans=function(){
 	el('town-id').innerHTML='0x'+intToHex(this.townId2)+intToHex(this.townId1);
 }
 Town.prototype.save=function(){	
-	savegame.writeU8(Offsets.MAP_BUILDINGS-4, this.maxBuildings);
+	savegame.writeU8(Offsets.MAP_N_BUILDINGS, this.nBuildings);
+	savegame.writeU8(Offsets.MAP_N_BUILDINGS_EVENT, this.nBuildingsEvent);
 
 	savegame.writeU8(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
 	savegame.writeU8(Offsets.TOWN_GRASSTYPE, this.grassType);
@@ -780,11 +807,7 @@ ItemGrid.prototype.repaintTile=function(i){
 		this._ctx.fillRect(x, y, this.tileSize, this.tileSize);
 
 		var icon=0;
-		if(item.hasBuilding){
-			icon=3;
-		}else if(item.hasBuildingMask){
-			icon=7;
-		}else if(!el('item_'+item.id)){
+		if(!el('item_'+item.id)){
 			icon=1;
 		}else if(this.inside){
 			var rotation=item.flag2>>4;
@@ -800,18 +823,16 @@ ItemGrid.prototype.repaintTile=function(i){
 
 		if(icon)
 			this._ctx.drawImage(acresImage, icon*20, 704, 16, 16, x, y, 16, 16);
-	}else if(item.hasBuilding && item.hasBuildingMask){
-		this._ctx.drawImage(acresImage, 140, 704, 16, 16, x, y, 16, 16);
-		this._ctx.drawImage(acresImage, 60, 704, 16, 16, x, y, 16, 16);
-	}else if(item.hasBuilding){
-		this._ctx.drawImage(acresImage, 60, 704, 16, 16, x, y, 16, 16);
-	}else if(item.hasBuildingMask){
-		this._ctx.drawImage(acresImage, 140, 704, 16, 16, x, y, 16, 16);
 	}else if(item.id==0x7ffc){
 		this._ctx.fillStyle='#bbb';
 		this._ctx.fillRect(x, y, this.tileSize, this.tileSize);
 	}
-	
+
+	if(item.hasBuildingMask)
+		this._ctx.drawImage(acresImage, 140, 704, 16, 16, x, y, 16, 16);
+	if(item.hasBuilding)
+		this._ctx.drawImage(acresImage, 60, 704, 16, 16, x, y, 16, 16);
+
 	this._ctx.fillStyle='rgba(0,0,0,.15)';
 	this._ctx.fillRect(x+this.tileSize-1, y, 1, this.tileSize);
 	this._ctx.fillRect(x, y+this.tileSize-1, this.tileSize,1);
@@ -902,11 +923,11 @@ function click(evt,itemGridObj,firstClick){
 	}
 
 
-	if(itemGridObj.belongsToMap){
+	//if(itemGridObj.belongsToMap){
 		el('debug-name').innerHTML='<b>'+(itemGridObj.startX+x)+'x'+(itemGridObj.startY+y)+':</b> '+itemSlot.name;
-	}else{
-		el('debug-name').innerHTML=itemSlot.name;
-	}
+	//}else{
+	//	el('debug-name').innerHTML=itemSlot.name;
+	//}
 	el('debug-hex').innerHTML=itemSlot.nameHex;
 
 	el('debug').style.top=window.pageYOffset+24+rect.top+y*itemGridObj.tileSize+'px';
@@ -936,18 +957,28 @@ function ItemGridMap(type){
 		this.offsetItems=Offsets.ISLAND_ITEMS;
 	}
 
-	this.itemGrids=[];
-	this.items=[];
+	this.gridMaxWidth=(acreWidth)*16;
+	this.gridMaxHeight=(nGrids/(acreWidth))*16;
+	this.gridXY=new Array(this.gridMaxWidth);
+	for(var x=0; x<this.gridMaxWidth; x++)
+		this.gridXY[x]=new Array(this.gridMaxHeight);
+
+	this.itemGrids=new Array(nGrids);
+	this.items=new Array(16*16*nGrids);
 	for(var i=0; i<nGrids; i++){
 		this.itemGrids[i]=new ItemGrid(this.offsetItems+i*4*16*16, 16, 16);
-		this.itemGrids[i].belongsToMap=true;
+		//this.itemGrids[i].belongsToMap=true;
 		this.itemGrids[i].startX=16+16*(i%acreWidth);
 		this.itemGrids[i].startY=16+16*parseInt(i/acreWidth);
 
 		el('map-'+type).appendChild(this.itemGrids[i].canvas);
 
-		for(var j=0; j<256; j++)
-			this.items.push(this.itemGrids[i].itemList.items[j]);
+		for(var j=0; j<256; j++){
+			this.itemGrids[i].itemList.items[j].acre=this.itemGrids[i];
+			this.itemGrids[i].itemList.items[j].acreTile=j;
+			this.gridXY[this.itemGrids[i].startX-16+(j%16)][this.itemGrids[i].startY-16+parseInt(j/16)]=this.itemGrids[i].itemList.items[j];
+			this.items[i*16*16+j]=this.itemGrids[i].itemList.items[j];
+		}
 	}
 
 	this.acres=[];
@@ -1342,9 +1373,8 @@ function acceptImportMap(){
 
 		for(var i=0; i<N_BUILDINGS; i++){
 			var oldBuilding=buildings[FIRST_BUILDING+i];
-			if(oldBuilding.id>0x11 && (oldBuilding.id!=0xf8 && oldBuilding.id!=0xfc)){
+			if(oldBuilding.id>0x11 && !oldBuilding.isEmpty()){
 				oldBuilding.remove();
-				oldBuilding._refreshTile(true);
 			}
 		}
 
@@ -1359,7 +1389,7 @@ function acceptImportMap(){
 					if(oldBuilding.id==newId){
 						oldBuilding.x=newX;
 						oldBuilding.y=newY;
-						oldBuilding._refreshTile(true);
+						oldBuilding._refreshMask(true);
 						break;
 					}
 				}
@@ -1375,6 +1405,7 @@ function acceptImportMap(){
 				}
 			}
 		}
+		town.fixBuildingCounters();
 	}
 	
 
@@ -1405,6 +1436,7 @@ function Building(type, n){
 		this.map=map;
 		this._MAXWIDTH=112;
 		this._MAXHEIGHT=96;
+		this.eventBuilding=(n>=56);
 	}
 	this.id=savegame.readU16(this.offset);
 	this.x=savegame.readU8(this.offset+2);
@@ -1412,53 +1444,53 @@ function Building(type, n){
 
 	buildings.push(this);
 
-	if((!plusMode && this.id!=0xf8) || (plusMode && this.id!=0xfc))
+	if(!this.isEmpty())
 		this._createEditRow();
 }
-Building.prototype._refreshTile=function(moving){
-	var acreWidth=(this.type==='island')? 2:5;
 
-	if(this.x<16 || this.y<16 || this.x>this._MAXWIDTH-17 || this.y>this._MAXHEIGHT-17 || (!plusMode && this.id==0xf8) || (plusMode && this.id==0xfc))
-		return null;
-
-	var acre=this.map.itemGrids[parseInt((this.x-16)/16)+parseInt((this.y-16)/16)*acreWidth];	
-	var xy=(this.x%16)+(this.y%16)*16;
-
-	if(moving){
-		this.mapTile=acre.itemList.items[xy];
-		this.mapTile.hasBuilding=this.spanBuildingName.innerHTML;
+Building.prototype._refreshMask=function(status, doNotRefreshOtherMasks){
+	if(!status || !this.isEmpty()){
+		var x=this.x-16;
+		var y=this.y-16;
+		if(x>=0 && y>=0 && x<this.map.gridMaxWidth && y<this.map.gridMaxHeight){
+			if(status){
+				this.map.gridXY[x][y].hasBuilding=this.spanBuildingName.innerHTML;
+				this.map.gridXY[x][y].refreshName();
+			}else{
+				this.map.gridXY[x][y].hasBuilding=false;
+			}
+			this.map.gridXY[x][y].acre.repaintTile(this.map.gridXY[x][y].acreTile);
+		}
 
 		var maskCoords=getBuildingMask(this.id);
 		for(var i=0; i<maskCoords.length; i++){
-			var acre=getAcreByXY(this.type, this.x+maskCoords[i].x, this.y+maskCoords[i].y);
-			var acreTile=getTileByAcreXY(acre, this.x+maskCoords[i].x, this.y+maskCoords[i].y);
-			if(typeof acreTile==='number'){
-				//tile.hasBuilding=this.spanBuildingName.innerHTML;
-				acre.itemList.items[acreTile].hasBuildingMask=true;
-				acre.repaintTile(acreTile);
+			x=this.x+maskCoords[i].x-16;
+			y=this.y+maskCoords[i].y-16;
+			if(x>=0 && y>=0 && x<this.map.gridMaxWidth && y<this.map.gridMaxHeight){
+				this.map.gridXY[x][y].hasBuildingMask=status;
+				this.map.gridXY[x][y].acre.repaintTile(this.map.gridXY[x][y].acreTile);
 			}
 		}
-	}else{
-		this.mapTile.hasBuilding=false;
-		this.mapTile.hasBuildingMask=false;
-	}
 
-	this.mapTile.refreshName();
-	acre.repaintTile(xy);
+		/* repaint rest of masks */
+		if(status && !doNotRefreshOtherMasks)
+			for(var i=0; i<buildings.length; i++)
+				if(buildings[i]!==this)
+					buildings[i]._refreshMask(true, true);
+	}
+}
+Building.prototype.isEmpty=function(){
+	return (!plusMode && this.id===0xf8) || (plusMode && this.id===0xfc);
 }
 Building.prototype.set=function(newId){
-	this.id=newId;
-	if((!plusMode && newId==0xf8) || (plusMode && newId==0xfc)){
-		this.x=0;
-		this.y=0;
+	this._refreshMask(false);
 
-		if(this.tr){
-			if(this.type==='map'){
-				el('buildings').removeChild(this.tr);
-				town.maxBuildings--; //not tested yet
-			}
-			this.tr=null;
-		}
+	var wasEmpty=this.isEmpty();
+	this.id=newId;
+	if(wasEmpty && !this.isEmpty())
+		town.nBuildings++;
+	if(this.isEmpty()){
+		this.remove();
 	}else if(this.tr){
 		this.tr.order=this.id;
 
@@ -1468,7 +1500,6 @@ Building.prototype.set=function(newId){
 			this.spanBuildingName.innerHTML='(?) 0x'+this.id.toString(16);
 
 
-		this._refreshTile(true);
 
 
 	}else{
@@ -1476,11 +1507,22 @@ Building.prototype.set=function(newId){
 		//this.y=16+this.n;
 		this._createEditRow();
 	}
+	this._refreshMask(true);
 }
 Building.prototype.remove=function(){
-	this._refreshTile(false);
+	this._refreshMask(false);
 
-	this.set(plusMode? 0xfc : 0xf8);
+	if(!this.isEmpty())
+		town.nBuildings--;
+	if(this.tr){
+		if(this.type==='map')
+			el('buildings').removeChild(this.tr);
+		this.tr=null;
+	}
+
+	this.x=0;
+	this.y=0;
+	this.id=plusMode? 0xfc : 0xf8;
 }
 Building.prototype._createEditRow=function(){
 	if(el('add-building-'+this.id))
@@ -1488,7 +1530,7 @@ Building.prototype._createEditRow=function(){
 	else
 		this.spanBuildingName=createSpan(' 0x'+this.id.toString(16));
 
-	this._refreshTile(true);
+	this._refreshMask(true);
 
 
 
@@ -1546,28 +1588,28 @@ Building.prototype.save=function(){
 	savegame.writeU8(this.offset+3, this.y);
 }
 Building.prototype.setX=function(x){
-	this._refreshTile(false);
+	this._refreshMask(false);
 
 	x=parseInt(x);
 	if(!x)
 		this.x=0;
-	else if(x>=0 && x<=this._MAXWIDTH && x!=NaN && x!=null)
+	else if(x>=0 && x<this._MAXWIDTH && x!=NaN && x!=null)
 		this.x=x;
 	this.inputX.value=this.x;
 
-	this._refreshTile(true);
+	this._refreshMask(true);
 }
 Building.prototype.setY=function(y){
-	this._refreshTile(false);
+	this._refreshMask(false);
 
 	y=parseInt(y);
 	if(!y)
 		this.y=0;
-	else if(y>=0 && y<=this._MAXHEIGHT && y!=NaN && y!=null)
+	else if(y>=0 && y<this._MAXHEIGHT && y!=NaN && y!=null)
 		this.y=y;
 	this.inputY.value=this.y;
 
-	this._refreshTile(true);
+	this._refreshMask(true);
 }
 function addBuildingEvents(b,inputX,inputY, moveBuildingButton, editButton){
 	addEvent(inputX, 'change', function(){b.setX(this.value)});
@@ -1610,26 +1652,19 @@ function openBuildingDialog(b){
 	MarcDialogs.open('building')
 }
 function acceptBuilding(){
-	currentEditingItem.set(el('select-building-list').value);
+	currentEditingItem.set(parseInt(el('select-building-list').value));
 	MarcDialogs.close();
 }
 function addBuilding(){
 	var found=false;
 	var slot=55;
 
-	while(!found && slot>10){
+	while(slot>10){
 		if((!plusMode && buildings[slot].id==0xf8) || (plusMode && buildings[slot].id==0xfc)){
-			currentEditingItem=buildings[slot];
-			found=true;
-
-			el('select-building-list').value=0x4c;
-
-			var allBuildings=el('select-building-list').children;
-			for(var i=0; i<allBuildings.length; i++)
-				allBuildings[i].disabled=(allBuildings[i].group!==0);
-
-			town.maxBuildings++;
-			MarcDialogs.open('building')
+			buildings[slot].set(0x4c);
+			openBuildingDialog(buildings[slot]);
+			
+			break;
 		}
 		slot--;
 	}
@@ -1667,27 +1702,19 @@ function moveBuilding(b){
 	moveBuildingOverlay.children[0].style.top=((b.y-16)*10)+'px';
 }
 function moveBuildingAccept(evt){
-	var b=currentEditingItem;
+	var currentBuilding=currentEditingItem;
+	currentBuilding._refreshMask(false);
 
-	var rect=b.map.itemGrids[0].canvas.parentElement.getBoundingClientRect();
+	var rect=currentBuilding.map.itemGrids[0].canvas.parentElement.getBoundingClientRect();
 	var x=parseInt((evt.clientX-rect.left)/10)+16;
 	var y=parseInt(((evt.clientY-rect.top))/10)+16;
 
-	var maskCoords=getBuildingMask(b.id);
-	for(var i=0; i<maskCoords.length; i++){
-		var acre=getAcreByXY(b.type, b.x+maskCoords[i].x, b.y+maskCoords[i].y);
-		var acreTile=getTileByAcreXY(acre, b.x+maskCoords[i].x, b.y+maskCoords[i].y);
-		if(typeof acreTile==='number'){
-			acre.itemList.items[acreTile].hasBuildingMask=false;
-			acre.repaintTile(acreTile);
-		}
-	}
-	currentEditingItem._refreshTile(false);
-	currentEditingItem.x=x;
-	currentEditingItem.y=y;
-	currentEditingItem.inputX.value=x;
-	currentEditingItem.inputY.value=y;
-	currentEditingItem._refreshTile(true);
+	currentBuilding._refreshMask(false);
+	currentBuilding.x=x;
+	currentBuilding.y=y;
+	currentBuilding.inputX.value=x;
+	currentBuilding.inputY.value=y;
+	currentBuilding._refreshMask(true);
 
 	moveBuildingOverlay.parentElement.removeChild(moveBuildingOverlay);
 }
@@ -1716,33 +1743,6 @@ function getBuildingMask(buildingId){
 	}
 
 	return coords;
-}
-function getAcreByXY(type,x,y){
-	var ACRE_WIDTH=(type==='island')? 2:5;
-	var MAX_WIDTH,MAX_HEIGHT;
-	var MAP;
-	if(type==='island'){
-		MAP=island;
-		MAX_WIDTH=64;
-		MAX_HEIGHT=64;
-	}else{
-		MAP=map;
-		MAX_WIDTH=112;
-		MAXHEIGHT=96;
-	}
-
-
-	if(x<16 || y<16 || x>MAX_WIDTH-17 || y>MAX_HEIGHT-17)
-		return null;
-
-	return MAP.itemGrids[parseInt((x-16)/16)+parseInt((y-16)/16)*ACRE_WIDTH];
-}
-function getTileByAcreXY(acre,x,y){
-	if(acre)
-		return (x%16)+(y%16)*16;
-		//return acre.itemList.items[(x%16)+(y%16)*16]
-	else
-		return null;
 }
 
 
@@ -3184,8 +3184,11 @@ function initializeEverything2(){
 	buildings=new Array();
 	for(var i=0; i<58; i++)
 		new Building('map', i);
+	town.fixBuildingCounters();
+
 	for(var i=0; i<2; i++)
 		new Building('island', i);
+
 
 
 	/* read Labelle's patterns data */
