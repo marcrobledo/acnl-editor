@@ -183,7 +183,8 @@ U16String.prototype.toString=function(){
 	this.span.innerHTML=string;
 	return string
 }
-U16String.prototype.save=function(){
-	for(var i=0;i<this.maxLength;i++)
-		savegame.writeU16(this.offset+i*2,this.chars[i])
+U16String.prototype.save=function(offset){
+	offset=offset || this.offset;
+	for(var i=0; i<this.maxLength; i++)
+		savegame.writeU16(offset+i*2, this.chars[i])
 }
