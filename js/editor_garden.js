@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor (garden.dat) v20190427
+	Animal Crossing: New Leaf Save Editor (garden.dat) v20190502
 	by Marc Robledo 2015-2019
 
 	A lot of thanks to:
@@ -923,11 +923,11 @@ function click(evt,itemGridObj,firstClick){
 	}
 
 
-	//if(itemGridObj.belongsToMap){
+	if(itemGridObj.showCoords){
 		el('debug-name').innerHTML='<b>'+(itemGridObj.startX+x)+'x'+(itemGridObj.startY+y)+':</b> '+itemSlot.name;
-	//}else{
-	//	el('debug-name').innerHTML=itemSlot.name;
-	//}
+	}else{
+		el('debug-name').innerHTML=itemSlot.name;
+	}
 	el('debug-hex').innerHTML=itemSlot.nameHex;
 
 	el('debug').style.top=window.pageYOffset+24+rect.top+y*itemGridObj.tileSize+'px';
@@ -967,7 +967,7 @@ function ItemGridMap(type){
 	this.items=new Array(16*16*nGrids);
 	for(var i=0; i<nGrids; i++){
 		this.itemGrids[i]=new ItemGrid(this.offsetItems+i*4*16*16, 16, 16);
-		//this.itemGrids[i].belongsToMap=true;
+		this.itemGrids[i].showCoords=true;
 		this.itemGrids[i].startX=16+16*(i%acreWidth);
 		this.itemGrids[i].startY=16+16*parseInt(i/acreWidth);
 
