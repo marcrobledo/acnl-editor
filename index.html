@@ -24,7 +24,7 @@
 		<span class="logo"></span>
 		<h1>Animal Crossing: New Leaf Save Editor</h1>
 		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 2nd May 2019)</span>
+			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 19th Apr 2020)</span>
 		</div>
 
 		<div id="help">
@@ -115,24 +115,19 @@
 <div id="tab-map">
 	<div style="float:right;width:360px">
 		<h3 class="no-separation">Buildings</h3>
-		<ul id="buildings" class="building-list">
-			<li id="buildings-sort-button" style="text-align:center">
-				<input type="button" value="Sort by type" onclick="sortMapBuildings()"/>
-				<input type="button" value="Add building" onclick="addBuilding()"/>
-			</li>
-		</ul>
+		<ul id="buildings" class="building-list"></ul>
+		<div class="text-center"><button onclick="addBuilding()">Add building</button></div>
 	</div>
 	<div id="map-map" class="map"></div>
 
 	<br style="clear:both; display:block"/>
 	Options:
-	<input type="button" value="Fill all" onclick="fillAll()"/>
-	<input type="button" value="Remove all" onclick="removeAll()"/>
+	<button onclick="fillAll()">Fill all</button>
+	<button onclick="removeAll()">Remove all</button>
 	&nbsp;&nbsp;&nbsp;
-	<input type="button" value="Maintenance" onclick="MarcDialogs.open('maintenance')"/>
+	<button onclick="MarcDialogs.open('maintenance')">Maintenance</button>
 	&nbsp;&nbsp;&nbsp;
-	<input type="button" value="Import map" onclick="tempFileLoadFunction=importMap;
-	el('file-load').accept='.dat';el('file-load').click()"/>
+	<button onclick="tempFileLoadFunction=importMap; el('file-load').accept='.dat';el('file-load').click()">Import map</button>
 
 	<div class="row">
 		<div class="column column-5">
@@ -143,8 +138,22 @@
 		<div class="column column-5">
 			<h3>Grass</h3>
 			<div id="grass-quads"></div>
-			<input type="button" value="Revive +" onclick="grassMap.alterAll(16)"/>
-			<input type="button" value="Desert -" onclick="grassMap.alterAll(-16)"/>
+			<label>Pencil size: <select id="select-grass-pencil-size" onchange="grassPencilSize=this.selectedIndex">
+				<option>1</option>
+				<option>2</option>
+				<option selected>3</option>
+				<option>4</option>
+			</select></label>
+			<label>Intensity: <select id="select-grass-intensity" onchange="grassPencilIntensity=((this.selectedIndex+1)*32)-1">
+				<option value="32">Min</option>
+				<option value="64">2</option>
+				<option value="96">3</option>
+				<option value="128">4</option>
+				<option value="160">5</option>
+				<option value="192">6</option>
+				<option value="224">7</option>
+				<option value="255" selected>Max</option>
+			</select></label>
 		</div>
 	</div>
 
@@ -164,12 +173,12 @@
 			<h3 class="no-separation">Player info</h3>
 			<table>
 				<tr>
-					<td>Name/SID:</td>
-					<td><div id="player-name"></div> <span id="player-id" class="mono"></span></td>
+					<td><label for="player-name">Name/SID:</label></td>
+					<td><input type="text" id="player-name" maxlength="9" onchange="currentPlayer.setName(this.value)" /> <span id="player-id" class="mono"></span></td>
 				</tr>
 				<tr>
-					<td>TPC text:</td>
-					<td><div id="player-tpctext"></div></td>
+					<td><label for="player-tpctext">TPC text:</label></td>
+					<td><input type="text" id="player-tpctext" maxlength="32" onchange="currentPlayer.TPCtext.set(this.value)" /></td>
 				</tr>
 				<tr>
 					<td><label for="select-gender">Gender:</label></td>
@@ -224,12 +233,15 @@
 					<td><input type="text" id="input-meow"/></td>
 				</tr>
 				<tr>
+					<td><label for="button-change-tpc">TPC Pic:</label></td>
+					<td><button id="button-change-tpc" onclick="changeTPCPic()">Change</button></td>
+				</tr>
+				<tr>
 					<td>Cheats:</td>
 					<td id="player-cheats">
-						<input type="button" value="Encyclopedia" onclick="currentPlayer.fillEncyclopedia()"/>
-						<input type="button" value="Emotions" onclick="currentPlayer.unlockEmotions()"/>
-						<input type="button" value="Fill catalog" onclick="currentPlayer.fillCatalog()"/>
-						<input type="button" value="Change TPC pic" onclick="changeTPCPic()"/>
+						<button onclick="currentPlayer.fillEncyclopedia()">Encyclopedia</button>
+						<button onclick="currentPlayer.unlockEmotions()">Emotions</button>
+						<button onclick="currentPlayer.fillCatalog()">Catalog</button>
 					</td>
 				</tr>
 			</table>
@@ -321,8 +333,7 @@
 		<div class="column column-5">
 			<h3>Acres</h3>
 			<div id="island-acres"></div><br/>
-			<input type="button" value="Import map" onclick="tempFileLoadFunction=importIsland;
-	el('file-load').accept='.dat';el('file-load').click()"/>
+			<button onclick="tempFileLoadFunction=importIsland; el('file-load').accept='.dat';el('file-load').click()">Import map</button>
 		</div>
 
 		<div class="column column-5">
@@ -420,10 +431,10 @@
 				<tr>
 					<td>Town ordinances</td>
 					<td>
-						<input id="checkbox-ordinance0" type="checkbox" onchange="town.currentOrdinances[0]=this.checked;if(town.currentOrdinances[0] && town.currentOrdinances[1]){town.currentOrdinances[1]=false;el('checkbox-ordinance1').checked=false;}"/> <label for="checkbox-ordinance0">Early bird</label><br/>
-						<input id="checkbox-ordinance1" type="checkbox" onchange="town.currentOrdinances[1]=this.checked;if(town.currentOrdinances[0] && town.currentOrdinances[0]){town.currentOrdinances[0]=false;el('checkbox-ordinance0').checked=false;}"/> <label for="checkbox-ordinance1">Night owl</label><br/>
-						<input id="checkbox-ordinance2" type="checkbox" onchange="town.currentOrdinances[2]=this.checked"/> <label for="checkbox-ordinance2">Bell boom</label><br/>
-						<input id="checkbox-ordinance3" type="checkbox" onchange="town.currentOrdinances[3]=this.checked"/> <label for="checkbox-ordinance3">Keep town beautiful</label>
+						<label for="checkbox-ordinance0"><input id="checkbox-ordinance0" type="checkbox" onchange="town.currentOrdinances[0]=this.checked;if(town.currentOrdinances[0] && town.currentOrdinances[1]){town.currentOrdinances[1]=false;el('checkbox-ordinance1').checked=false;}"/> Early bird</label><br/>
+						<label for="checkbox-ordinance1"><input id="checkbox-ordinance1" type="checkbox" onchange="town.currentOrdinances[1]=this.checked;if(town.currentOrdinances[0] && town.currentOrdinances[0]){town.currentOrdinances[0]=false;el('checkbox-ordinance0').checked=false;}"/> Night owl</label><br/>
+						<label for="checkbox-ordinance2"><input id="checkbox-ordinance2" type="checkbox" onchange="town.currentOrdinances[2]=this.checked"/> Bell boom</label><br/>
+						<label for="checkbox-ordinance3"><input id="checkbox-ordinance3" type="checkbox" onchange="town.currentOrdinances[3]=this.checked"/> Keep town beautiful</label>
 					</td>
 				</tr>
 			</table>
@@ -439,17 +450,15 @@
 				<tr>
 					<td>Secure value:</td><td><span id="nand-value" class="mono"></span></td>
 				</tr>
-				<tr id="town-cheats">
-					<td>Cheats:</td>
-					<td>
-						<input id="button-unlockahhd" type="button" value="Unlock HHD content" onclick="unlockHHDContent()"/>
-					</td>
+				<tr id="town-unlockhhd">
+					<td><abbr title="Happy Home Designer">HHD</abbr> content:</td>
+					<td><button onclick="town.unlockHHDContent();">Unlock</button></td>
 				</tr>
 				<tr>
 					<td>Available PWPs:</td>
 					<td>
 						<ul id="pwps-available" class="binary-list"></ul>
-						<input type="button" value="Unlock all" onclick="town.availablePWPs.setAll(true)"/>
+						<button onclick="town.availablePWPs.setAll(true)">Unlock all</button>
 					</td>
 				</tr>
 			</table>
@@ -486,7 +495,7 @@
 	You are responsible of any data lost.<br/><br/>
 	Be careful when editing your savegame, always keep a backup of your previous savegame.
 	<div class="buttons">
-		<input type="button" class="red" value="I accept" onclick="acceptDisclaimer()" />
+		<button class="red" onclick="acceptDisclaimer()">I accept</button>
 	</div>
 </div>
 
@@ -496,9 +505,8 @@
 	<b class="warning">Warning!</b> Use this at your own risk.
 
 	<div class="buttons">
-		<input type="button" class="red" value="Update secure NAND value" onclick="tempFileLoadFunction=changeSecureNANDValue;
-	el('file-load').accept='.dat';el('file-load').click();MarcDialogs.close()"/>
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+		<button class="red" onclick="tempFileLoadFunction=changeSecureNANDValue; el('file-load').accept='.dat';el('file-load').click();MarcDialogs.close()">Update secure NAND value</button>
+		<button onclick="MarcDialogs.close()">Cancel</button>
 	</div>
 </div>
 
@@ -508,8 +516,8 @@
 	<input type="checkbox" id="perfectize-trees" /> <label for="perfectize-trees">Add a perfect fruit to trees</label>
 
 	<div class="buttons">
-		<input type="button" class="button-accept" value="Accept" onclick="acceptMaintenance()"/>
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+		<button class="blue" onclick="acceptMaintenance()">Accept</button>
+		<button onclick="MarcDialogs.close()">Cancel</button>
 	</div>
 </div>
 
@@ -520,8 +528,8 @@
 	<input type="checkbox" id="import-buildings" /> <label for="import-buildings">Import buildings <small>(may need manually fixing)</small></label>
 
 	<div class="buttons">
-		<input type="button" class="button-accept" value="Accept" onclick="acceptImportMap()"/>
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+		<button class="blue" onclick="acceptImportMap()">Accept</button>
+		<button onclick="MarcDialogs.close()">Cancel</button>
 	</div>
 </div>
 
@@ -531,190 +539,19 @@
 	<div id="acre-selector"></div>
 </div>
 
-<div id="dialog-string" class="dialog">
-	<label for="input-string" id="input-string-title"></label>:	<input type="text" id="input-string" />
-
-	<div class="buttons">
-		<input type="button" class="button-accept" value="Accept" onclick="acceptEditString()"/>
-		<input type="button" value="Insert special character" onclick="MarcDialogs.open('specialchars')"/>
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
-	</div>
-</div>
-
-<div id="dialog-specialchars" class="dialog">
-	<label for="select-unicode">Select special character</label>:
-	<select id="select-unicode">
-		<optgroup label="Nintendo DS">
-			<option value="57344">A Button</option>
-			<option value="57345">B Button</option>
-			<option value="57346">X Button</option>
-			<option value="57347">Y Button</option>
-			<option value="57348">L Button</option>
-			<option value="57349">R Button</option>
-			<option value="57350">D-pad</option>
-			<option value="57364">DS Touch Screen Calibration</option>
-		</optgroup>
-		<optgroup label="Nintendo DSi">
-			<option value="57373">DSi/3DS Touch Screen Calibration</option>
-			<option value="57374">Camera Icon</option>
-		</optgroup>
-		<optgroup label="Nintendo 3DS">
-			<option value="57465">D-pad Up</option>
-			<option value="57466">D-pad Down</option>
-			<option value="57467">D-pad Left</option>
-			<option value="57468">D-pad Right</option>
-			<option value="57469">D-pad Up &amp; Down</option>
-			<option value="57470">D-pad Left &amp; Right</option>
-			<option value="57464">Power Button</option>
-			<option value="57462">Video Icon</option>
-			<option value="57458">Turning Arrow</option>
-			<option value="57459">HOME Menu</option>
-			<option value="57460">Pedometer</option>
-			<option value="57461">Play Coin</option>
-			<option value="57457">Close Button</option>
-			<option value="57456">Close Button</option>
-		</optgroup>
-		<optgroup label="PictoChat">
-			<option value="57352">Happy Face</option>
-			<option value="57353">Angry Face</option>
-			<option value="57354">Sad Face</option>
-			<option value="57355">Sleepy Face</option>
-			<option value="57356">Sun</option>
-			<option value="57357">Cloud</option>
-			<option value="57358">Umbrella</option>
-			<option value="57359">Snowman</option>
-			<option value="57360">Black Box with !</option>
-			<option value="57361">Black Box with ?</option>
-			<option value="57362">Envelope</option>
-			<option value="57363">Cellphone</option>
-			<option value="57351">Clock</option>
-			<option value="57365">Spade</option>
-			<option value="57366">Diamond</option>
-			<option value="57367">Heart</option>
-			<option value="57368">Clubs</option>
-			<option value="57369">Right Arrow</option>
-			<option value="57370">Left Arrow</option>
-			<option value="57371">Up Arrow</option>
-			<option value="57372">Down Arrow</option>
-			<option value="57375">Box with X inside</option>
-			<option value="57376">Loading Squares 1</option>
-			<option value="57377">Loading Squares 2</option>
-			<option value="57378">Loading Squares 3</option>
-			<option value="57379">Loading Squares 4</option>
-			<option value="57380">Loading Squares 5</option>
-			<option value="57381">Loading Squares 6</option>
-			<option value="57382">Loading Squares 7</option>
-			<option value="57383">Loading Squares 8</option>
-			<option value="57384">Big X</option>
-			<option value="57385">Chat Room A</option>
-			<option value="57386">Chat Room B</option>
-			<option value="57387">Chat Room C</option>
-			<option value="57388">Chat Room D</option>
-			<option value="57389">A in Black Background</option>
-			<option value="57390">M in Black Background</option>
-			<option value="57392">P in PictoChat Logo</option>
-			<option value="57393">I in PictoChat Logo</option>
-			<option value="57394">C in PictoChat Logo</option>
-			<option value="57395">T in PictoChat Logo</option>
-			<option value="57396">H in PictoChat Logo</option>
-			<option value="57397">A in PictoChat Logo</option>
-			<option value="57406">Small X in Black Background</option>
-			<option value="57407">Large X in Black Background</option>
-		</optgroup>
-		<optgroup label="Nintendo Wii">
-			<option value="57447">Wii Logo</option>
-			<option value="57410">Wii Remote A Button</option>
-			<option value="57411">Wii Remote B Button</option>
-			<option value="57409">D-pad</option>
-			<option value="57412">Home Button</option>
-			<option value="57413">+ Button</option>
-			<option value="57414">- Button</option>
-			<option value="57415">1 Button</option>
-			<option value="57416">2 Button</option>
-			<option value="57408">Power Button</option>
-			<option value="57417">Analog Stick</option>
-			<option value="57418">Nunchuk C Button</option>
-			<option value="57419">Nunchuk Z Button</option>
-			<option value="57424">Left Analog Stick</option>
-			<option value="57425">Right Analog Stick</option>
-			<option value="57420">Classic Controller A Button</option>
-			<option value="57421">Classic Controller B Button</option>
-			<option value="57422">Classic Controller X Button</option>
-			<option value="57423">Classic Controller Y Button</option>
-			<option value="57426">Classic Controller L Button</option>
-			<option value="57427">Classic Controller R Button</option>
-			<option value="57428">Classic Controller ZL Button</option>
-			<option value="57429">Classic Controller ZR Button</option>
-			<option value="57430">Enter Key</option>
-			<option value="57431">Space Key</option>
-			<option value="57432">Wii Remote Pointer</option>
-			<option value="57433">Wii Remote Pointer 1</option>
-			<option value="57434">Wii Remote Pointer 2</option>
-			<option value="57435">Wii Remote Pointer 3</option>
-			<option value="57436">Wii Remote Pointer 4</option>
-			<option value="57437">Wii Remote Pointer Grabbing</option>
-			<option value="57438">Wii Remote Pointer Grabbing 1</option>
-			<option value="57439">Wii Remote Pointer Grabbing 2</option>
-			<option value="57440">Wii Remote Pointer Grabbing 3</option>
-			<option value="57441">Wii Remote Pointer Grabbing 4</option>
-			<option value="57442">Wii Remote Pointer Open</option>
-			<option value="57443">Wii Remote Pointer Open 1</option>
-			<option value="57444">Wii Remote Pointer Open 2</option>
-			<option value="57445">Wii Remote Pointer Open 3</option>
-			<option value="57446">Wii Remote Pointer Open 4</option>
-			<option value="57451">? in Black Background</option>
-			<option value="57448">Superscript er</option>
-		</optgroup>
-		<optgroup label="Extra">
-			<option value="9728">Sun</option>
-			<option value="9729">Cloud</option>
-			<option value="9730">Umbrella</option>
-			<option value="9731">Snowman</option>
-			<option value="9742">Telephone</option>
-			<option value="9756">Hand Left</option>
-			<option value="9757">Hand Up</option>
-			<option value="9758">Hand Right</option>
-			<option value="9759">Hand Down</option>
-			<option value="9824">Spade</option>
-			<option value="9829">Heart</option>
-			<option value="9827">Clubs</option>
-			<option value="9830">Diamond</option>
-			<option value="9828">White Spade</option>
-			<option value="9825">White Heart</option>
-			<option value="9831">White Clubs</option>
-			<option value="9826">White Diamond</option>
-			<option value="9743">White Telephone</option>
-			<option value="10004">Tick</option>
-			<option value="8481">TEL</option>
-		</optgroup>
-	</select>
-
-	<div class="buttons">
-		<input type="button" value="Insert special character" onclick="el('input-string').value+=String.fromCharCode(el('select-unicode').value);MarcDialogs.open('string')"/>
-		<input type="button" value="Cancel" onclick="MarcDialogs.open('string')"/>
-	</div>
-</div>
-
 <div id="dialog-pattern" class="dialog">
 	<img src="" id="pattern-preview"/><br/>
 	<span id="pattern-preview-title"></span>
 
+	<a href="https://www.thulinma.com/acnl/" target="_blank">Edit</a>
 	<div class="buttons">
-		<input type="button" value="Import pattern" onclick="
-	el('file-load').accept='.acnl';el('file-load').click()"/>
-		<input type="button" value="Export pattern" onclick="currentEditingItem.export()"/>	
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+		<button onclick="el('file-load').accept='.acnl';el('file-load').click()">Import pattern</button>
+		<button onclick="currentEditingItem.export()">Export pattern</button>
+		<button id="button-pattern-steal" onclick="currentEditingItem.steal(currentPlayer)">Steal pattern</button>
+		<button onclick="MarcDialogs.close()">Cancel</button>
 	</div>
 </div>
-<div id="dialog-building" class="dialog">
-	Select the new building: <select id="select-building-list"></select>
 
-	<div class="buttons">
-		<input type="button" class="button-accept" value="Accept" onclick="acceptBuilding()"/>
-		<!-- <input type="button" class="red" value="Remove" onclick="removeBuilding()"/> -->
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
-	</div>
-</div>
 <div id="dialog-villager" class="dialog">
 	<label for="villager-new">New villager:</label> <select id="villager-new" onchange="el('villager-default').checked=true;refreshVillagerEdit();"></select> <span id="villager-pic"></span><br/>
 	Personality: <span id="villager-personality"></span><br/>
@@ -724,8 +561,8 @@
 	</div>
 
 	<div class="buttons">
-		<input type="button" class="button-accept" value="Accept" onclick="acceptVillagerEdit()"/>
-		<input type="button" value="Cancel" onclick="MarcDialogs.close()"/>
+		<button class="blue" onclick="acceptVillagerEdit()">Accept</button>
+		<button onclick="MarcDialogs.close()">Cancel</button>
 	</div>
 </div>
 

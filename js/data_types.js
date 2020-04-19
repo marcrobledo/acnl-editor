@@ -154,7 +154,7 @@ function U16String(offset,maxLength){
 
 	this.span=createSpan('?');
 	this.span.className='u16string';
-	this.toString()
+	this.toString();
 }
 U16String.prototype._read=function(){
 	this.chars=new Array(this.maxLength)
@@ -187,4 +187,16 @@ U16String.prototype.save=function(offset){
 	offset=offset || this.offset;
 	for(var i=0; i<this.maxLength; i++)
 		savegame.writeU16(offset+i*2, this.chars[i])
+}
+U16String.prototype.createInput=function(onChangeEvt){
+	var input=document.createElement('input');
+	input.maxLength=this.maxLength;
+	input.u16string=this;
+	input.value=this.toString();
+	input.type='text';
+	addEvent(input, 'change', onChangeEvt || function(){
+		this.u16string.set(this.value);
+	});
+	
+	return input;
 }

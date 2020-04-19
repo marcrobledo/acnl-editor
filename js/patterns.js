@@ -61,9 +61,38 @@ function Pattern(offset, n){
 	this.canvas.width=32;
 	this.canvas.height=32;
 	this.canvas.className='pattern';
-	this.pattern=this;
+
 	this.refreshCanvas();
 	addPatternEvents(this);
+}
+Pattern.prototype.steal=function(player){
+	//change user id+name+gender
+	for(var i=0; i<(2+18+1); i++)
+		savegame._u8array[this.offset+0x2a+i]=savegame._u8array[player.offset+Offsets.PLAYER_ID1+i];
+
+	//change town id+name
+	for(var i=0; i<(2+18); i++)
+		savegame._u8array[this.offset+0x40+i]=savegame._u8array[Offsets.TOWN_ID1+i];
+
+
+	this.author=new U16String(this.offset+0x2c, 10).toString();
+	this.canvas.title=this.title+' by '+this.author;
+	el('pattern-preview-title').innerHTML='<b>'+this.title+'</b> by '+this.author;
+	el('button-pattern-steal').disabled=true;
+}
+Pattern.prototype.checkOwner=function(player){
+	//check user id+name+gender
+	for(var i=0; i<(2+18+1); i++){
+		if(savegame._u8array[this.offset+0x2a+i]!==savegame._u8array[player.offset+Offsets.PLAYER_ID1+i])
+			return false
+	}
+	//check town id+name
+	for(var i=0; i<(2+18); i++){
+		if(savegame._u8array[this.offset+0x40+i]!==savegame._u8array[Offsets.TOWN_ID1+i])
+			return false;
+	}
+
+	return true;
 }
 Pattern.prototype.refreshCanvas=function(){
 	var ctx=this.canvas.getContext('2d');
@@ -119,5 +148,6 @@ function showPatternDialog(p){
 	currentEditingItem=p;
 	el('pattern-preview').src=p.canvas.toDataURL('image/png');
 	el('pattern-preview-title').innerHTML='<b>'+p.title+'</b> by '+p.author;
+	el('button-pattern-steal').disabled=p.checkOwner(currentPlayer);
 	MarcDialogs.open('pattern');
 }

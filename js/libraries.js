@@ -129,3 +129,25 @@ MarcDialogs=function(){function e(e,t,n){a?e.attachEvent("on"+t,n):e.addEventLis
 /* MarcStringCleaner.js */
 var _STR_CLEAN=['a',/[\xc0\xc1\xc2\xc4\xe0\xe1\xe2\xe4]/g,'e',/[\xc8\xc9\xca\xcb\xe8\xe9\xea\xeb]/g,'i',/[\xcc\xcd\xce\xcf\xec\xed\xee\xef]/g,'o',/[\xd2\xd3\xd4\xd6\xf2\xf3\xf4\xf6]/g,'u',/[\xd9\xda\xdb\xdc\xf9\xfa\xfb\xfc]/g,'n',/[\xd1\xf1]/g,'c',/[\xc7\xe7]/g,'ae',/[\xc6\xe6]/g,'and',/\x26/g,'euro',/\u20ac/g,'',/[^\w- ]/g,'_',/( |-)/g,'_',/_+/g,'',/^_|_$/g];
 if(!String.prototype.clean)String.prototype.clean=function(){var s=this.toLowerCase();for(var i=0;i<_STR_CLEAN.length;i+=2)s=s.replace(_STR_CLEAN[i+1],_STR_CLEAN[i]);return s}
+
+
+/* WarnOnLeave */
+var WarnOnLeave=(function(){
+	var CONFIRMATION_MESSAGE='There are unsaved changes. Do you want to leave this page?'; //confirmation message was deprecated in HTML5 specification
+	var enabled=false;
+
+	var _EVENT_FUNCTION=function(evt){
+		(evt || window.event).returnValue=CONFIRMATION_MESSAGE; //IE
+		return CONFIRMATION_MESSAGE; //gecko, webkit
+	};
+
+	return{
+		set:function(status){
+			if(status && !enabled)
+				window.addEventListener('beforeunload',_EVENT_FUNCTION,false);
+			else if(!status && enabled)
+				window.removeEventListener('beforeunload',_EVENT_FUNCTION,false);
+			enabled=!!status;
+		}
+	}
+}());

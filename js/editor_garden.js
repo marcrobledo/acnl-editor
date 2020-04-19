@@ -1,6 +1,6 @@
 /*
-	Animal Crossing: New Leaf Save Editor (garden.dat) v20190502
-	by Marc Robledo 2015-2019
+	Animal Crossing: New Leaf Save Editor (garden.dat) v20200419
+	by Marc Robledo 2015-2020
 
 	A lot of thanks to:
 	 * SciresM for breaking the numeric encryption used in the game
@@ -308,7 +308,7 @@ var cleanSearch;
 var savegame,map,island,players,grassMap,grassMapToday,buildings,town;
 var currentPlayer,currentTab;
 var currentEditingItem;
-var moveBuildingOverlay;
+var selectBuildings, buildingHash;
 
 var plusMode=false;
 
@@ -348,22 +348,7 @@ function createButton(t){var b=document.createElement('input');b.type='button';b
 function createSpan(t){var s=document.createElement('span');s.innerHTML=t;return s}
 function createOption(v,t){var o=document.createElement('option');o.value=v;o.innerHTML=t;return o}
 function createEditButton(){var b=document.createElement('span');b.className='sprite edit-icon';return b}
-function createEditStringButton(s,name){
-	var div=document.createElement('div');
 
-	if(s.chars[0]){
-		div.appendChild(s.span);
-		//div.style.display='inline-block';
-
-		var editButton=createEditButton();	
-		addEvent(editButton, 'click', function(){
-			openEditStringDialog(s, name);
-		});
-
-		div.appendChild(editButton);
-	}
-	return div
-}
 
 
 function addNumericInputEvent(e,min,max){
@@ -445,15 +430,13 @@ function Town(){
 	this.townId1=savegame.readU8(Offsets.TOWN_ID1);
 	this.townId2=savegame.readU8(Offsets.TOWN_ID2);
 	this.name=new U16String(Offsets.TOWN_NAME, 9);
-	el('town-name').appendChild(createEditStringButton(this.name, 'town name'));
+	el('town-name').appendChild(this.name.createInput(function(){town.setName(this.value)}));
 	
 	this.currentOrdinances=new Array(4);
 	var ordinanceBits=(savegame.readU8(Offsets.TOWN_ORDINANCES) & 0x1e) >> 1;
-	//this.setOrdinancesBits=savegame.readU8(Offsets.TOWN_ORDINANCES_SET) & 0x70;	
+	//var ordinancesBitsSet=savegame.readU8(Offsets.TOWN_ORDINANCES_SET) & 0x70;	
 	for (var i=0; i<4; i++){
-		var ordinanceEnabled=ordinanceBits & (1<<i);
-		this.currentOrdinances[i]=ordinanceEnabled;
-		el('checkbox-ordinance'+i).checked=ordinanceEnabled;
+		el('checkbox-ordinance'+i).checked=this.currentOrdinances[i]=ordinanceBits & (1<<i);
 	}
 	
 	
@@ -607,7 +590,7 @@ Town.prototype.save=function(){
 
 	
 	/* ordinances */
-	/*var currentOrdinancesBits=0;
+	var currentOrdinancesBits=0;
 	var ordinancesEnabled=0;
 	for(var i=0; i<4; i++){
 		if(this.currentOrdinances[i]){
@@ -620,21 +603,21 @@ Town.prototype.save=function(){
 
 	var newSetOrdinanceBits;
 	if(ordinancesEnabled===0){
-		newSetOrdinance=0x40; //0x40 is the value set when no ordinances are enabled
+		newSetOrdinanceBits=0x40; //0x40 is the value set when no ordinances are enabled
 	}else if(ordinancesEnabled===1){
 		if(this.currentOrdinances[0]){
-			newSetOrdinance=0x00;
+			newSetOrdinanceBits=0x00;
 		}else if(this.currentOrdinances[1]){
-			newSetOrdinance=0x10;
+			newSetOrdinanceBits=0x10;
 		}else if(this.currentOrdinances[2]){
-			newSetOrdinance=0x20;
+			newSetOrdinanceBits=0x20;
 		}else if(this.currentOrdinances[3]){
-			newSetOrdinance=0x30;
+			newSetOrdinanceBits=0x30;
 		}
 	}else{
-		newSetOrdinance=0x70; //0x70 will prevent the ordinance from being reset every day.
+		newSetOrdinanceBits=0x70; //0x70 will prevent the ordinance from being reset every day.
 	}	
-	savegame.writeU8(Offsets.TOWN_ORDINANCES_SET, (savegame.readU8(Offsets.TOWN_ORDINANCES_SET) & (~0x70)) | newSetOrdinanceBits);*/
+	savegame.writeU8(Offsets.TOWN_ORDINANCES_SET, (savegame.readU8(Offsets.TOWN_ORDINANCES_SET) & (~0x70)) | newSetOrdinanceBits);
 
 
 	/* shops */
@@ -679,22 +662,20 @@ function generateTownRoofColorIds(townIdX){
 }
 
 Town.prototype.checkHHDStatus=function(){
-	var b=savegame.readU8(Offsets.HHD_UNLOCK);
-	return b & 0x04
+	var b=(savegame.readU8(Offsets.HHD_UNLOCK) & 0x04);
+	if(b){
+		el('town-unlockhhd').children[1].style.color='green';
+		el('town-unlockhhd').children[1].innerText='Unlocked';
+	}
+	return b
 }
 Town.prototype.unlockHHDContent=function(){
 	var b=savegame.readU8(Offsets.HHD_UNLOCK);
 	savegame.writeU8(Offsets.HHD_UNLOCK, b | 0x04);
+	this.checkHHDStatus();
 }
 
 
-function unlockHHDContent(){
-	MarcDialogs.confirm('Do you want to unlock HHD content?', function(){
-		town.unlockHHDContent();
-		MarcDialogs.close();
-		el('button-unlockahhd').disabled=true;
-	});
-}
 
 
 
@@ -881,10 +862,31 @@ function click(evt,itemGridObj,firstClick){
 
 	if(currentEditingItem===itemSlot && mouseHeld && !firstClick)
 		return false;
+
 	currentEditingItem=itemSlot;
 
-	if(mouseHeld===1){
-		if(
+	if(itemGridObj.belongsToMap && !itemGridObj.belongsToMap.currentMovingBuilding){
+		if(itemSlot.hasBuilding)
+			itemGridObj.canvas.parentElement.style.cursor='grab';
+		else
+			itemGridObj.canvas.parentElement.style.cursor='default';
+	}
+
+
+	if(itemGridObj.belongsToMap && itemGridObj.belongsToMap.currentMovingBuilding){
+		if(mouseHeld===1){
+			itemGridObj.belongsToMap.currentMovingBuilding.move(itemGridObj.startX+x, itemGridObj.startY+y);
+			itemGridObj.belongsToMap.showGlowingTile(itemGridObj.belongsToMap.currentMovingBuilding.x, itemGridObj.belongsToMap.currentMovingBuilding.y);
+		}else{
+			itemGridObj.belongsToMap.hideGlowingTile();
+			itemGridObj.belongsToMap.currentMovingBuilding=null;
+			itemGridObj.canvas.parentElement.style.cursor='grab';
+		}
+	}else if(mouseHeld===1){
+		if(firstClick && itemSlot.hasBuilding){
+			itemGridObj.canvas.parentElement.style.cursor='grabbing';
+			itemGridObj.belongsToMap.currentMovingBuilding=itemSlot.hasBuilding;
+		}else if(
 			(el('items').value>=itemGridObj.minItem && el('items').value<=itemGridObj.maxItem)
 			||
 			(el('items').value==0x33a7 && itemGridObj.nItems===1 && itemGridObj.minItem!==Offsets.MIN_SONG)
@@ -923,7 +925,7 @@ function click(evt,itemGridObj,firstClick){
 	}
 
 
-	if(itemGridObj.showCoords){
+	if(itemGridObj.belongsToMap){
 		el('debug-name').innerHTML='<b>'+(itemGridObj.startX+x)+'x'+(itemGridObj.startY+y)+':</b> '+itemSlot.name;
 	}else{
 		el('debug-name').innerHTML=itemSlot.name;
@@ -967,7 +969,7 @@ function ItemGridMap(type){
 	this.items=new Array(16*16*nGrids);
 	for(var i=0; i<nGrids; i++){
 		this.itemGrids[i]=new ItemGrid(this.offsetItems+i*4*16*16, 16, 16);
-		this.itemGrids[i].showCoords=true;
+		this.itemGrids[i].belongsToMap=this;
 		this.itemGrids[i].startX=16+16*(i%acreWidth);
 		this.itemGrids[i].startY=16+16*parseInt(i/acreWidth);
 
@@ -994,6 +996,11 @@ function ItemGridMap(type){
 			this.acres[i]=new Acre(type, i);
 		}
 	}
+
+	this.glowingTile=document.createElement('div');
+	this.glowingTile.className='glowing-tile';
+	el('map-'+type).appendChild(this.glowingTile);
+	this.hideGlowingTile();
 }
 ItemGridMap.prototype.repaint=function(){
 	for(var i=0; i<this.itemGrids.length; i++)
@@ -1005,6 +1012,32 @@ ItemGridMap.prototype.save=function(){
 
 	for(var i=0; i<this.acres.length; i++)
 		this.acres[i].save();
+}
+ItemGridMap.prototype.replaceItems=function(search,replace,flag1,flag2){
+	flag1=flag1 || 0x00;
+	flag2=flag2 || 0x00;
+
+	var count=0;
+	for(var i=0;i<map.items.length;i++){
+		if(map.items[i].id===search){
+			map.items[i].set(flag2,flag1,replace);
+			map.itemGrids[i >> 8].itemList.edited=true;
+			count++;
+		}
+	}
+	if(count)
+		map.repaint();
+
+	return count;
+}
+ItemGridMap.prototype.showGlowingTile=function(x,y){
+	this.glowingTile.style.display='block';
+
+	this.glowingTile.style.left=((x-16)*10)+'px';
+	this.glowingTile.style.top=((y-16)*10)+'px';
+}
+ItemGridMap.prototype.hideGlowingTile=function(){
+	this.glowingTile.style.display='none';
 }
 
 
@@ -1068,6 +1101,14 @@ function mouseDownGrass(evt,grassMap){
 	clickGrass(evt,grassMap,true);
 }
 
+var GRASS_PENCILS=[
+	[0,0],
+	[0,0,1,0,0,1,1,1],
+	[0,0,1,0,0,1,1,1,-1,-1,-1,0,-1,1,0,-1,1,-1],
+	[-1,-2,0,-2,1,-2,-2,-1,-1,-1,0,-1,1,-1,2,-1,-2,0,-1,0,0,0,1,0,2,0,-2,1,-1,1,0,1,1,1,2,1,-1,2,0,2,1,2],
+];
+var grassPencilIntensity;
+var grassPencilSize;
 function clickGrass(evt,grassMap,firstClick){
 	var rect=grassMap.canvas.getBoundingClientRect();
 	if(parseInt(evt.clientX-rect.left)>grassMap.canvas.width || parseInt(evt.clientY-rect.top)>grassMap.canvas.height)
@@ -1083,16 +1124,15 @@ function clickGrass(evt,grassMap,firstClick){
 		var y=parseInt((evt.clientY-rect.top)/grassMap._TILE_SIZE);
 
 		if(mouseHeld==1){
-			grassMap.alterSingle(x,y,255);
-			grassMap.alterSingle(x+1,y,255);
-			grassMap.alterSingle(x,y+1,255);
-			grassMap.alterSingle(x+1,y+1,255);
+			for(var i=0; i<GRASS_PENCILS[grassPencilSize].length; i+=2){
+				grassMap.alterSingle(x+GRASS_PENCILS[grassPencilSize][i],y+GRASS_PENCILS[grassPencilSize][i+1],grassPencilIntensity);
+			}
 		}else if(mouseHeld==2){
-			grassMap.alterSingle(x,y,-255);
-			grassMap.alterSingle(x+1,y,-255);
-			grassMap.alterSingle(x,y+1,-255);
-			grassMap.alterSingle(x+1,y+1,-255);
+			for(var i=0; i<GRASS_PENCILS[grassPencilSize].length; i+=2){
+				grassMap.alterSingle(x+GRASS_PENCILS[grassPencilSize][i],y+GRASS_PENCILS[grassPencilSize][i+1],0);
+			}
 		}
+
 	}
 }
 function addGrassMapEvents(grassMap){
@@ -1194,24 +1234,10 @@ GrassMap.prototype.drawTile=function(x,y){
 GrassMap.prototype._getTileOffset=function(x,y){
 	return 64*(parseInt(y/8)*this.width*2+parseInt(x/8))+GRASS_TILES[(y%8)*8+(x%8)]
 }
-GrassMap.prototype.alterAll=function(v){
-	for(var i=0; i<this.tiles.length; i++){
-		this.tiles[i]+=v;
-		if(this.tiles[i]>255)
-			this.tiles[i]=255;
-		else if(this.tiles[i]<0)
-			this.tiles[i]=0;
-	}
-	this.draw();
-}
-GrassMap.prototype.alterSingle=function(x,y,v){
+GrassMap.prototype.alterSingle=function(x,y,intensity){
 	if(x>=0 && x<=127 && y>=0 && y<=95){
 		var t=this._getTileOffset(x,y);
-		this.tiles[t]+=v;
-		if(this.tiles[t]>255)
-			this.tiles[t]=255;
-		else if(this.tiles[t]<0)
-			this.tiles[t]=0;
+		this.tiles[t]=intensity;
 		this.drawTile(x,y);
 	}
 }
@@ -1442,8 +1468,6 @@ function Building(type, n){
 	this.x=savegame.readU8(this.offset+2);
 	this.y=savegame.readU8(this.offset+3);
 
-	buildings.push(this);
-
 	if(!this.isEmpty())
 		this._createEditRow();
 }
@@ -1454,7 +1478,7 @@ Building.prototype._refreshMask=function(status, doNotRefreshOtherMasks){
 		var y=this.y-16;
 		if(x>=0 && y>=0 && x<this.map.gridMaxWidth && y<this.map.gridMaxHeight){
 			if(status){
-				this.map.gridXY[x][y].hasBuilding=this.spanBuildingName.innerHTML;
+				this.map.gridXY[x][y].hasBuilding=this;
 				this.map.gridXY[x][y].refreshName();
 			}else{
 				this.map.gridXY[x][y].hasBuilding=false;
@@ -1492,19 +1516,17 @@ Building.prototype.set=function(newId){
 	if(this.isEmpty()){
 		this.remove();
 	}else if(this.tr){
-		this.tr.order=this.id;
-
-		if(el('add-building-'+this.id))
-			this.spanBuildingName.innerHTML=el('add-building-'+this.id).innerHTML;
+		if(buildingHash[this.id])
+			this.spanBuildingName.children[0].innerHTML=buildingHash[this.id].name;
 		else
-			this.spanBuildingName.innerHTML='(?) 0x'+this.id.toString(16);
+			this.spanBuildingName.children[0].innerHTML='(?) 0x'+this.id.toString(16);
 
 
 
 
 	}else{
-		//this.x=16+this.n;
-		//this.y=16+this.n;
+		this.x=16;
+		this.y=16;
 		this._createEditRow();
 	}
 	this._refreshMask(true);
@@ -1525,10 +1547,11 @@ Building.prototype.remove=function(){
 	this.id=plusMode? 0xfc : 0xf8;
 }
 Building.prototype._createEditRow=function(){
-	if(el('add-building-'+this.id))
-		this.spanBuildingName=createSpan(el('add-building-'+this.id).innerHTML);
+	this.spanBuildingName=createSpan('');
+	if(buildingHash[this.id])
+		this.spanBuildingName.appendChild(createSpan(buildingHash[this.id].name));
 	else
-		this.spanBuildingName=createSpan(' 0x'+this.id.toString(16));
+		this.spanBuildingName.appendChild(createSpan(' 0x'+this.id.toString(16)));
 
 	this._refreshMask(true);
 
@@ -1539,8 +1562,6 @@ Building.prototype._createEditRow=function(){
 
 	var divCoord=document.createElement('div');
 	divCoord.className='div-coord';
-
-	var moveBuildingButton=null;
 
 	
 	this.inputX=createInput(this.x);
@@ -1554,10 +1575,6 @@ Building.prototype._createEditRow=function(){
 	){
 		this.inputX.disabled=true;
 		this.inputY.disabled=true;
-	}else{
-		moveBuildingButton=createEditButton();
-		moveBuildingButton.className='sprite edit-icon edit-icon2';
-		divCoord.appendChild(moveBuildingButton);
 	}
 	divCoord.appendChild(this.inputX);
 	divCoord.appendChild(createSpan('&times;'));
@@ -1566,16 +1583,16 @@ Building.prototype._createEditRow=function(){
 	this.tr.appendChild(this.spanBuildingName);
 	this.tr.appendChild(divCoord);
 
-	var editButton=null;
-	if(el('add-building-'+this.id) && el('add-building-'+this.id).group!=-1){
-		editButton=createEditButton();
-		this.tr.appendChild(editButton);
+	var editable=false;
+	if(buildingHash[this.id] && buildingHash[this.id].group!=-1){
+		editable=this.spanBuildingName;
+		this.spanBuildingName.className='editable';
+		this.spanBuildingName.appendChild(createEditButton());
 	}
 
 
-	addBuildingEvents(this, this.inputX, this.inputY, moveBuildingButton, editButton);
+	addBuildingEvents(this, this.inputX, this.inputY, editable);
 
-	this.tr.order=this.id;
 	if(this.type=='island'){
 		el('buildings-island').appendChild(this.tr);
 	}else{
@@ -1611,7 +1628,24 @@ Building.prototype.setY=function(y){
 
 	this._refreshMask(true);
 }
-function addBuildingEvents(b,inputX,inputY, moveBuildingButton, editButton){
+Building.prototype.move=function(x,y){
+	this._refreshMask(false);
+
+	this.x=isNaN(x)?16:x;
+	this.y=isNaN(y)?16:y;
+	this.inputX.value=this.x;
+	this.inputY.value=this.y;
+
+	this._refreshMask(true);
+}
+function addBuildingEvents(b,inputX,inputY, editButton){
+	addEvent(b.tr, 'mouseenter', function(){
+		b.map.showGlowingTile(b.x, b.y);
+	});
+	addEvent(b.tr, 'mouseleave', function(){
+		b.map.hideGlowingTile();
+	});
+
 	addEvent(inputX, 'change', function(){b.setX(this.value)});
 	addEvent(inputY, 'change', function(){b.setY(this.value)});
 
@@ -1626,35 +1660,32 @@ function addBuildingEvents(b,inputX,inputY, moveBuildingButton, editButton){
 		}else if(evt.keyCode==38){
 			b.setY(b.y-1);
 		}
+		b.map.showGlowingTile(b.x, b.y);
 	}
 
-	if(moveBuildingButton){
-		addEvent(moveBuildingButton, 'click', function(){
-			moveBuilding(b);
-		});
-	}
 	addEvent(inputX, 'keyup', moveWithKeys);
 	addEvent(inputY, 'keyup', moveWithKeys);
 	if(editButton)
-		addEvent(editButton, 'click', function(){openBuildingDialog(b)});
+		addEvent(editButton, 'click', function(){editBuilding(b)});
 }
-function openBuildingDialog(b){
-	currentEditingItem=b;
 
-	var group=el('add-building-'+b.id).group;
+function editBuilding(b){
+	selectBuildings.currentBuilding=b;
 
-	el('select-building-list').value=b.id;
+	selectBuildings.innerHTML='';
+	for(var i=0; i<BUILDINGS.length; i++){
+		var id=plusMode? BUILDINGS[i][1]:BUILDINGS[i][0];
+		if(buildingHash[id].group===buildingHash[b.id].group)
+			selectBuildings.appendChild(createOption(id, buildingHash[id].name));
+	}
+	selectBuildings.value=b.id;
 
-	var allBuildings=el('select-building-list').children;
-	for(var i=0; i<allBuildings.length; i++)
-		allBuildings[i].disabled=(allBuildings[i].group!==group);
-
-	MarcDialogs.open('building')
+	b.tr.replaceChild(selectBuildings, b.tr.children[0]);
+	
+	selectBuildings.focus();
+	//selectBuildings.click();
 }
-function acceptBuilding(){
-	currentEditingItem.set(parseInt(el('select-building-list').value));
-	MarcDialogs.close();
-}
+
 function addBuilding(){
 	var found=false;
 	var slot=55;
@@ -1662,62 +1693,15 @@ function addBuilding(){
 	while(slot>10){
 		if((!plusMode && buildings[slot].id==0xf8) || (plusMode && buildings[slot].id==0xfc)){
 			buildings[slot].set(0x4c);
-			openBuildingDialog(buildings[slot]);
+			editBuilding(buildings[slot]);
 			
 			break;
 		}
 		slot--;
 	}
 }
-function sortMapBuildings(){
-	var ul=el('buildings');
-	ul.removeChild(el('buildings-sort-button'));
-	var liSeparation=document.createElement('li');
-	liSeparation.order=0x12;
-	liSeparation.appendChild(document.createElement('hr'));
-	var lis=[].slice.call(ul.children);
-	while(ul.children[0])
-		ul.removeChild(ul.firstChild);
-	lis.push(liSeparation);
-	lis=lis.sort(function(a,b){return a.order-b.order});
-	for(var i=0;i<lis.length;i++)
-		ul.appendChild(lis[i]);
-}
-function moveBuilding(b){
-	currentEditingItem=b;
 
-	if(moveBuildingOverlay.parentElement)
-		moveBuildingOverlay.parentElement.removeChild(moveBuildingOverlay);
 
-	//var rect=b.map.itemGrids[0].canvas.parentElement.getBoundingClientRect();
-
-	el('map-'+currentEditingItem.type).appendChild(moveBuildingOverlay);
-	//el('move-building-overlay').style.left=(rect.left)+'px';
-	//el('move-building-overlay').style.top=(rect.top)+'px';
-	//el('move-building-overlay').style.width=rect.width+'px';
-	//el('move-building-overlay').style.height=rect.height+'px';
-
-	/* glowing tile */
-	moveBuildingOverlay.children[0].style.left=((b.x-16)*10)+'px';
-	moveBuildingOverlay.children[0].style.top=((b.y-16)*10)+'px';
-}
-function moveBuildingAccept(evt){
-	var currentBuilding=currentEditingItem;
-	currentBuilding._refreshMask(false);
-
-	var rect=currentBuilding.map.itemGrids[0].canvas.parentElement.getBoundingClientRect();
-	var x=parseInt((evt.clientX-rect.left)/10)+16;
-	var y=parseInt(((evt.clientY-rect.top))/10)+16;
-
-	currentBuilding._refreshMask(false);
-	currentBuilding.x=x;
-	currentBuilding.y=y;
-	currentBuilding.inputX.value=x;
-	currentBuilding.inputY.value=y;
-	currentBuilding._refreshMask(true);
-
-	moveBuildingOverlay.parentElement.removeChild(moveBuildingOverlay);
-}
 function getBuildingMask(buildingId){
 	var coords=[];
 	var buildingMask=false;
@@ -1872,7 +1856,7 @@ function Villager(n){
 		tr.appendChild(td);
 
 		td=document.createElement('td');
-		td.appendChild(createEditStringButton(this.catchphrase, 'catchphrase'));
+		td.appendChild(this.catchphrase.createInput());
 		tr.appendChild(td);
 
 
@@ -2111,10 +2095,6 @@ function Player(n){
 	this.playerId2=savegame.readU8(this.offset+Offsets.PLAYER_ID2);
 
 	this.name=new U16String(this.offset+Offsets.PLAYER_NAME, 9);
-	var div=document.createElement('div');
-	div.id='player-name-'+this.n;
-	div.appendChild(createEditStringButton(this.name, 'player name'));
-	el('player-name').appendChild(div);
 
 	this.playerIdReferences=false;
 
@@ -2125,10 +2105,6 @@ function Player(n){
 
 	this.TPCregion=savegame.readU8(this.offset+Offsets.PLAYER_TPCREGION);
 	this.TPCtext=new U16String(this.offset+Offsets.PLAYER_TPCTEXT, 32); //40?
-	var div2=document.createElement('div');
-	div2.id='player-tpctext-'+this.n;
-	div2.appendChild(createEditStringButton(this.TPCtext, 'player TPC text'));
-	el('player-tpctext').appendChild(div2);
 
 	this.birthdayMonth=savegame.readU8(this.offset+Offsets.PLAYER_BIRTHDAYMONTH);
 	this.birthdayDay=savegame.readU8(this.offset+Offsets.PLAYER_BIRTHDAYDAY);
@@ -2518,8 +2494,8 @@ function addBadgeEvents(li){
 
 
 function addTurnipEvents(dow, AMinput, PMinput){
-	AMinput.style.width='35px';
-	PMinput.style.width='35px';
+	AMinput.style.width='40px';
+	PMinput.style.width='40px';
 
 	addNumericInputEvent(AMinput, 0, 990);
 	addNumericInputEvent(PMinput, 0, 990);
@@ -2649,52 +2625,38 @@ Item.prototype.refreshName=function(){
 	}
 
 	if(this.hasBuilding)
-		this.name+='<br/><b style="color:yellow">Building: '+this.hasBuilding+'</b>';
+		this.name+='<br/><b style="color:yellow">Building: '+buildingHash[this.hasBuilding.id].name+'</b>';
 }
 
 
 function getSelectedItemName(){
 	return '<i>'+el('item_'+el('items').value).innerHTML+'</i>';
 }
+
+
+
+
 function fillAll(){
 	var itemName=getSelectedItemName();
 	MarcDialogs.confirm('Fill all town with '+itemName+'?', function(){
-		var count=0;
-		for(var i=0;i<map.items.length;i++)
-			if(map.items[i].id==0x7ffe){
-				map.items[i].set(0x00,el('flag1').value,el('items').value);
-				count++
-			}
-		if(count){
-			forceMapEdited();
+		var count=map.replaceItems(0x7ffe, el('items').value, el('flag1').value); 
+
+		if(count)
 			MarcDialogs.alert(count+' '+itemName+' were added.');
-			map.repaint();
-		}else{
+		else
 			MarcDialogs.close();
-		}
 	});
 }
 function removeAll(){
 	var itemName=getSelectedItemName();
 	MarcDialogs.confirm('Remove all '+itemName+' on town?', function(){
-		var count=0;
-		for(var i=0;i<map.items.length;i++)
-			if(map.items[i].id==el('items').value){
-				map.items[i].set(0x00,0x00,0x7ffe);
-				count++
-			}
-		if(count){
-			forceMapEdited();
+		var count=map.replaceItems(parseInt(el('items').value), 0x7ffe); 
+
+		if(count)
 			MarcDialogs.alert(count+' '+itemName+' were removed.');
-			map.repaint();
-		}else{
+		else
 			MarcDialogs.close();
-		}
 	});
-}
-function forceMapEdited(){
-	for(var i=0; i<map.itemGrids.length; i++)
-		map.itemGrids[i].itemList.edited=true;
 }
 function acceptMaintenance(){
 	var removedWeeds=0;
@@ -2704,12 +2666,15 @@ function acceptMaintenance(){
 	for(var i=0; i<map.items.length; i++){
 		if((el('remove-weeds').checked) && map.items[i].isWeed()){
 			map.items[i].set(0x00,0x00,0x7ffe);
+			map.itemGrids[i >> 8].itemList.edited=true;
 			removedWeeds++;
 		}else if(el('water-flowers').checked && map.items[i].isWiltedFlower()){
 			map.items[i].set(0x40,map.items[i].flag1,map.items[i].id);
+			map.itemGrids[i >> 8].itemList.edited=true;
 			wateredFlowers++
 		}else if(el('perfectize-trees').checked && map.items[i].id>=0x3a && map.items[i].id<=0x52 && map.items[i].flag1==0x00 && map.items[i].flag2==0x00){
 			map.items[i].set(0x01,0x00,map.items[i].id);
+			map.itemGrids[i >> 8].itemList.edited=true;
 			perfectizedTrees++
 		}
 	}
@@ -2723,7 +2688,6 @@ function acceptMaintenance(){
 		messages.push(perfectizedTrees+' normal trees got a single perfect fruit.');
 
 	if(messages[0]){
-		forceMapEdited();
 		MarcDialogs.alert(messages.join('<br/>'));
 		map.repaint();
 	}else
@@ -2785,11 +2749,11 @@ function initializeEverything(){
 	if(savegame.fileSize==524288 || savegame.fileSize==786432 || savegame.fileSize==1183744 || savegame.fileSize==1245184){
 		/*
 			524288 & 786432: old RAM dump
-			1183744 &1245184: mori.bin (LeafTools) RAM dump
+			1183744 & 1245184: mori.bin (LeafTools) RAM dump
 		*/
-		MarcDialogs.alert('<b>WARNING: </b>The savegame file you are trying to open is no longer supported. It will be converted to gardenram.dat format automatically after saving<br/><br/>Make sure you are using the latest RAM dumping/injecting method or you will screw your savegame.');
+		MarcDialogs.alert('<b>WARNING: </b>The savegame file you are trying to open is no longer supported. It will be converted to native garden.dat format automatically after saving.');
 		var fixedSavegame=new MarcFile(522752);
-		fixedSavegame.fileName='gardenram.dat';
+		fixedSavegame.fileName='garden.dat';
 		fixedSavegame.fileType=savegame.fileType;
 		for(var i=0; i<0x80; i++)
 			fixedSavegame.writeU8(i, 0x00);
@@ -2836,7 +2800,7 @@ function initializeEverything2(){
 		hide('tr-shop-harvey');
 		hide('column-storage');
 		hide('tr-meowcoupons');
-		hide('button-unlockahhd');
+		hide('town-unlockhhd');
 	}
 
 	addEvent(window, 'click', hideSearchResults);
@@ -2965,13 +2929,22 @@ function initializeEverything2(){
 		}
 	}
 
+	selectBuildings=document.createElement('select');
+	selectBuildings.style.width='250px';
+	addEvent(selectBuildings,'change',function(){
+		this.currentBuilding.set(parseInt(selectBuildings.value));
+	});
+	addEvent(selectBuildings,'blur',function(){
+		this.currentBuilding.tr.replaceChild(this.currentBuilding.spanBuildingName, selectBuildings);
+	});
+	buildingHash={};
 	/* read buildings JSON data */
 	for(var i=0; i<BUILDINGS.length; i++){
 		var id=plusMode? BUILDINGS[i][1]:BUILDINGS[i][0];
-		var option=createOption(id, getString(BUILDINGS[i][4]));
-		option.id='add-building-'+id;
-		option.group=BUILDINGS[i][2];
-		el('select-building-list').appendChild(option);
+		buildingHash[id]={
+			group:BUILDINGS[i][2],
+			name:getString(BUILDINGS[i][4])
+		};
 	}
 
 	/* read villagers JSON data */
@@ -3025,6 +2998,8 @@ function initializeEverything2(){
 	/* Grass */
 	grassMap=new GrassMap(Offsets.MAP_GRASS,8,6);
 	grassMapToday=new GrassMapToday(Offsets.MAP_GRASS_TODAY,5,4);
+	grassPencilSize=el('select-grass-pencil-size').selectedIndex;
+	grassPencilIntensity=((el('select-grass-intensity').selectedIndex+1)*32)-1;
 
 	/* read player data */
 	players=new Array(4);
@@ -3136,8 +3111,7 @@ function initializeEverything2(){
 	el('select-towntreesize').value=town.treeSize;
 
 	/* check HHD content status */
-	if(town.checkHHDStatus())
-		el('button-unlockahhd').disabled=true;
+	town.checkHHDStatus()
 
 	/* shops & lost and found */
 	el('shop-retail').appendChild(town.shopRetail.canvas);
@@ -3183,11 +3157,26 @@ function initializeEverything2(){
 	/* read buildings */
 	buildings=new Array();
 	for(var i=0; i<58; i++)
-		new Building('map', i);
+		buildings.push(new Building('map', i));
 	town.fixBuildingCounters();
 
+	/* sort buildings by type */
+	buildings=buildings.sort(function(a,b){return a.id-b.id});
+	var liSeparation=null;
+	for(var i=0; i<buildings.length; i++){
+		if(buildings[i].tr){
+			if(buildings[i].id>0x11 && !liSeparation){
+				liSeparation=document.createElement('li');
+				liSeparation.appendChild(document.createElement('hr'));
+				el('buildings').appendChild(liSeparation);
+			}
+
+			el('buildings').appendChild(buildings[i].tr);
+		}
+	}
+
 	for(var i=0; i<2; i++)
-		new Building('island', i);
+		buildings.push(new Building('island', i));
 
 
 
@@ -3276,23 +3265,13 @@ function initializeEverything2(){
 	addEvent(window, 'contextmenu', prevent);
 	addEvent(window, 'mouseup', mouseUp);
 
-	moveBuildingOverlay=document.createElement('div');
-	moveBuildingOverlay.id='move-building-overlay';
-
-	var glowingTile=document.createElement('div');
-	glowingTile.id='glowing-tile';
-	moveBuildingOverlay.appendChild(glowingTile);
-	var moveBuildingMessage=document.createElement('div');
-	moveBuildingMessage.id='move-building-message';
-	moveBuildingMessage.innerHTML='Click the map to move the building to the desired position';
-	moveBuildingOverlay.appendChild(moveBuildingMessage);
-	addEvent(moveBuildingOverlay, 'click', moveBuildingAccept);
 
 	document.body.removeChild(el('home'));
 	show('header');
 	show('editor');
 	selectPlayer(0);
 
+	WarnOnLeave.set(true);
 }
 
 function getAcreThumbnailPosition(i, size){
@@ -3305,7 +3284,10 @@ function selectPlayer(p){
 		currentPlayer=players[p];
 
 		el('player-id').innerHTML='0x'+intToHex(currentPlayer.playerId2)+intToHex(currentPlayer.playerId1);
-	
+
+		el('player-name').value=currentPlayer.name.toString();
+		el('player-tpctext').value=currentPlayer.TPCtext.toString();
+
 		el('select-birthday-day').value=currentPlayer.birthdayDay;
 		el('select-birthday-month').value=currentPlayer.birthdayMonth;
 		el('select-registration-day').value=currentPlayer.registrationDay;
@@ -3340,7 +3322,7 @@ function selectPlayer(p){
 		el('select-house-pavement').value=currentPlayer.housePavement;
 		el('select-house-mailbox').value=currentPlayer.houseMailbox;
 
-		var PLAYER_BLOCKS=['player-name-','player-tpctext-','patterns','rooms0','rooms1','rooms2','rooms3','rooms4','rooms5'];
+		var PLAYER_BLOCKS=['patterns','rooms0','rooms1','rooms2','rooms3','rooms4','rooms5'];
 
 		for(var i=0; i<4; i++){
 			if(i==p){
@@ -3379,32 +3361,6 @@ function selectPlayer(p){
 
 
 
-function openEditStringDialog(u16s,title){
-	currentEditingItem=u16s;
-	el('input-string-title').innerHTML='Change '+title;
-	el('input-string').value=u16s.toString();
- 
-	MarcDialogs.open('string')
-} 
-function acceptEditString(){
-	var newString=el('input-string').value;
-	if(currentEditingItem===players[0].name){
-		players[0].setName(newString);
-	}else if(currentEditingItem===players[1].name){
-		players[1].setName(newString);
-	}else if(currentEditingItem===players[2].name){
-		players[2].setName(newString);
-	}else if(currentEditingItem===players[3].name){
-		players[3].setName(newString);
-	}else if(currentEditingItem===town.name){
-		town.setName(newString);
-	}else{
-		currentEditingItem.set(newString);
-	}	
-
-	MarcDialogs.close();
-}
-
 
 
 
@@ -3430,8 +3386,9 @@ function saveChanges(){
 	updateChecksums(savegame);
 
 	savegame.save();
-}
 
+	WarnOnLeave.set(false);
+}
 
 
 

@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf (Welcome amiibo) villager list for Savegame Editor
+	Villager list for Animal Crossing: New Leaf (Welcome amiibo)
 
 	FORMAT: [name,isPlus,personality,catchphrase,dataOld,dataPlus]
 	MALE PERSONALITIES:		00=lazy

@@ -1,6 +1,6 @@
 /*
-	Animal Crossing: New Leaf Save Editor v20181219
-	by Marc Robledo 2015-2017
+	Animal Crossing: New Leaf Save Editor v20200418
+	by Marc Robledo 2015-2020
 */
 @font-face{font-family:'Noto Sans';font-style:normal;font-weight:normal;src:local('Noto Sans'),local('NotoSans'),url('./NotoSans.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000}
 @font-face{font-family:'Noto Sans';font-style:normal;font-weight:bold;src:local('Noto Sans Bold'),local('NotoSans-Bold'),url('./NotoSansBold.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000}
@@ -12,7 +12,6 @@ body{
 	background-color:#fafafa;
 	margin:100px 30px 30px 30px;
 
-
 	-webkit-touch-callout:none;
 	-webkit-user-select:none;
 	-khtml-user-select:none;
@@ -21,16 +20,10 @@ body{
 	user-select:none;
 	cursor:default
 }
+.text-center{text-align:center}
 .hidden{display:none}
 .mono{font-family:monospace}
-.u16string{
-	max-width:160px;
-	white-space:nowrap;
-	overflow:hidden;
-	text-overflow:ellipsis;
-	display:inline-block;
-	vertical-align:middle
-}
+
 hr{border:none;border-top:1px solid #ccc;max-width:50%}
 h3{
 	padding-bottom:10px;
@@ -360,12 +353,13 @@ span.sprite{display:inline-block;vertical-align:middle}
 #move-building-overlay:hover{
 	cursor:crosshair;
 }
+
 @keyframes tileglow{
 	0%{background-color:yellow}
 	50%{background-color:black}
 	100%{background-color:yellow}
 }
-#glowing-tile{
+.glowing-tile{
 	position:absolute;
 	top:0;left:0;
 	width:10px;height:10px;
@@ -458,21 +452,21 @@ span.sprite{display:inline-block;vertical-align:middle}
 
 
 .building-list{
-	max-height:520px;
+	max-height:560px;
 	overflow-y:auto;
 	list-style:none;
 	padding:0;
-	margin:0
+	margin:0 0 10px;
 }
 .building-list li{clear:both;padding:8px 4px}
 .building-list li:hover{background-color:#eee}
 .building-list .div-coord{float:right}
-.building-list input[type="text"]{width:24px}
+.building-list input[type="text"]{width:32px}
 
 .edit-icon{margin-left:5px;opacity:.1;transition:opacity .2s}
-li:hover>.edit-icon,tr:hover .edit-icon,div:hover>.edit-icon{opacity:1}
+span.editable:hover>.edit-icon,tr:hover .edit-icon,div:hover>.edit-icon{opacity:1}
 .edit-icon:hover{cursor:pointer}
-
+span.editable:hover{text-decoration:underline;cursor:pointer}
 
 
 /* PATTERNS */
@@ -580,13 +574,15 @@ li:hover>.edit-icon,tr:hover .edit-icon,div:hover>.edit-icon{opacity:1}
 
 
 /* FORMS */
-input,select{font:100% 'Noto Sans', sans-serif}
-input[type="text"]{border:1px solid #777;padding:2px 2px;border-radius:2px;}
-input[type="text"]:hover{border-color:black}
-input[type="text"]:focus{border-color:#219fe8;box-shadow:#3bdcff 0 0 4px}
+input,select,button{font-size:100%;font-family:inherit}
+input[type="text"],select{font-size:100%;font-family:inherit;max-width:100%;box-sizing:border-box;border:1px solid #777;padding:4px 6px;border-radius:2px;}
+input[type="text"]:hover,select:hover{border-color:black}
+input[type="text"]:focus,select:focus{/*border-color:#219fe8;box-shadow:#76e7ff 0 0 0 3px;*/}
+input[type="text"]:focus,select:focus{border-color:#3fb31e;box-shadow:#c5f789 0 0 0 3px;}
 input[type="text"].time{width:50px}
 input[type="text"].fixed-width{width:180px}
-input[type="button"],input[type="submit"]{
+
+button{
 	padding:7px 15px;
 	color:#4f4f4f;
 	border-radius:3px;
@@ -596,21 +592,32 @@ input[type="button"],input[type="submit"]{
 	cursor:pointer;
 	transition:all .1s;
 }
-input[type="button"]:disabled,input[type="submit"]:disabled{opacity:.35}
-input[type="button"]:hover,input[type="submit"]:hover{
+button:disabled{opacity:.35}
+button:hover{
 	background-color:#f3f3f3;
 	border-bottom:3px solid #e8e8e8;
 }
-input[type="button"]:active,input[type="button"].active,input[type="submit"]:active,input[type="submit"].active{
+button:active,button.active{
 	transform:translate(0px,1px);
 }
-input[type="button"].button-accept{background-color:#2991bf;border-color:#1e6a8d;text-shadow:0 -1px 0 #20749a;color:white}
-input[type="button"].button-accept:hover{background-color:#49b1df;border-color:#3e8aad;text-shadow:0 -1px 0 #4094ba;}
-input[type="button"].red{background-color:#b72319;border-color:#951d15;text-shadow:0 -1px 0 #a01d15;color:white}
-input[type="button"].red:hover{background-color:#bf261c;border-color:#871a13;text-shadow:0 -1px 0 #8b1b14;color:white}
-input[type="button"].green,input[type="submit"].green{background-color:#59b259 !important;background-image:linear-gradient(to bottom, #61c261, #51a351) !important;border-color:#52a452 #4f9f4f #448944 !important;text-shadow:0 -1px 0 #37a137 !important;color:white !important}
-input[type="button"].green:hover,input[type="submit"].green:hover{background-color:#278AB7 !important;background-image:linear-gradient(to bottom, #64ce64, #51a351) !important;border-color:#3f7f3f !important;text-shadow:0 -1px 0 #1c9216 !important;color:white !important}
+button.blue{background-color:#2991bf;border-color:#1e6a8d;text-shadow:0 -1px 0 #20749a;color:white}
+button.blue:hover{background-color:#49b1df;border-color:#3e8aad;text-shadow:0 -1px 0 #4094ba;}
+button.red{background-color:#b72319;border-color:#951d15;text-shadow:0 -1px 0 #a01d15;color:white}
+button.red:hover{background-color:#bf261c;border-color:#871a13;text-shadow:0 -1px 0 #8b1b14;color:white}
+button.green{background-color:#59b259 !important;background-image:linear-gradient(to bottom, #61c261, #51a351) !important;border-color:#52a452 #4f9f4f #448944 !important;text-shadow:0 -1px 0 #37a137 !important;color:white !important}
+button.green:hover{background-color:#278AB7 !important;background-image:linear-gradient(to bottom, #64ce64, #51a351) !important;border-color:#3f7f3f !important;text-shadow:0 -1px 0 #1c9216 !important;color:white !important}
 
+select{
+	padding-right:20px;
+	-webkit-appearance:none;
+	-moz-appearance:none;
+	text-overflow:'';
+
+	background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeD0iMTJweCIgeT0iMHB4IiB3aWR0aD0iMjRweCIgaGVpZ2h0PSIzcHgiIHZpZXdCb3g9IjAgMCA2IDMiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDYgMyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBvbHlnb24gcG9pbnRzPSI1Ljk5MiwwIDIuOTkyLDMgLTAuMDA4LDAgIi8+PC9zdmc+");
+	background-position:100% center;
+	background-repeat:no-repeat;
+}
+select::-ms-expand{display:none}
 
 
 
