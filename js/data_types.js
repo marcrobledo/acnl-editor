@@ -198,5 +198,9 @@ U16String.prototype.createInput=function(onChangeEvt){
 		this.u16string.set(this.value);
 	});
 	
+	this.input=input;
 	return input;
+}
+U16String.prototype.refreshInput=function(){
+	this.input.value=this.toString();
 }

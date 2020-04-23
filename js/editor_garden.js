@@ -1,5 +1,5 @@
 /*
-	Animal Crossing: New Leaf Save Editor (garden.dat) v20200419
+	Animal Crossing: New Leaf Save Editor (garden.dat) v20200423
 	by Marc Robledo 2015-2020
 
 	A lot of thanks to:
@@ -1938,6 +1938,7 @@ Villager.prototype.setVillager=function(newId,defaultBytes){
 
 		if(villagerInfo.catchphrase){
 			this.catchphrase.set(villagerInfo.catchphrase);
+			this.catchphrase.refreshInput();
 		}
 	}
 }
