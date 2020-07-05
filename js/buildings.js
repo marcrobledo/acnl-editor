@@ -224,7 +224,7 @@ var BUILDINGS=[
 const PWPS_INGAME_LIST=[
 	['default projects list'],
 	['topiaries','topiaires','Buchsbaums','sculturas arboreas','setos'],
-	['2 ?'],
+	['Dream Suite'],
 	['3 ?'],
 	BUILDINGS[20][4],
 	BUILDINGS[21][4],
