@@ -3,7 +3,23 @@
 */
 
 var ITEM_GROUPS=[
-{title:"Patterns",oldId:0x9d,flags1:["00=1-1","01=1-2","02=1-3","03=1-4","04=1-5","05=1-6","06=1-7","07=1-8","08=1-9","09=1-10","10=2-1","11=2-2","12=2-3","13=2-4","14=2-5","15=2-6","16=2-7","17=2-8","18=2-9","19=2-10","20=3-1","21=3-2","22=3-3","23=3-4","24=3-5","25=3-6","26=3-7","27=3-8","28=3-9","29=3-10","30=4-1","31=4-2","32=4-3","33=4-4","34=4-5","35=4-6","36=4-7","37=4-8","38=4-9","39=4-10"],items:[
+{title:"Patterns",oldId:0x9d,flags:[{flag:1, bit:4, values:[
+	{value:0, label:'Player 1'},
+	{value:1, label:'Player 2'},
+	{value:2, label:'Player 3'},
+	{value:3, label:'Player 4'}
+]}, {flag:1, bit:0, values:[
+	{value:0, label:'Pattern 1'},
+	{value:1, label:'Pattern 2'},
+	{value:2, label:'Pattern 3'},
+	{value:3, label:'Pattern 4'},
+	{value:4, label:'Pattern 5'},
+	{value:5, label:'Pattern 6'},
+	{value:6, label:'Pattern 7'},
+	{value:7, label:'Pattern 8'},
+	{value:8, label:'Pattern 9'},
+	{value:9, label:'Pattern 10'}
+]}],items:[
 "Pattern",
 ]},
 
@@ -56,9 +72,9 @@ var ITEM_GROUPS=[
 "clovers (weed)",,
 "rafflesia",
 ]},
-{title:"Outside flowers (wilted)",oldId:0xce,copyOf:-1,copyLimit:41,copyText:"wilted",onlyMap:1},
+{title:"Outside flowers (wilted)",oldId:0xce,copyOf:-1,copyLimit:41,flags:[{flag:2, bit:4, label:'Watered'}],copyText:"wilted",onlyMap:1},
 
-{title:"Fruit trees",oldId:0x3a,onlyMap:1,flags1:["03=(no fruit)","08=perfect 0","18=perfect 1","48=perfect 4"],flags2:["01=mixed"],items:[
+{title:"Fruit trees",oldId:0x3a,onlyMap:1,flags:[{flag:1, bit:0, label:'no fruit'},{flag:1, bit:3, label:'perfect fruit'},{flag:2, bit:0, label:'perfect mixed'}],items:[
 "apple tree (growing 1)",,
 "apple tree (growing 2)",,
 "apple tree (growing 3)",,
@@ -225,7 +241,7 @@ null,,
 "rafflesia (wilted)",
 ]},
 
-{title:"Rocks",oldId:0x98,onlyMap:1,flags2:["04=breakable"],items:[
+{title:"Rocks",oldId:0x98,onlyMap:1,flags:[{flag:2, bit:2, label:'Breakable'}],items:[
 "rock",,
 "rock (2)",,
 "rock (3)",,
@@ -264,7 +280,17 @@ null,,
 "rotten cherry",
 ]},
 
-{title:"Fruits",oldId:0x2018,flags1:["01=x2","02=x3","03=x4","04=x5","05=x6","06=x7","07=x8","08=x9"],items:[
+{title:"Fruits",oldId:0x2018,flags:[{flag:1,bit:0, values:[
+	{value:0,label:'Single'},
+	{value:1,label:'Basket &times;2'},
+	{value:2,label:'Basket &times;3'},
+	{value:3,label:'Basket &times;4'},
+	{value:4,label:'Basket &times;5'},
+	{value:5,label:'Basket &times;6'},
+	{value:6,label:'Basket &times;7'},
+	{value:7,label:'Basket &times;8'},
+	{value:8,label:'Basket &times;9'}
+]}],items:[
 "apples",,
 "oranges",,
 "pears",,
@@ -612,7 +638,11 @@ null,,
 {title:"Songs (seashell player)",oldId:0x21df,plusId:0x21df+0x05,copyOf:-2,copyText:"seashell player"},
 
 
-{title:"Paper",oldId:0x223a,plusId:0x223a+0x05,flags1:["01=x2","02=x3","03=x4"],items:[
+{title:"Paper",oldId:0x223a,plusId:0x223a+0x05,flags:[{flag:1,bit:0, values:[{value:0,label:'Single'},
+	{value:1,label:'Pack &times;2'},
+	{value:2,label:'Pack &times;3'},
+	{value:3,label:'Pack &times;4'},
+]}],items:[
 "butterfly paper",,
 "airmail paper",,
 "New Year's cards",,

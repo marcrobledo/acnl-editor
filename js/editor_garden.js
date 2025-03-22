@@ -1,31 +1,76 @@
 /*
-	Animal Crossing: New Leaf Save Editor (garden.dat) v20200423
-	by Marc Robledo 2015-2020
-
-	A lot of thanks to:
-	 * SciresM for breaking the numeric encryption used in the game
-	 * kwsch and Mega-Mew for their work in NLSE
-	 * Thulinma for Pattern structure (check out his editor pattern http://www.thulinma.com/acnl/ )
-	 * NeoKamek for his work on LeafTools and other help
-	 * slattz and Cuyler36 for various contributions
-	 * jexom for documenting grass deterioration
-	 * froggestspirit for extracting acre information and item list
-	 * sprungit/shokolad-town for compiling hair style and color thumbnails
+* Animal Crossing: New Leaf Save Editor
+* Online savegame editor for ACNL videogame
+* (last update: 2025-03-19)
+* By Marc Robledo https://www.marcrobledo.com
+*
+* License:
+*
+* MIT License
+* 
+* Copyright (c) 2015-2025 Marc Robledo
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
 */
 
 /* service worker */
 if(location.protocol==='http:')
 	location.replace(window.location.href.replace('http:','https:'));
-else if(location.protocol==='https:' && 'serviceWorker' in navigator)
+else if(location.protocol==='https:' && location.host==='www.marcrobledo.com' && 'serviceWorker' in navigator)
 	navigator.serviceWorker.register('/acnl-editor/_cache_service_worker.js', {scope: '/acnl-editor/'});
 
 
 
-var AUTO_INCREMENT=false; /* automatic increase item index after placing */
+
+const EditorSettings={
+	language:'en',
+	showDisclaimer:true,
+	autoIncrement:false,
+	load:function(){
+		if(localStorage && localStorage.getItem('acnl-editor-settings')){
+			const loadedSettings=JSON.parse(localStorage.getItem('acnl-editor-settings'));
+
+			if(loadedSettings.language && ['en','enu','fr','de','it','es','jp','kr'].includes(loadedSettings.language))
+				this.language=loadedSettings.language;
+
+			this.showDisclaimer=!!loadedSettings.showDisclaimer;
+			//this.autoIncrement=!!loadedSettings.autoIncrement;
+			this._lastSave=typeof loadedSettings._lastSave==='number'? loadedSettings._lastSave : new Date().getTime();
+		}
+	},
+	save:function(){
+		if(localStorage){
+			this._lastSave=new Date().getTime();
+			localStorage.setItem('acnl-editor-settings', JSON.stringify(EditorSettings));
+		}
+	},
+	reset:function(){
+		if(localStorage)
+			localStorage.removeItem('acnl-editor-settings');
+	}
+}
+
 
 
 var Offsets={
 	TOWN_TREESIZE:			0x80+0x049526,
+	TOWN_CLIFF_SIDE:		0x80+0x04da00,
 	TOWN_GRASSTYPE:			0x80+0x04da01,
 	TOWN_PLAYTIME:			0x80+0x5c730,
 	TOWN_DAYSPLAYED:		0x80+0x5c7ba,
@@ -139,6 +184,7 @@ var Offsets={
 };
 const OffsetsPlus={
 	TOWN_TREESIZE:			0x04be86,
+	TOWN_CLIFF_SIDE:		0x053480,
 	TOWN_GRASSTYPE:			0x053481,
 	TOWN_PLAYTIME:			0x0621b0,
 	TOWN_DAYSPLAYED:		0x06223e,
@@ -316,12 +362,10 @@ function el(e){return document.getElementById(e)}
 function show(e){el(e).style.display='block'}
 function hide(e){el(e).style.display='none'}
 function toggle(e){if(el(e).style.display=='block')hide(e);else show(e)}
-function addEvent(e,ev,f){if(e.addEventListener){e.addEventListener(ev,f,false);return true}else if(e.attachEvent)e.attachEvent('on'+ev,f)}
+function addEvent(e,ev,f){if(typeof e==='string') e=el(e); e.addEventListener(ev,f,false);}
 
-function prevent(evt){evt.stopPropagation();evt.preventDefault()}
-function stopPropagation(e){if(typeof e.stopPropagation!='undefined')e.stopPropagation();else e.cancelBubble=true}
-function setCookie(k,v,w){var exp;if(w){exp=new Date((new Date()).getTime()+1000*60*60*24*7).toGMTString()}else{exp='Thu, 31 Dec 2020 12:00:00 UTC'}document.cookie='acnleditor'+k+'='+v+'; expires='+exp}
-function getCookie(k){var cs=document.cookie.split(';');for(var i=0;i<cs.length;i++){var f=cs[i].indexOf(k+'=');if(f>-1)return cs[i].substring(f+(k+'=').length)}return false}
+function preventDefault(evt){/*evt.stopPropagation();*/evt.preventDefault()}
+function stopPropagation(evt){evt.stopPropagation();}
 function getString(o){
 	if(el('lang-selector').value==='fr')
 		return o[1] || o[0];
@@ -340,8 +384,7 @@ function intToHex(i,b){var h=i.toString(16);while(h.length<b*2)h='0'+h;return h}
 function range(min,max){var a=[];for(i=min;i<=max;i++)a.push(i);return a}
 function random(v){return Math.floor((Math.random()*v))}
 function showTab(evt){var newTab=evt.target.tabInfo;if(newTab.id!==currentTab.id){hide('tab-'+currentTab.id);currentTab.button.className='';show('tab-'+newTab.id);newTab.button.className='active';currentTab=newTab}}
-function updateLangIcon(l){el('lang-flag').style.backgroundPosition='-'+(l*16)+'px 0px'}
-function acceptDisclaimer(updateCookie){setCookie('nodisclaimer',1,true);MarcDialogs.close()}
+
 
 function createInput(defValue){var input=document.createElement('input');input.type='text';input.value=defValue;return input}
 function createButton(t){var b=document.createElement('input');b.type='button';b.className='button';b.value=t;return b}
@@ -373,9 +416,6 @@ function _cleanInputEvent(){
 
 
 
-var showDebug=function(){show('debug')};
-var hideDebug=function(){hide('debug')};
-function enableDebugOnElement(e){addEvent(e,'mouseenter',showDebug);addEvent(e,'mouseleave',hideDebug)}
 
 
 
@@ -384,22 +424,75 @@ function enableDebugOnElement(e){addEvent(e,'mouseenter',showDebug);addEvent(e,'
 
 
 
+const UI={
+	Home:{
+		updateLanguageIcon:function(){
+			el('lang-flag').style.backgroundPosition='-'+(el('lang-selector').selectedIndex*16)+'px 0px'
+		}
+	},
+	Snackbars:(function(){
+		const container=document.createElement('div');
+		container.id='snackbars';
+		const _closeSnackbar=function(snackbar){
+			snackbar.removeEventListener('click',_evtClickSnackbar);
+			window.clearTimeout(snackbar.autoCloseTimeout);
+			snackbar.className=snackbar.className.replace(' open','');
+			window.setTimeout(function(){container.removeChild(snackbar)},600);
+		};
+		const _evtClickSnackbar=function(evt){
+			_closeSnackbar(this);
+		};
 
+		window.addEventListener('load',function(){
+			document.body.appendChild(container);
+		});
+
+		return{
+			show:function(message, className){
+				const snackbar=document.createElement('div');
+				snackbar.className='snackbar'+(typeof className==='string'? ' snackbar-'+className:'');
+				snackbar.innerHTML=message;
+				snackbar.addEventListener('click',_evtClickSnackbar);
+				container.appendChild(snackbar);
+				window.requestAnimationFrame(function(){
+					window.requestAnimationFrame(function(){
+						snackbar.className+=' open';
+						snackbar.autoCloseTimeout=window.setTimeout(function(){
+							_closeSnackbar(snackbar);
+						}, 5000);
+					});
+				});
+			}
+		}
+	}())
+}
 
 
 /* Initialize ACNL editor */
 addEvent(window,'load',function(){
-	if(!getCookie('nodisclaimer')){
+	EditorSettings.load();
+
+	/* UI events */
+	document.getElementById('lang-selector').addEventListener('change',function(){
+		EditorSettings.language=this.value;
+		EditorSettings.save();
+		UI.Home.updateLanguageIcon();
+	});
+
+	document.getElementById('button-hide-disclaimer').addEventListener('click',function(){
+		EditorSettings.showDisclaimer=false;
+		EditorSettings.save();
+		MarcDialogs.close();
+	});
+
+	if(EditorSettings.showDisclaimer){
 		MarcDialogs.open('disclaimer');
 	}else{
 		document.body.removeChild(el('dialog-disclaimer'));
 	}
 
-	var cookieLang=getCookie('lang');
-	if(cookieLang && typeof cookieLang==='string'){
-		el('lang-selector').selectedIndex=parseInt(cookieLang);
-		updateLangIcon(parseInt(cookieLang));
-	}
+	document.getElementById('lang-selector').value=EditorSettings.language;
+	UI.Home.updateLanguageIcon();
 
 	hide('loading');
 	show('loadform');
@@ -412,6 +505,7 @@ function Town(){
 	this.nBuildingsEvent=savegame.readU8(Offsets.MAP_N_BUILDINGS_EVENT);
 
 	this.treeSize=savegame.readU8(parseInt(Offsets.TOWN_TREESIZE)); //01-07
+	this.cliffSide=savegame.readU8(Offsets.TOWN_CLIFF_SIDE); //00-01???
 	this.grassType=savegame.readU8(Offsets.TOWN_GRASSTYPE); //00-02
 	this.grassTypeIsland=savegame.readU8(Offsets.ISLAND_GRASSTYPE); //00-02
 
@@ -509,11 +603,11 @@ Town.prototype.fixBuildingCounters=function(){
 	}
 	
 	if(nBuildings!==this.nBuildings){
-		MarcDialogs.alert('Building counter has been fixed ('+this.nBuildings+' &raquo; '+nBuildings+').');
+		UI.Snackbars.show('Building counter has been fixed ('+this.nBuildings+' &raquo; '+nBuildings+').');
 		this.nBuildings=nBuildings;
 	}
 	if(nBuildingsEvent!==this.nBuildingsEvent){
-		MarcDialogs.alert('Building counter has been fixed ('+this.nBuildingsEvent+' &raquo; '+nBuildingsEvent+').');
+		UI.Snackbars.show('Building counter has been fixed ('+this.nBuildingsEvent+' &raquo; '+nBuildingsEvent+').');
 		this.nBuildingsEvent=nBuildingsEvent;
 	}
 }
@@ -563,6 +657,7 @@ Town.prototype.save=function(){
 	savegame.writeU8(Offsets.MAP_N_BUILDINGS_EVENT, this.nBuildingsEvent);
 
 	savegame.writeU8(Offsets.TOWN_NATIVEFRUIT, this.nativeFruit);
+	savegame.writeU8(Offsets.TOWN_CLIFF_SIDE, this.cliffSide);
 	savegame.writeU8(Offsets.TOWN_GRASSTYPE, this.grassType);
 	savegame.writeU8(Offsets.ISLAND_GRASSTYPE, this.grassTypeIsland);
 
@@ -785,7 +880,13 @@ ItemGrid.prototype.repaintTile=function(i){
 		else
 			this._ctx.fillStyle='#3cde30'
 
-		this._ctx.fillRect(x, y, this.tileSize, this.tileSize);
+		if(players && this.belongsToMap===map && item.id===0x009d && el('checkbox-render-patterns').checked){
+			const player=(item.flag1 >> 4) & 0b00000011;
+			const pattern=item.flag1 & 0b00001111;
+			this._ctx.drawImage(players[player].patterns[pattern].canvas, x, y, this.tileSize, this.tileSize);
+		}else{
+			this._ctx.fillRect(x, y, this.tileSize, this.tileSize);
+		}
 
 		var icon=0;
 		if(!el('item_'+item.id)){
@@ -833,16 +934,6 @@ acresImage.src='./resources/acres.png';
 
 
 
-function mouseDown(evt,itemGridObj){
-	if(evt.which==3)
-		mouseHeld=2;
-	else if(evt.which==1)
-		mouseHeld=1;
-	else mouseHeld=0;
-
-	click(evt,itemGridObj,true);
-}
-function mouseUp(evt){mouseHeld=0}
 
 
 
@@ -851,6 +942,9 @@ function isLockedItem(itemId){
 		(plusMode && ((itemId>=0x341a && itemId<=0x341d) || (itemId>=0x33bc && itemId<=0x33c3)))	
 }
 
+function refreshCurrentItemText(){
+	el('popover-toggler-item').innerHTML=el('items').options[el('items').selectedIndex].text;
+}
 function click(evt,itemGridObj,firstClick){
 	var rect=itemGridObj.canvas.getBoundingClientRect();
 	var x=parseInt((evt.clientX-rect.left)/itemGridObj.tileSize);
@@ -891,7 +985,7 @@ function click(evt,itemGridObj,firstClick){
 			||
 			(el('items').value==0x33a7 && itemGridObj.nItems===1 && itemGridObj.minItem!==Offsets.MIN_SONG)
 		){
-			if(firstClick && itemGridObj.inside && itemSlot.id!==0x7ffe && itemSlot.id!==0x7ffc && itemSlot.id==el('items').value && itemSlot.flag1==el('flag1').decimalValue && itemSlot.flag2==el('flag2').decimalValue){
+			if(firstClick && itemGridObj.inside && itemSlot.id!==0x7ffe && itemSlot.id!==0x7ffc && itemSlot.id==el('items').value && itemSlot.flag1==getFlagByte(1) && itemSlot.flag2==getFlagByte(2)){
 				var rotation=itemSlot.flag2>>4;
 
 				var newFlag2;
@@ -904,45 +998,72 @@ function click(evt,itemGridObj,firstClick){
 				else
 					newFlag2=0x40+(itemSlot.flag2%16)
 
-				setFlag(2, newFlag2);
+				setFlagBits(2, newFlag2);
 			}
 			if(!isLockedItem(el('items').value) && !isLockedItem(itemSlot.id))
-				itemSlot.set(el('flag2').decimalValue,el('flag1').decimalValue,el('items').value);
+				itemSlot.set(getFlagByte(2),getFlagByte(1),el('items').value);
 
 			itemGridObj.repaintTile((parseInt(y*itemGridObj.width)+x));
 		}
-		if(AUTO_INCREMENT)
+		if(EditorSettings.autoIncrement)
 			el('items').selectedIndex=el('items').selectedIndex+1;
 		itemGridObj.itemList.edited=true;
 	}else if(mouseHeld===2){
 		if(!el('item_'+itemSlot.id)){
-			el('item_unk').value=itemSlot.id;
-			el('item_unk').innerHTML='unknown item: 0x'+intToHex(itemSlot.id, 1);
+			const option=document.createElement('option');
+			option.id='item_'+itemSlot.id;
+			option.value=itemSlot.id;
+			option.innerHTML='unknown item: 0x'+intToHex(itemSlot.id, 1);
+			document.getElementById('items').insertBefore(option, document.getElementById('item_32766'));
 		}
 		el('items').value=itemSlot.id;
+		refreshCurrentItemText();
 
-		buildFlagsSelects(itemSlot.flag1, itemSlot.flag2);
+		buildFlagEditor(itemSlot.flag1, itemSlot.flag2);
 	}
 
 
 	if(itemGridObj.belongsToMap){
-		el('debug-name').innerHTML='<b>'+(itemGridObj.startX+x)+'x'+(itemGridObj.startY+y)+':</b> '+itemSlot.name;
+		el('tooltip-name').innerHTML='<b>'+(itemGridObj.startX+x)+'x'+(itemGridObj.startY+y)+':</b> '+itemSlot.name;
 	}else{
-		el('debug-name').innerHTML=itemSlot.name;
+		el('tooltip-name').innerHTML=itemSlot.name;
 	}
-	el('debug-hex').innerHTML=itemSlot.nameHex;
+	el('tooltip-hex').innerHTML=itemSlot.nameHex;
+	if(itemGridObj.belongsToMap===map && itemSlot.id===0x009d &&el('checkbox-render-patterns').checked){
+		const player=(itemSlot.flag1 >> 4) & 0b00000011;
+		const pattern=itemSlot.flag1 & 0b00001111;
+		el('tooltip-pattern').getContext('2d').drawImage(players[player].patterns[pattern].canvas, 0, 0);
+		el('tooltip-pattern').style.display='block';
+	}else{
+		el('tooltip-pattern').style.display='none';
+	}
 
-	el('debug').style.top=window.pageYOffset+24+rect.top+y*itemGridObj.tileSize+'px';
-	el('debug').style.left=rect.left+24+x*itemGridObj.tileSize+'px';
+	el('tooltip').style.top=window.pageYOffset+24+rect.top+y*itemGridObj.tileSize+'px';
+	el('tooltip').style.left=rect.left+24+x*itemGridObj.tileSize+'px';
 }
 
+
+
+const _evtGridMouseDown=function(evt,itemGridObj){
+	if(evt.which==3)
+		mouseHeld=2;
+	else if(evt.which==1)
+		mouseHeld=1;
+	else mouseHeld=0;
+
+	click(evt,itemGridObj,true);
+}
+const _evtGridMouseUp=function(evt){mouseHeld=0}
+const _evtGridMouseEnter=function(){show('tooltip')};
+const _evtgridMouseLeave=function(){hide('tooltip')};
 function addItemGridEvents(itemGridObj){
-	addEvent(itemGridObj.canvas,'click',prevent);
-	addEvent(itemGridObj.canvas,'mousedown',function(evt){mouseDown(evt,itemGridObj)});
-	addEvent(itemGridObj.canvas,'mouseup',mouseUp);
+	addEvent(itemGridObj.canvas,'click',preventDefault);
+	addEvent(itemGridObj.canvas,'mousedown',function(evt){_evtGridMouseDown(evt,itemGridObj)});
+	addEvent(itemGridObj.canvas,'mouseup',_evtGridMouseUp);
 	addEvent(itemGridObj.canvas,'mousemove',function(evt){click(evt,itemGridObj,false)});
 
-	enableDebugOnElement(itemGridObj.canvas);
+	addEvent(itemGridObj.canvas,'mouseenter',_evtGridMouseEnter);
+	addEvent(itemGridObj.canvas,'mouseleave',_evtgridMouseLeave);
 }
 
 function ItemGridMap(type){
@@ -1136,9 +1257,9 @@ function clickGrass(evt,grassMap,firstClick){
 	}
 }
 function addGrassMapEvents(grassMap){
-	addEvent(grassMap.canvas,'click',prevent);
+	addEvent(grassMap.canvas,'click',preventDefault);
 	addEvent(grassMap.canvas,'mousedown',function(evt){mouseDownGrass(evt,grassMap)});
-	addEvent(grassMap.canvas,'mouseup',mouseUp);
+	addEvent(grassMap.canvas,'mouseup',_evtGridMouseUp);
 	addEvent(grassMap.canvas,'mousemove',function(evt){clickGrass(evt,grassMap,false)});
 }
 
@@ -1273,7 +1394,8 @@ function Acre(type, n, itemGrid){
 	this.button.className='acre-button';
 
 	this.span=document.createElement('span');
-	this.span.innerHTML='0x'+intToHex(this.id,1);
+	this.span.className='mono';
+	this.span.innerHTML=intToHex(this.id,1);
 	this.button.appendChild(this.span);
 
 	if(type==='map' && n<=6)
@@ -1282,8 +1404,22 @@ function Acre(type, n, itemGrid){
 	el(type+'-acres').appendChild(this.button);
 	this.refreshThumbnail();
 
-	//addEvent(this.button, 'mousedown', function(){clickAcre(this)});
 	addAcreEvents(this);
+}
+Acre.prototype.isTownPlaza=function(){
+	return this.id===0x07 || this.id===0x08 || this.id===0x09;
+}
+Acre.prototype.hasPond=function(){
+	return this.id===0x03 || this.id===0x04 || this.id===0x05 || this.id===0x0c || this.id===0x0d || this.id===0x0e || this.id===0x0f || this.id===0x12;
+}
+Acre.prototype.hasWaterfallWall=function(){
+	return (!plusMode && (this.id===0x9b || this.id===0xa4)) || (plusMode && (this.id===0x9c || this.id===0xa6));
+}
+Acre.prototype.hasWaterfallSea=function(){
+	return this.id>=0x70 && this.id<=0x84;
+}
+Acre.prototype.hasSlope=function(){
+	return this.id>=0x85 && this.id<=0x99;
 }
 Acre.prototype.setId=function(newId){
 	this.id=newId;
@@ -1309,23 +1445,33 @@ Acre.prototype.refreshThumbnail=function(){
 		this.itemGrid.repaintAll();
 	}
 }
-
-
-
-function addAcreEvents(a){
-	addEvent(a.button, 'mousedown', function(){clickAcre(a)});
-}
-function clickAcre(acre){
+const _evtClickAcre=function(acre){
 	currentEditingItem=acre;
 	MarcDialogs.open('acre');
+	
+	
+	const acreButtons=document.querySelectorAll('#acre-selector .acre-button');
+	acreButtons.forEach(function(acreButton){
+		if(acreButton.acreId===currentEditingItem.id){
+			acreButton.className='acre-button selected';
+			acreButton.scrollIntoView({block:'center'});
+		}else{
+			acreButton.className='acre-button';
+		}
+	});
 }
+function addAcreEvents(a){
+	addEvent(a.button, 'mousedown', function(){_evtClickAcre(a)});
+}
+
+
 function importMap(){importMapOffset(map)}
 function importIsland(){importMapOffset(island)}
 function importMapOffset(mapOffset){
 	var validFileName=checkPlusSavegame(savegame)?'garden_plus':'garden';
 
 	if(!checkValidSavegame(tempFile) || checkPlusSavegame(tempFile)!==checkPlusSavegame(savegame)){
-		MarcDialogs.alert('Invalid '+validFileName+'.dat file.');
+		UI.Snackbars.show('Invalid '+validFileName+'.dat file.', 'danger');
 		return false;
 	}
 
@@ -1436,6 +1582,8 @@ function acceptImportMap(){
 	
 
 	MarcDialogs.close();
+	if(currentEditingItem===map)
+		checkWarnings();
 }
 
 
@@ -1506,6 +1654,12 @@ Building.prototype._refreshMask=function(status, doNotRefreshOtherMasks){
 Building.prototype.isEmpty=function(){
 	return (!plusMode && this.id===0xf8) || (plusMode && this.id===0xfc);
 }
+Building.prototype.isIslandStorageBin=function(){
+	return this.id===0x5c;
+}
+Building.prototype.isDock=function(){
+	return this.id===0x5d;
+}
 Building.prototype.set=function(newId){
 	this._refreshMask(false);
 
@@ -1559,6 +1713,7 @@ Building.prototype._createEditRow=function(){
 
 	
 	this.tr=document.createElement('li');
+	this.tr.className='building-row';
 
 	var divCoord=document.createElement('div');
 	divCoord.className='div-coord';
@@ -1615,6 +1770,8 @@ Building.prototype.setX=function(x){
 	this.inputX.value=this.x;
 
 	this._refreshMask(true);
+	if(this.isDock() || this.isIslandStorageBin())
+		checkWarnings();
 }
 Building.prototype.setY=function(y){
 	this._refreshMask(false);
@@ -1627,6 +1784,8 @@ Building.prototype.setY=function(y){
 	this.inputY.value=this.y;
 
 	this._refreshMask(true);
+	if(this.isDock() || this.isIslandStorageBin())
+		checkWarnings();
 }
 Building.prototype.move=function(x,y){
 	this._refreshMask(false);
@@ -1637,6 +1796,8 @@ Building.prototype.move=function(x,y){
 	this.inputY.value=this.y;
 
 	this._refreshMask(true);
+	if(this.isDock() || this.isIslandStorageBin())
+		checkWarnings();
 }
 function addBuildingEvents(b,inputX,inputY, editButton){
 	addEvent(b.tr, 'mouseenter', function(){
@@ -1687,18 +1848,21 @@ function editBuilding(b){
 }
 
 function addBuilding(){
-	var found=false;
+	var foundEmptySlot=false;
 	var slot=55;
 
 	while(slot>10){
 		if((!plusMode && buildings[slot].id==0xf8) || (plusMode && buildings[slot].id==0xfc)){
 			buildings[slot].set(0x4c);
 			editBuilding(buildings[slot]);
-			
+			foundEmptySlot=true;
 			break;
 		}
 		slot--;
 	}
+
+	if(!foundEmptySlot)
+		UI.Snackbars.show('Building limit reached', 'danger');
 }
 
 
@@ -1748,11 +1912,13 @@ function SimpleVillager(type,n){
 	this.id=savegame.readU16(this.offset);
 
 	if(isValidVillagerId(this.id) || type==='campsite' || (plusMode && this.isCaravan && this.id==0xffff)){
-		this.spanName=createSpan('?');
+		this.spanName=createSpan('');
+		this.spanName.className='editable';
+		this.spanName.appendChild(createSpan('?'));	//name
+		this.spanName.appendChild(createEditButton());
 		this.updateButtonText();
 
-		var editButton=createEditButton();
-		addSimpleVillagerEvents(editButton,this);
+		addSimpleVillagerEvents(this.spanName,this);
 
 		var tr=document.createElement('tr');
 
@@ -1763,7 +1929,6 @@ function SimpleVillager(type,n){
 
 		td=document.createElement('td');
 		td.appendChild(this.spanName);
-		td.appendChild(editButton);
 		tr.appendChild(td);
 
 		if(this.isPastVillager)
@@ -1783,9 +1948,9 @@ SimpleVillager.prototype.setVillager=function(newId){
 }
 SimpleVillager.prototype.updateButtonText=function(){
 	if(this.id==0xffff)
-		this.spanName.innerHTML='(none)';
+		this.spanName.children[0].innerHTML='(none)';
 	else
-		this.spanName.innerHTML=el('villager-new-'+this.id).innerHTML;
+		this.spanName.children[0].innerHTML=el('villager-new-'+this.id).innerHTML;
 }
 
 
@@ -1804,12 +1969,15 @@ function Villager(n){
 	this.letter=new Letter(this.offset+Offsets.VILLAGER_STOREDLETTER);
 
 	if(isValidVillagerId(this.id)){
-		this.spanName=createSpan('?');
+		this.spanName=createSpan('');
+		this.spanName.className='editable';
+		this.spanName.appendChild(createSpan('?'));	//name
+		this.spanName.appendChild(createEditButton());
+
 		this.updateButtonText();
 
-		var editButton=createEditButton();
 
-		addCurrentVillagerEvents(editButton, this);
+		addCurrentVillagerEvents(this.spanName, this);
 
 
 		this.itemGridShirt=new ItemGrid(this.offset+Offsets.VILLAGER_SHIRT, 1, 1, false, Offsets.MIN_SHIRT, Offsets.MAX_SHIRT);
@@ -1828,7 +1996,6 @@ function Villager(n){
 
 		td=document.createElement('td');
 		td.appendChild(this.spanName);
-		td.appendChild(editButton);
 		tr.appendChild(td);
 
 		td=document.createElement('td');
@@ -1951,7 +2118,7 @@ Villager.prototype.updateButtonText=function(){
 	var text=el('villager-new-'+this.id).innerHTML;
 	if(this.isBoxed())
 		text+=' (boxed)';
-	this.spanName.innerHTML=text;
+	this.spanName.children[0].innerHTML=text;
 }
 
 
@@ -2319,7 +2486,7 @@ Player.prototype.refreshJPG=function(){
 }
 Player.prototype.importJPG=function(image){
 	if(image.width!=64||image.height!=104){
-		MarcDialogs.alert('Invalid JPG dimensions (must be 64x104).');
+		UI.Snackbars.show('Invalid JPG dimensions (must be 64x104).', 'danger');
 		return false
 	}
 	var offset=this.offset+Offsets.PLAYER_TPCPIC;
@@ -2336,7 +2503,7 @@ Player.prototype.unlockEmotions=function(){
 		for(var i=0; i<Constants.ALL_EMOTIONS.length; i++){
 			savegame.writeU8(emotionsOffset+i, Constants.ALL_EMOTIONS[i]);
 		}
-		MarcDialogs.alert('Emotions were unlocked for this player.');
+		UI.Snackbars.show('Emotions were unlocked for this player.');
 	});
 }
 Player.prototype.fillEncyclopedia=function(){
@@ -2344,7 +2511,7 @@ Player.prototype.fillEncyclopedia=function(){
 		var encyclopediaOffset=currentPlayer.offset+Offsets.PLAYER_ENCYCLOPEDIA;
 		for(var i=0; i<Constants.FULL_ENCYCLOPEDIA.length; i++)
 			savegame.writeU8(encyclopediaOffset+i, Constants.FULL_ENCYCLOPEDIA[i]);
-		MarcDialogs.alert('Encyclopedia was filled for this player.');
+		UI.Snackbars.show('Encyclopedia was filled for this player.');
 	});
 }
 Player.prototype.fillCatalog=function(){
@@ -2353,7 +2520,7 @@ Player.prototype.fillCatalog=function(){
 		var maxInts=plusMode?106:56; //Non PlusMode size is only estimate
 		for(var i=0; i<maxInts; i++)
 			savegame.writeU32(catalogOffset+i*4, 0xffffffff);
-		MarcDialogs.alert('Catalog was filled for this player.');
+		UI.Snackbars.show('Catalog was filled for this player.');
 	});
 }
 
@@ -2365,10 +2532,10 @@ function changeTPCPic(){
 }
 function changeTPCPic2(){
 	if((tempFile.readU32(0) & 0x00ffffff)!==0x00ffd8ff){
-		MarcDialogs.alert('Invalid pic file (must be a valid JPG file. dimensions: 64x104, max size: 4kb).');
+		UI.Snackbars.show('Invalid pic file (must be a valid JPG file. dimensions: 64x104, max size: 4kb).', 'danger');
 		return false
 	}else if(tempFile.fileSize>5024){
-		MarcDialogs.alert('Too big JPG file (>5024 bytes).');
+		UI.Snackbars.show('Too big JPG file (>5024 bytes).', 'danger');
 		return false
 	}
 	var reader=new FileReader();
@@ -2383,43 +2550,20 @@ function changeTPCPic2(){
 }
 
 
-function showSearchResults(){el('search-results').style.display='block'}
-function hideSearchResults(){el('search-results').style.display='none'}
-function clickOnSearchResult(){el('items').value=this.id;buildFlagsSelects(0,0);hideSearchResults()}
-function searchItem(q){
-	while(el('search-results').children[0]){
-		el('search-results').removeChild(el('search-results').firstChild);
-	}
-
-	if(cleanSearch)
-		q=q.clean();
-	if(!q || q.length<2){
-		return 0
-	}
-
-	var results=0;
-	q=new RegExp(q);
-	var items=el('items').getElementsByTagName('option');
-
-	for(var i=0; i<items.length && results<30; i++){
-		var id=items[i].value;
-		var cleanName=items[i].cleanName;
-
-		if(q.test(cleanName)){
-			var li=document.createElement('li');
-			li.innerHTML=items[i].innerHTML;
-			li.id=id;
-			addEvent(li, 'click', clickOnSearchResult);
-			el('search-results').appendChild(li);
-			results++;
-		}
-	}
-	if(results==30){
-		var li=document.createElement('li');
-		li.innerHTML='too many results...';
-		el('search-results').appendChild(li);
-	}
+function isPopoverOpen(popover){
+	return / open/.test(el('popover-'+popover).className);
 }
+function showPopover(popover){
+	el('popover-'+popover).className='popover open';
+}
+function hidePopover(popover){
+	el('popover-'+popover).className='popover';
+}
+function hidePopovers(){
+	hidePopover('item');
+	hidePopover('flags');
+}
+
 
 
 
@@ -2475,7 +2619,7 @@ function refreshFaceIcon(){
 function refreshBadge(b){
 	if(b){
 		if(currentPlayer.badges[b.badgeId]==0){
-			b.badgeIcon.style.backgroundPosition='-96px -744px';
+			b.badgeIcon.style.backgroundPosition='-96px -760px';
 		}else{
 			b.badgeIcon.style.backgroundPosition='-'+(currentPlayer.badges[b.badgeId]-1)*28+'px -'+(16+(b.badgeId)*28)+'px';
 		}
@@ -2504,80 +2648,148 @@ function addTurnipEvents(dow, AMinput, PMinput){
 	addEvent(PMinput, 'change', function(){town.turnipPrices[dow].PM.set(parseInt(this.value))});
 }
 
+
+
+
 var currentItemGroup=null;
-function buildFlagsSelects(f1,f2){
+function buildFlagEditor(f1,f2){
 	var nextItemGroup=el('item_'+el('items').value).parentElement;
 	if(currentItemGroup!=nextItemGroup){
-		var options1=el('select-flag1').getElementsByTagName('option');
-		for(var i=2; i<options1.length; i++)
-			el('select-flag1').removeChild(options1[i]);
+		el('flag-known').innerHTML='';
+		el('flag-unknown').innerHTML='';
 
-		if(nextItemGroup.flags1){
-			var newFlags1=el('item_'+el('items').value).parentElement.flags1;
+		//build known modifiers
+		const allBits=[
+			{flag:1, bit:0, label:'0', unknown:true},
+			{flag:1, bit:1, label:'1', unknown:true},
+			{flag:1, bit:2, label:'2', unknown:true},
+			{flag:1, bit:3, label:'3', unknown:true},
+			{flag:1, bit:4, label:'4', unknown:true},
+			{flag:1, bit:5, label:'5', unknown:true},
+			{flag:1, bit:6, label:'6', unknown:true},
+			{flag:1, bit:7, label:'7', unknown:true},
+			{flag:2, bit:0, label:'8', unknown:true},
+			{flag:2, bit:1, label:'9', unknown:true},
+			{flag:2, bit:2, label:'10', unknown:true},
+			{flag:2, bit:3, label:'11', unknown:true},
+			{flag:2, bit:4, label:'12', unknown:true},
+			{flag:2, bit:5, label:'13', unknown:true},
+			{flag:2, bit:6, label:'14', unknown:true},
+			{flag:2, bit:7, label:'15', unknown:true}
+		];
 
-			for(var i=0; i<newFlags1.length; i++)
-				el('select-flag1').appendChild(newFlags1[i]);
+		const knownFlags=(nextItemGroup.flags || []).slice();;
+		if(el('tab-selector').children[0].className==='active' || el('tab-selector').children[2].className==='active'){ //town or island
+			knownFlags.unshift({flag:2, bit:7, nBits:1, label:'Buried'});
+		}else{
+			knownFlags.unshift({flag:2, bit:6, nBits:2, values:[{value:0, label:'&darr;'},{value:1, label:'&rarr;'},{value:2, label:'&uarr;'},{value:3, label:'&larr;'}]});
 		}
 
 
 
-		var options2=el('select-flag2').getElementsByTagName('option');
-		for(var i=2; i<options2.length; i++)
-			el('select-flag2').removeChild(options2[i]);
+		knownFlags.forEach(function(bitsInfo){
+			if(!bitsInfo.nBits){
+				if(bitsInfo.values){
+					const maxValue=bitsInfo.values.reduce(function(max, value){return Math.max(max, value.value)}, 0);
+					bitsInfo.nBits=Math.ceil(Math.log2(maxValue+1));
+				}else if(bitsInfo.label){
+					bitsInfo.nBits=1;
+				}else{
+					throw new Error('Invalid group flags');
+				}
+			}
 
+			//remove from allBits
+			for(var i=0; i<bitsInfo.nBits; i++){
+				const index=allBits.findIndex(function(bit){return bit.flag==bitsInfo.flag && bit.bit==bitsInfo.bit+i});
+				if(index>=0)
+					allBits.splice(index, 1);
+			}
+			allBits.push(bitsInfo);
+		});
+		allBits.forEach(function(bitsInfo){
+			const label=document.createElement('label');
+			var nBits=1;
+			if(bitsInfo.values){
+				//many bits
+				label.appendChild(document.createElement('select'));
+				for(var i=0; i<bitsInfo.values.length; i++){
+					label.children[0].appendChild(createOption(bitsInfo.values[i].value, bitsInfo.values[i].label));
+				}
+				const maxValue=bitsInfo.values.reduce(function(max, value){return Math.max(max, value.value)}, 0);
+				nBits=Math.ceil(Math.log2(maxValue+1));
 
-		if(nextItemGroup.flags2){
-			var newFlags2=el('item_'+el('items').value).parentElement.flags2;
+				addEvent(label.children[0],'change', rebuildFlagHex);
+			}else if(bitsInfo.label){
+				//single bit
+				label.appendChild(document.createElement('input'));
+				label.appendChild(document.createTextNode(bitsInfo.label));
+				label.children[0].type='checkbox';
+				addEvent(label.children[0],'change', rebuildFlagHex);
+			}
+			label.children[0].id='flag-'+bitsInfo.flag+'-'+bitsInfo.bit;
+			label.children[0].bitsInfo=bitsInfo;
 
-			for(var i=0; i<newFlags2.length; i++)
-				el('select-flag2').appendChild(newFlags2[i]);
-		}
+			if(bitsInfo.unknown){
+				el('flag-unknown').appendChild(label);
+				label.className='flag-bit mono';
+			}else{
+				el('flag-known').appendChild(label);
+			}
+		});
 	}
 	currentItemGroup=nextItemGroup;
 
-
-	setFlag(1, f1);
-	setFlag(2, f2);
+	setFlagBits(1, f1);
+	setFlagBits(2, f2);
 }
+function setFlagBits(flag, value){
+	for(var i=0; i<8; i++){
+		const htmlElement=el('flag-'+flag+'-'+i);
+		if(!htmlElement)
+			continue;
 
-function setFlag(f, val){
-	if(val==-1){
-		el('select-flag'+f).value=-1;
-		el('flag'+f).disabled=false;
-	}else{
-		var hex=val.toString(16);
-		if(val<16)
-			hex='0'+hex;
-		el('flag'+f).value=hex;
-		setFlagDecimal(f);
-
-
-		if(val==0 || el('flag'+f+'_'+val)){
-			el('select-flag'+f).value=val;
-			el('flag'+f).disabled=true;
+		const nBits=htmlElement.bitsInfo.nBits;
+		if(nBits>1){
+			htmlElement.value=(value >> i) & ((1<<nBits)-1);
 		}else{
-			el('select-flag'+f).value=-1;
-			el('flag'+f).disabled=false;
+			htmlElement.checked=(value & (1<<i));
 		}
-	}	
+	}
+	rebuildFlagHex();
 }
-function cleanFlagInput(f){
-	el('flag'+f).value=el('flag'+f).value.replace(/[^0-9a-f]/i,'');
-	setFlagDecimal(f);
+function rebuildFlagHex(){
+	el('flags-value').innerHTML=intToHex(getFlagByte(2),1)+intToHex(getFlagByte(1),1);
+	var strings=[];
+	const knownFlagElements=el('flag-known').children;
+	for(var i=0; i<knownFlagElements.length; i++){
+		const htmlElement=knownFlagElements[i].children[0];
+		if(htmlElement.bitsInfo.values){
+			strings.push(htmlElement.options[htmlElement.selectedIndex].text);
+		}else if(htmlElement.checked){
+			strings.push(htmlElement.parentElement.innerText);
+		}
+	}
+	el('flags-label').innerHTML=strings.join(', ');
 }
-function setFlagDecimal(f){el('flag'+f).decimalValue=parseInt(el('flag'+f).value, 16)}
+function getFlagByte(flag){
+	var value=0b00000000;
+	for(var i=0; i<8; i++){
+		const htmlElement=el('flag-'+flag+'-'+i);
+		if(!htmlElement)
+			continue;
+		
+		const nBits=htmlElement.bitsInfo.nBits;
+		if(nBits>1){
+			value|=(parseInt(htmlElement.value) & ((1<<nBits)-1)) << i;
+		}else{
+			value|=(htmlElement.checked?1:0) << i;
+		}
+	}
+	return value >>> 0;
+}
 
 
-
-
-
-/*function mouseOverAcre(acre){
-	el('debug-name').innerHTML=acre.n;
-	el('debug-hex').innerHTML=acre.id.toString(16);
-
-	el('debug').style.top=window.pageYOffset+24+parseInt(acre.button.getBoundingClientRect().top)+'px';
-	el('debug').style.left=parseInt(acre.button.getBoundingClientRect().left+24)+'px';
-}*/
 
 
 function Item(offset, n, inside){
@@ -2594,6 +2806,7 @@ Item.prototype.save=function(){
 	savegame.writeU8(this.offset+2, this.flag1);
 	savegame.writeU8(this.offset+3, this.flag2);
 }
+Item.prototype.isRock=function(){return this.id>=0x98 && this.id<=0x9c}
 Item.prototype.isWeed=function(){return (this.id>=0x7c && this.id<=0x7f) || (this.id>=0xcb && this.id<=0xcd) || (this.id==0xf8)}
 Item.prototype.isBuried=function(){return (this.flag2>>4)==0x08}
 Item.prototype.isWatered=function(){return (this.flag2>>4)==0x04}
@@ -2605,6 +2818,8 @@ Item.prototype.set=function(flag2,flag1,id){
 	this.id=parseInt(id);
 
 	this.refreshName();
+	if(!this.inside)
+		checkWarnings();
 }
 Item.prototype.refreshName=function(){
 	/* Update hex and name */
@@ -2630,35 +2845,38 @@ Item.prototype.refreshName=function(){
 }
 
 
-function getSelectedItemName(){
-	return '<i>'+el('item_'+el('items').value).innerHTML+'</i>';
+
+function openReplaceItemDialog(){
+	if(!el('items-replace').innerHTML){
+		el('items-replace').innerHTML=el('items').innerHTML;
+		el('items-replace').value=0x7ffe;
+	}
+
+	const itemReplace=el('items').options[el('items').selectedIndex];
+	el('replace-item-name').innerHTML=itemReplace.text;
+	MarcDialogs.open('replace')
+}
+function acceptReplaceItem(){
+	const itemReplace=el('items').options[el('items').selectedIndex];
+	const itemWith=el('items-replace').options[el('items-replace').selectedIndex];
+
+	if(itemReplace.id!==itemWith.id){
+		const flag1=0x00; //getFlagByte(1);
+		const count=map.replaceItems(parseInt(itemReplace.value), parseInt(itemWith.value), flag1); 
+
+		if(count){
+			if(parseInt(itemReplace.value)===0x7ffe){
+				UI.Snackbars.show(count+' <em>'+itemWith.text+'</em> were added.');
+			}else if(parseInt(itemWith.value)===0x7ffe){
+				UI.Snackbars.show(count+' <em>'+itemReplace.text+'</em> were removed.');
+			}else{
+				UI.Snackbars.show(count+' items were placed with <em>'+itemWith.text+'</em>.');
+			}
+		}
+	}
+	MarcDialogs.close();
 }
 
-
-
-
-function fillAll(){
-	var itemName=getSelectedItemName();
-	MarcDialogs.confirm('Fill all town with '+itemName+'?', function(){
-		var count=map.replaceItems(0x7ffe, el('items').value, el('flag1').value); 
-
-		if(count)
-			MarcDialogs.alert(count+' '+itemName+' were added.');
-		else
-			MarcDialogs.close();
-	});
-}
-function removeAll(){
-	var itemName=getSelectedItemName();
-	MarcDialogs.confirm('Remove all '+itemName+' on town?', function(){
-		var count=map.replaceItems(parseInt(el('items').value), 0x7ffe); 
-
-		if(count)
-			MarcDialogs.alert(count+' '+itemName+' were removed.');
-		else
-			MarcDialogs.close();
-	});
-}
 function acceptMaintenance(){
 	var removedWeeds=0;
 	var wateredFlowers=0;
@@ -2680,19 +2898,18 @@ function acceptMaintenance(){
 		}
 	}
 
-	var messages=[];
-	if(removedWeeds)
-		messages.push(removedWeeds+' weeds were removed.');
-	if(wateredFlowers)
-		messages.push(wateredFlowers+' flowers were watered.');
-	if(perfectizedTrees)
-		messages.push(perfectizedTrees+' normal trees got a single perfect fruit.');
 
-	if(messages[0]){
-		MarcDialogs.alert(messages.join('<br/>'));
+	MarcDialogs.close()
+	if(removedWeeds || wateredFlowers || perfectizedTrees){
+		if(removedWeeds)
+			UI.Snackbars.show(removedWeeds+' weeds were removed.');
+		if(wateredFlowers)
+			UI.Snackbars.show(wateredFlowers+' flowers were watered.');
+		if(perfectizedTrees)
+			UI.Snackbars.show(perfectizedTrees+' normal trees got a single perfect fruit.');
+
 		map.repaint();
-	}else
-		MarcDialogs.close()
+	}
 }
 
 
@@ -2724,9 +2941,66 @@ function refreshSecureValue(){
 
 
 
+function getWarnings(){
+	const warnings=[];
+	if(!map.acres.some((acre) => acre.isTownPlaza())){
+		warnings.push('No town plaza acre found.');
+	}
+	if(!map.acres.some((acre) => acre.hasPond())){
+		warnings.push('No pound acre found.');
+	}
+	if(!map.acres.some((acre) => acre.hasWaterfallWall())){
+		warnings.push('No waterfall (wall) acre found.');
+	}
+	if(!map.acres.some((acre) => acre.hasWaterfallSea())){
+		warnings.push('No waterfall (sea) acre found.');
+	}
+	if(map.acres.filter((acre) => acre.hasSlope()).length<2){
+		warnings.push('Not enough slope acres.');
+	}
+	if(map.items.filter((item) => item.isRock()).length<2){
+		warnings.push('Not enough rocks.');
+	}
+
+	const islandStorageBin=buildings.find((building) => building.isIslandStorageBin());
+	const dock=buildings.find((building) => building.isDock());
+	if(islandStorageBin && dock){
+		if(dock.x!==(islandStorageBin.x-1) || dock.y!==(islandStorageBin.y+8))
+			warnings.push('Dock correct position should be: '+(islandStorageBin.x-1)+'&times;'+(islandStorageBin.y+8));
+	}
+
+	return warnings;
+}
+function checkWarnings(){
+	const nWarnings=getWarnings().length;
+	el('warning-counter').innerHTML=nWarnings;
+	el('button-warnings').style.display=nWarnings?'inline-block':'none';
+}
+
+
+
+
+
+
+
+
+
+
+
+function tryExample(){
+	fetch('./example_garden_plus.dat').then(function(response){
+		return response.arrayBuffer();
+	}).then(function(buffer){
+		const file=new File([new Uint8Array(buffer)], 'garden_plus.dat');
+		loadSavegameFromFile(file);
+		el('save-button').disabled=true;
+	}).catch(function(){
+		UI.Snackbars.show('Can\'t load example file.', 'danger');
+	});
+}
 function loadSavegameFromFile(file){
 	if(!file){
-		MarcDialogs.alert('No savegame was specified.');
+		UI.Snackbars.show('No savegame was specified.', 'danger');
 		return false
 	}
 
@@ -2752,7 +3026,7 @@ function initializeEverything(){
 			524288 & 786432: old RAM dump
 			1183744 & 1245184: mori.bin (LeafTools) RAM dump
 		*/
-		MarcDialogs.alert('<b>WARNING: </b>The savegame file you are trying to open is no longer supported. It will be converted to native garden.dat format automatically after saving.');
+		UI.Snackbars.show('Outdated savegame converted to native <span class="mono">garden.dat</span> format', 'danger');
 		var fixedSavegame=new MarcFile(522752);
 		fixedSavegame.fileName='garden.dat';
 		fixedSavegame.fileType=savegame.fileType;
@@ -2767,7 +3041,7 @@ function initializeEverything(){
 
 	/* check valid ACNL savegame */
 	if(!checkValidSavegame(savegame)){
-		MarcDialogs.alert('Invalid AC:NL savegame file.');
+		UI.Snackbars.show('Invalid AC:NL savegame file.', 'danger');
 		return null;
 	}
 
@@ -2804,8 +3078,6 @@ function initializeEverything2(){
 		hide('town-unlockhhd');
 	}
 
-	addEvent(window, 'click', hideSearchResults);
-	addEvent(el('search-input'), 'click', stopPropagation);
 
 
 
@@ -2840,29 +3112,7 @@ function initializeEverything2(){
 		var itemCounter=0;
 		var firstId=(plusMode && itemGroup.plusId)?itemGroup.plusId:itemGroup.oldId;		
 
-		if(ITEM_GROUPS[i].flags1){
-			optGroup.flags1=[];
-
-			var newFlags1=ITEM_GROUPS[i].flags1;
-			for(var j=0; j<newFlags1.length; j++){
-				var matches=newFlags1[j].match(/^([0-9a-f]{1,2})=(.+)/i);
-				var opt=createOption(parseInt(matches[1], 16), matches[2]);
-				opt.id='flag1_'+parseInt(matches[1], 16);
-				optGroup.flags1.push(opt);
-			}
-		}
-
-		if(ITEM_GROUPS[i].flags2){
-			optGroup.flags2=[];
-
-			var newFlags2=ITEM_GROUPS[i].flags2;
-			for(var j=0; j<newFlags2.length; j++){
-				var matches=newFlags2[j].match(/^([0-9a-f]{1,2})=(.+)/i);
-				var opt=createOption(parseInt(matches[1], 16), matches[2]);
-				opt.id='flag2_'+parseInt(matches[1], 16);
-				optGroup.flags2.push(opt);
-			}
-		}
+		optGroup.flags=ITEM_GROUPS[i].flags || [];
 
 		//var onlyMap=itemGroup.onlyMap;
 		//var onlyPockets=itemGroup.onlyPockets;
@@ -2929,6 +3179,7 @@ function initializeEverything2(){
 			itemCounter++;
 		}
 	}
+	el('items').value=0x7ffe;
 
 	selectBuildings=document.createElement('select');
 	selectBuildings.style.width='250px';
@@ -2989,9 +3240,135 @@ function initializeEverything2(){
 	VILLAGERS_SPECIAL2=null;
 
 
+	/* Item ribbon UI events */
+	addEvent(window, 'click', hidePopovers);
+	addEvent(window, 'keyup', function(evt){
+		if(evt.keyCode===27){ //esc
+			if(isPopoverOpen('item')){
+				hidePopover('item');
+				el('popover-toggler-item').focus();
+			}else if(isPopoverOpen('flags')){
+				hidePopover('flags');
+				el('popover-toggler-flags').focus();
+			}
+		}
+	});
+	addEvent('popover-toggler-item', 'keydown', function(evt){
+		if(evt.keyCode===38 || evt.keyCode===40){ //up or down
+			evt.stopPropagation();
+			evt.preventDefault();
+			const selectedIndex=el('items').selectedIndex>=0? el('items').selectedIndex:0;
+			if(evt.keyCode===38 && selectedIndex>0){ //up
+				el('items').selectedIndex=selectedIndex-1;
+				el('items').dispatchEvent(new Event('change'));
+			}else if(evt.keyCode===40 && selectedIndex<el('items').options.length-1){ //down
+				el('items').selectedIndex=selectedIndex+1;
+				el('items').dispatchEvent(new Event('change'));
+
+			}
+		}
+	});
+	addEvent('popover-toggler-item', 'click', function(evt){
+		evt.stopPropagation();
+		if(!isPopoverOpen('item')){
+			hidePopover('flags');
+			showPopover('item');
+			if(el('items-search').value!==el('items').value){
+				el('items-search').value='';
+				el('search-input').value='';
+			}
+			if(el('search-input').value){
+				show('items-search');
+				hide('items');
+			}else{
+				hide('items-search');
+				show('items');
+			}
+			//scroll #items to selected option
+			//el('items').scrollTop=el('items').options[el('items').selectedIndex].offsetTop;
+			const selectedIndex=el('items').selectedIndex>=0? el('items').selectedIndex:0;
+			el('items').options[selectedIndex].scrollIntoView({block:'center'});
+			el('search-input').focus();
+			el('search-input').select();
+		}else{
+			hidePopover('item');
+		}
+	});
+	addEvent('popover-toggler-flags', 'click', function(evt){evt.stopPropagation(); hidePopover('item'); showPopover('flags')});
+	addEvent('popover-item', 'click', stopPropagation);
+	addEvent('popover-flags', 'click', stopPropagation);
+	addEvent('items', 'change', function(){
+		refreshCurrentItemText();
+		buildFlagEditor(0,0);
+		hidePopover('item');
+		el('popover-toggler-item').focus();
+	});
+	addEvent('items-search', 'change', function(){
+		el('items').value=this.value;
+		el('items').dispatchEvent(new Event('change'));
+	});
+	addEvent('search-input', 'keydown', function(evt){
+		if(evt.keyCode===40){ //down
+			evt.stopPropagation();
+			if(el('items-search').options.length){
+				el('items-search').focus();
+			}else{
+				el('items').focus();
+			}
+		}else if(evt.keyCode===13){ //enter
+			if(el('items-search').options.length){
+				if(el('items-search').options.length===1){
+					el('items-search').selectedIndex=0;
+					el('items-search').dispatchEvent(new Event('change'));
+				}else{
+					el('items-search').focus();
+				}
+			}
+		}
+	});
+	addEvent('search-input', 'input', function(evt){
+		el('items-search').innerHTML='';
+	
+		const q=cleanSearch? this.value.clean() : this.value;
+
+		if(!q || q.length<2){
+			hide('items-search');
+			show('items');
+			return [];
+		}
+
+	
+		const regex=new RegExp(q);
+		var items=el('items').options;
+	
+		const results=Array.from(items).filter((item) => regex.test(item.cleanName)).slice(0,30);
+		results.forEach((item) => {
+			const option=document.createElement('option');
+			option.innerHTML=item.innerHTML;
+			option.value=item.value;
+			el('items-search').appendChild(option);
+		});
+
+		if(results.length){
+			el('items-search').size=results.length;
+			show('items-search');
+			hide('items');
+		}else{
+			hide('items-search');
+			show('items');
+		}
+	
+		if(results>=30){
+			/*
+			var li=document.createElement('li');
+			li.innerHTML='too many results...';
+			el('search-results').appendChild(li);*/
+		}
+		return results;
+	});
+
 	/* Map */
 	map=new ItemGridMap('map');
-
 
 	/* Island map */
 	island=new ItemGridMap('island');
@@ -3094,6 +3471,10 @@ function initializeEverything2(){
 	addSelectOptions('grasstype', 3, ['Triangle / square (winter)', 'Circle / star (winter)', 'Square / circle (winter)']);
 	addSelectEvent('grasstype', function(){town.grassType=this.value});
 	el('select-grasstype').value=town.grassType;
+
+	addSelectOptions('cliffside', 2, ['Left', 'Right']);
+	addSelectEvent('cliffside', function(){town.cliffSide=this.value});
+	el('select-cliffside').value=town.cliffSide;
 
 	addSelectOptions('grasstypeisland', 3, ['Triangle', 'Circle', 'Square']);
 	addSelectEvent('grasstypeisland', function(){town.grassTypeIsland=this.value});
@@ -3235,9 +3616,12 @@ function initializeEverything2(){
 
 
 	/* prepare acre dialog */
-	var chooseAcre=function(){currentEditingItem.setId(this.acreId);MarcDialogs.close()};
+	const _evtClickAcre=function(evt){
+		currentEditingItem.setId(this.acreId);
+		MarcDialogs.close();
+		checkWarnings();
+	};
 	var acreId=0;
-	var ICON_COLS=20;
 	for(var i=0;i<=214;i++){
 		if(!plusMode && (i==0x9b || i==0xa5)){
 			continue;
@@ -3254,17 +3638,18 @@ function initializeEverything2(){
 		button.acreId=acreId;
 
 		var span=document.createElement('span');
-		span.innerHTML='0x'+intToHex(acreId,1);
+		span.className='mono';
+		span.innerHTML=intToHex(acreId,1);
 		button.appendChild(span);
 
 		el('acre-selector').appendChild(button);
 
-		addEvent(button, 'click', chooseAcre);
+		addEvent(button, 'click', _evtClickAcre);
 		acreId++;
 	}
 
-	addEvent(window, 'contextmenu', prevent);
-	addEvent(window, 'mouseup', mouseUp);
+	addEvent(window, 'contextmenu', preventDefault);
+	addEvent(window, 'mouseup', _evtGridMouseUp);
 
 
 	document.body.removeChild(el('home'));
@@ -3273,6 +3658,7 @@ function initializeEverything2(){
 	selectPlayer(0);
 
 	WarnOnLeave.set(true);
+	checkWarnings();
 }
 
 function getAcreThumbnailPosition(i, size){
@@ -3328,7 +3714,10 @@ function selectPlayer(p){
 		for(var i=0; i<4; i++){
 			if(i==p){
 				for(j=0; j<PLAYER_BLOCKS.length; j++)
-					show(PLAYER_BLOCKS[j]+i);
+					if(PLAYER_BLOCKS[j]==='patterns')
+						el(PLAYER_BLOCKS[j]+i).style.display='grid';
+					else
+						show(PLAYER_BLOCKS[j]+i);
 				el('player'+i+'-pic').className='player-button active';
 			}else{
 				for(j=0; j<PLAYER_BLOCKS.length; j++)

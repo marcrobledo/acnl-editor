@@ -28,3 +28,14 @@ Be careful when editing your savegame, always keep a backup of your previous sav
 More info here:
 [How to dump and inject AC:NL savegame](http://www.marcrobledo.com/acnl-editor/help.html#Howto)
 [FAQ](http://www.marcrobledo.com/acnl-editor/help.html#FAQ)
+
+## Thanks
+A lot of thanks to:
+* SciresM for breaking the numeric encryption used in the game
+* kwsch and Mega-Mew for their work in NLSE
+* Thulinma for Pattern structure (check out his editor pattern http://www.thulinma.com/acnl/ )
+* NeoKamek for his work on LeafTools and other help
+* slattz and Cuyler36 for various contributions
+* jexom for documenting grass deterioration
+* froggestspirit for extracting acre information and item list
+* sprungit/shokolad-town for compiling hair style and color thumbnails

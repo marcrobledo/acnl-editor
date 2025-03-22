@@ -4,9 +4,21 @@
 	<title>Animal Crossing: New Leaf Save Editor</title>
 	<link rel="shortcut icon" href="./resources/favicon.png"/>
 	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
-	<meta name="description" content="An Animal Crossing: New Leaf savegame editor. It lets you edit your town, items, villagers and more!"/>
-	<meta name="keywords" content="animal, crossing, new, leaf, save, editor, ram, town, pockets, items, hack, exploit"/>
+	<meta name="description" content="An Animal Crossing: New Leaf savegame editor. Allows town, players, villagers and more editing!"/>
+	<meta name="keywords" content="animal, crossing, new, leaf, save, editor, map, player, town, pockets, items, hack, exploit"/>
 	<link type="text/css" rel="stylesheet" href="./resources/acnl_editor.css" media="all"/>
+
+	<!-- social network metatags -->	
+	<meta name="twitter:site" content="@marc_robledo">
+	<meta name="twitter:creator" content="@marc_robledo">
+	<meta name="twitter:domain" content="marcrobledo.com">
+	<meta property="og:title" content="Animal Crossing: New Leaf Save Editor">
+	<meta name="twitter:title" content="Animal Crossing: New Leaf Save Editor">
+	<meta name="twitter:description" content="Web based Animal Crossing: New Leaf savegame editor. Allows town, players, villagers and more editing!">
+	<meta property="og:image" content="https://www.marcrobledo.com/acnl-editor/resources/thumbnail.jpg">
+	<meta name="twitter:image" content="https://www.marcrobledo.com/acnl-editor/resources/thumbnail.jpg">
+	<meta name="twitter:card" content="photo">
+
 	<script type="text/javascript" src="./js/checksum.js"></script>
 	<script type="text/javascript" src="./js/patterns.js"></script>
 	<script type="text/javascript" src="./js/data_types.js"></script>
@@ -20,33 +32,28 @@
 
 
 <div id="home">
-	<div class="title">
-		<span class="logo"></span>
-		<h1>Animal Crossing: New Leaf Save Editor</h1>
-		<div class="author">
-			by <a href="http://www.marcrobledo.com" target="_blank">Marc Robledo</a> <span class="last-update">(last updated on 23th Apr 2020)</span>
+	<div id="home-wrapper">
+		<div id="title">
+			<span class="logo"></span>
+			<h1>Animal Crossing: New Leaf Save Editor</h1>
+			<div id="anniversary" onclick="MarcDialogs.open('anniversary')">
+				Celebrating 10 years of AC:NL Save Editor!
+			</div>
+			<div id="last-update">
+				<span>(last updated on 22th Mar 2025)</span>
+			</div>
 		</div>
-
-		<div id="help">
-			<a href="help.html" target="_blank">About</a> | 
-			<a href="help.html#Homebrew" target="_blank">How to</a> | 
-			<a href="https://github.com/marcrobledo/acnl-editor/releases">Download</a> | 
-			<a href="help.html#FAQ" target="_blank">FAQ</a>
-		</div>
-	</div>
-
-	<div id="blocks">
-		<div id="contribute"><a href="https://www.paypal.me/marcrobledo" target="_blank" rel="nofollow"><span>Feel free to contribute by making a donation!</span><span class="donate"><span class="sprite heart"></span> Donate</span></a></div>
-
-		<div class="block block-warning center open" id="block-warning">
-			Use this tool at your own risk.<br/>
-			By using it, you are responsible of any data lost.
-		</div>
+		<a href="https://www.paypal.me/marcrobledo" target="_blank" rel="nofollow" id="contribute"><span>Help to keep this site up by making a donation!</span> <button id="donate-button"><span class="sprite heart"></span> Donate</button></a>
 
 		<div class="block">
-			<label for="lang-selector">Select item language:</label> <span id="lang-flag" class="sprite flag flag-en"></span>
-			<select onchange="setCookie('lang',this.selectedIndex); updateLangIcon(this.selectedIndex)" id="lang-selector">
-				<option value="0" selected="selected">English</option>
+			<div id="block-warning">
+				Use this tool at your own risk.<br/>
+				By using it, you are responsible of any data lost.
+			</div>
+
+			<label>Select item language: <span id="lang-flag" class="sprite flag flag-en"></span>
+			<select id="lang-selector">
+				<option value="en" selected="selected">English</option>
 				<option value="enu">English (UK)</option>
 				<option value="fr">Français</option>
 				<option value="de">Deutsch</option>
@@ -54,49 +61,78 @@
 				<option value="es">Español</option>
 				<option value="jp">Japanese</option>
 				<option value="kr">Korean</option>
-			</select>
+			</select></label>
 
-			<hr/>
+			<div class="margin-top-sm"></div>
 			<span id="loading">Loading editor, please wait...</span>
 			<form id="loadform" style="display:none">
-				Open your <u>garden.dat</u> or <u>garden_plus.dat</u> file here:<br/>
-				<input type="file" accept=".dat" onchange="loadSavegameFromFile(this.files[0])"/>
+				<button id="open-savegame-button" type="button" class="green" onclick="el('file-garden').click();">
+					<div>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M2.8 14A1.8 1.8 0 0 1 1 12.2V9.8a.8.8 0 0 1 1.5 0v2.4c0 .2.1.3.3.3h10.4a.3.3 0 0 0 .3-.3V9.8a.8.8 0 0 1 1.5 0v2.4a1.8 1.8 0 0 1-1.8 1.8Z"/><path d="M11.8 4.7a.7.7 0 1 1-1 1l-2-1.9v5.7a.8.8 0 0 1-1.6 0V3.8l-2 2a.7.7 0 1 1-1-1l3.3-3.3a.7.7 0 0 1 1 0l3.3 3.2Z"/></svg>
+					</div>
+					<div>
+						Open AC:NL savegame file<br/><small>(<span class="mono">garden.dat</span> or <span class="mono">garden_plus.dat</span>)</small>
+					</div>
+				</button>
+				
+				<input type="file" id="file-garden" accept=".dat" style="display:none" onchange="loadSavegameFromFile(this.files[0])"/>
 			</form>
+			<!-- <small>or <span class="editable" onclick="tryExample();">try an example file</span></small> -->
+		</div>
+
+		<div id="footer">
+			by <a href="https://www.marcrobledo.com" target="_blank">Marc Robledo</a> | 
+			<a href="help.html" target="_blank">Instructions &amp; FAQ</a> | 
+			<a href="https://github.com/marcrobledo/acnl-editor/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 0 1 8 8 8 8 0 0 1-5.5 7.6c-.3 0-.5-.2-.5-.4V13c0-.7-.2-1.2-.5-1.5 1.7-.2 3.6-.9 3.6-4 0-.8-.3-1.5-.8-2 0-.3.4-1 0-2.2 0 0-.8-.2-2.3.8a7.4 7.4 0 0 0-4 0c-1.5-1-2.2-.8-2.2-.8-.4 1.1-.1 2 0 2.1a3 3 0 0 0-.9 2.2c0 3 1.9 3.7 3.7 4-.3.1-.5.5-.6 1-.4.2-1.6.5-2.3-.7-.1-.2-.6-.8-1.2-.8-.7 0-.3.4 0 .5.3.2.7 1 .8 1.2.2.4.7 1.3 2.7 1v1.4c0 .2-.1.5-.5.4A8 8 0 0 1 0 8a8 8 0 0 1 8-8Z"/></svg> GitHub repo</a>
 		</div>
 	</div>
 </div>
 
 
 <div id="header">
+	<div id="header-wrapper">
+		<div>
+			<span class="logo"></span>
+			<div id="itemsribbon">
+				<label>
+					Current item:
+					<button id="popover-toggler-item" class="popover-toggler">
+						-
+					</button>
+				</label>
+				<label class="margin-left-sm">
+					Flags:
+					<button id="popover-toggler-flags" class="popover-toggler">
+						<span id="flags-value" class="mono">0000</span>
+						<span id="flags-label"></span>
+					</button>
+				</label>
+				<div id="popover-item" class="popover">
+					<input type="text" id="search-input" placeholder="Search item..." autocomplete="off" />
+					<select id="items-search" class="margin-top-sm" size="1"></select>
+					<select id="items" class="margin-top-sm" size="30"><option value="32766" id="item_32766">-</option><option value="32764" id="item_32764">- (occupied room tile) -</option></select>
+				</div>
+				<div id="popover-flags" class="popover">
+					<div id="flag-known"></div>
+					<hr/>
+					Unknown bits: <div id="flag-unknown">
+					</div>
+				</div>
+			</div>
 
-	<div id="itemsribbon">
-		<input type="text" id="search-input" onkeyup="searchItem(this.value)" onfocus="showSearchResults();" placeholder="Search item..." />
-		<ul id="search-results"></ul>
-		<label for="items">Current item:</label> <select id="items" onchange="buildFlagsSelects(0,0);"><option value="32766" id="item_32766">-</option><option value="32764" id="item_32764">- (occupied room tile) -</option><option value="32766" id="item_unk">unknown item</option></select>
-		<label for="flag1">Flag 1:</label>
-		<input type="text" id="flag1" disabled="disabled" length="2" oninput="cleanFlagInput(1)" maxlength="2"/>
-		<select id="select-flag1" onchange="setFlag(1, parseInt(this.value))">
-			<option value="-1">custom</option>
-			<option value="0" selected="selected">none</option>
-		</select>
-		<label for="flag2">Flag 2:</label>
-		<input type="text" id="flag2" disabled="disabled" length="2" oninput="cleanFlagInput(2)" maxlength="2" />
-		<select id="select-flag2" onchange="setFlag(2,parseInt(this.value))">
-			<option value="-1">custom</option>
-			<option value="0" selected="selected">none</option>
-		</select>
+			<div id="tab-selector">
+				<span class="active">Town</span>
+				<span>Players</span>
+				<span>Island</span>
+				<span>Villagers</span>
+				<span>Shops</span>
+				<span>Other</span>
+			</div>
+		</div>
+		<div>
+			<button id="save-button" onclick="saveChanges()"><span class="sprite save-icon"></span> Save changes</button>
+		</div>
 	</div>
-
-	<span class="logo"></span>
-	<div id="tab-selector">
-		<span class="active">Map</span>
-		<span>Players</span>
-		<span>Island</span>
-		<span>Villagers</span>
-		<span>Shops</span>
-		<span>Other</span>
-	</div>
-	<button id="save-button" onclick="saveChanges()"><span class="sprite save-icon"></span> Save changes</button>
 </div>
 
 
@@ -105,62 +141,73 @@
 
 
 
-<div id="debug"><div id="debug-name"></div><div id="debug-hex"></div></div>
+<div id="tooltip"><div id="tooltip-name"></div><div id="tooltip-hex"></div><canvas id="tooltip-pattern" width="32" height="32"></canvas></div>
 
 <div id="editor" style="display:none">
 
 
 
 
-<div id="tab-map">
-	<div style="float:right;width:360px">
-		<h3 class="no-separation">Buildings</h3>
-		<ul id="buildings" class="building-list"></ul>
-		<div class="text-center"><button onclick="addBuilding()">Add building</button></div>
+<div id="tab-town" class="tab">
+	<div class="row space-between">
+		<div id="column-town-map">
+			<h3>Town map</h3>
+			<div id="map-map" class="map"></div>
+			<div class="row space-between">
+				<div>
+					Options:
+					<button onclick="openReplaceItemDialog();">Replace items</button>
+					<button onclick="MarcDialogs.open('maintenance')">Maintenance</button>
+					<button onclick="tempFileLoadFunction=importMap; el('file-load').accept='.dat';el('file-load').click()">Import map</button>
+				</div>
+				<div style="align-items: center;display: flex;gap: 8px;">
+					<label><input type="checkbox" id="checkbox-render-patterns" onchange="map.repaint()" /> Show patterns</label>
+					<button id="button-warnings" class="orange" onclick="MarcDialogs.alert('<strong>Warnings:</strong><br/>'+getWarnings().join('<br/>'))"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1a1.7 1.7 0 0 1 3 0l6.1 11.4a1.8 1.8 0 0 1-1.5 2.6H1.9a1.8 1.8 0 0 1-1.5-2.6Zm1.7.8a.3.3 0 0 0-.4 0L1.7 13a.3.3 0 0 0 .2.4h12.2a.3.3 0 0 0 .2-.4Zm.5 4v2.5a.8.8 0 0 1-1.5 0V5.7a.8.8 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/></svg> <span id="warning-counter"></span></button>
+				</div>
+			</div>
+		</div>
+		<div id="column-town-buildings">
+			<h3>Town buildings</h3>
+			<ul id="buildings" class="building-list"></ul>
+			<div class="text-center"><button onclick="addBuilding()">Add building</button></div>
+		</div>
 	</div>
-	<div id="map-map" class="map"></div>
 
-	<br style="clear:both; display:block"/>
-	Options:
-	<button onclick="fillAll()">Fill all</button>
-	<button onclick="removeAll()">Remove all</button>
-	&nbsp;&nbsp;&nbsp;
-	<button onclick="MarcDialogs.open('maintenance')">Maintenance</button>
-	&nbsp;&nbsp;&nbsp;
-	<button onclick="tempFileLoadFunction=importMap; el('file-load').accept='.dat';el('file-load').click()">Import map</button>
 
-	<div class="row">
-		<div class="column column-5">
-			<h3>Acres</h3>
+	<div class="row space-around margin-top-lg">
+		<div>
+			<h3>Town acres</h3>
 			<div id="map-acres"></div>
 		</div>
 
-		<div class="column column-5">
-			<h3>Grass</h3>
+		<div class="text-center">
+			<h3>Town grass</h3>
 			<div id="grass-quads"></div>
-			<label>Pencil size: <select id="select-grass-pencil-size" onchange="grassPencilSize=this.selectedIndex">
-				<option>1</option>
-				<option>2</option>
-				<option selected>3</option>
-				<option>4</option>
-			</select></label>
-			<label>Intensity: <select id="select-grass-intensity" onchange="grassPencilIntensity=((this.selectedIndex+1)*32)-1">
-				<option value="32">Min</option>
-				<option value="64">2</option>
-				<option value="96">3</option>
-				<option value="128">4</option>
-				<option value="160">5</option>
-				<option value="192">6</option>
-				<option value="224">7</option>
-				<option value="255" selected>Max</option>
-			</select></label>
+			<div class="margin-top-sm">
+				<label>Pencil size: <select id="select-grass-pencil-size" onchange="grassPencilSize=this.selectedIndex">
+					<option>1</option>
+					<option>2</option>
+					<option selected>3</option>
+					<option>4</option>
+				</select></label>
+				<label>Intensity: <select id="select-grass-intensity" onchange="grassPencilIntensity=((this.selectedIndex+1)*32)-1">
+					<option value="32">Min</option>
+					<option value="64">2</option>
+					<option value="96">3</option>
+					<option value="128">4</option>
+					<option value="160">5</option>
+					<option value="192">6</option>
+					<option value="224">7</option>
+					<option value="255" selected>Max</option>
+				</select></label>
+			</div>
 		</div>
 	</div>
 
 
 </div>
 
-<div id="tab-players" style="display:none" class="with-sticky-ribbon">
+<div id="tab-players" style="display:none">
 	<div id="player-selector">
 		<input type="image" class="button" src="" id="player0-pic" onclick="selectPlayer(0)"/>
 		<input type="image" class="button" src="" id="player1-pic" onclick="selectPlayer(1)"/>
@@ -168,9 +215,9 @@
 		<input type="image" class="button" src="" id="player3-pic" onclick="selectPlayer(3)"/>
 	</div>
 
-	<div class="row">
-		<div class="column column-4">
-			<h3 class="no-separation">Player info</h3>
+	<div class="row space-between margin-top-md">
+		<div>
+			<h3>Player info</h3>
 			<table>
 				<tr>
 					<td><label for="player-name">Name/SID:</label></td>
@@ -246,29 +293,31 @@
 				</tr>
 			</table>
 		</div>
-		<div class="column column-7">
-			<h3 class="no-separation">Items</h3>
+		<div style="flex-grow:1">
+			<h3>Items</h3>
 
+			<div id="pockets">Pockets: </div>
+			<div class="row margin-top-sm">
+				<div id="dresser0">Dresser A:<br/></div>
+				<div id="dresser1">Dresser B:<br/></div>
+				<div id="dresser2">Dresser C:<br/></div>
+				<div id="islandbox">Island box:<br/></div>
+			</div>
+			<div id="column-storage" class="margin-top-sm">Storage room:</div>
 			<div class="row">
-				<div class="column column-12" id="pockets">Pockets: </div>
-
-				<div class="column column-3" id="dresser0">Dresser A:<br/></div>
-				<div class="column column-3" id="dresser1">Dresser B:<br/></div>
-				<div class="column column-3" id="dresser2">Dresser C:<br/></div>
-				<div class="column column-3" id="islandbox">Island box:<br/></div>
-
-				<div class="column column-12" id="column-storage">Storage room:</div>
-				<div class="column column-3" id="storage0"></div>
-				<div class="column column-3" id="storage1"></div>
-				<div class="column column-3" id="storage2"></div>
-				<div class="column column-3" id="storage3"></div>
+				<div id="storage0"></div>
+				<div id="storage1"></div>
+				<div id="storage2"></div>
+				<div id="storage3"></div>
 			</div>
 		</div>
 	</div>
 
-	<div class="row">
+	<div class="margin-top-lg">
 		<h3>House exterior</h3>
-		<div class="column column-5">
+	</div>
+	<div class="row space-around">
+		<div>
 			<table>
 				<tr><td><label for="select-house-style">House style:</label></td><td><select id="select-house-style"></select></td></tr>
 				<tr><td><label for="select-house-brick">House brick:</label></td><td><select id="select-house-brick"></select></td></tr>
@@ -276,7 +325,7 @@
 				<tr><td>House door:</td><td><select id="select-house-doorshape"></select> <select id="select-house-door"></select></td></tr>
 			</table>
 		</div>
-		<div class="column column-5">
+		<div>
 			<table>
 				<tr><td><label for="select-house-fence">House fence:</label></td><td><select id="select-house-fence"></select></td></tr>
 				<tr><td><label for="select-house-pavement">House pavement:</label></td><td><select id="select-house-pavement"></select></td></tr>
@@ -285,41 +334,41 @@
 		</div>
 	</div>
 
-	<div class="row">
-		<div class="column column-4">
+	<div class="row space-around margin-top-lg">
+		<div>
 			<h3>Patterns</h3>
 			<div id="patterns0" class="player-patterns"></div>
 			<div id="patterns1" class="player-patterns"></div>
 			<div id="patterns2" class="player-patterns"></div>
 			<div id="patterns3" class="player-patterns"></div>
 		</div>
-		<div class="column column-7">
+		<div>
 			<h3>Badges</h3>
 			<ul id="badges"></ul>
 		</div>
 	</div>
 
-	<div class="row">
-		<div class="column column-5 room-container" id="rooms0">
+	<div class="row space-around margin-top-lg">
+		<div class="room-container" id="rooms0">
 			<h3>Main room</h3>
 		</div>
-		<div class="column column-5 room-container" id="rooms1">
+		<div class="room-container" id="rooms1">
 			<h3>Attic</h3>
 		</div>
 	</div>
-	<div class="row">
-		<div class="column column-5 room-container" id="rooms2">
+	<div class="row space-around margin-top-md">
+		<div class="room-container" id="rooms2">
 			<h3>Basement</h3>
 		</div>
-		<div class="column column-5 room-container" id="rooms3">
+		<div class="room-container" id="rooms3">
 			<h3>East room</h3>
 		</div>
 	</div>
-	<div class="row">
-		<div class="column column-5 room-container" id="rooms4">
+	<div class="row space-around margin-top-md">
+		<div class="room-container" id="rooms4">
 			<h3>West room</h3>
 		</div>
-		<div class="column column-5 room-container" id="rooms5">
+		<div class="room-container" id="rooms5">
 			<h3>North room</h3>
 		</div>
 	</div>
@@ -327,88 +376,97 @@
 
 
 <div id="tab-island" style="display:none">
-	<div id="map-island" class="map"></div>
-
-	<div class="row">
-		<div class="column column-5">
-			<h3>Acres</h3>
-			<div id="island-acres"></div><br/>
-			<button onclick="tempFileLoadFunction=importIsland; el('file-load').accept='.dat';el('file-load').click()">Import map</button>
+	<div class="row space-around">
+		<div>
+			<h3>Island map</h3>
+			<div id="map-island" class="map"></div>
 		</div>
-
-		<div class="column column-5">
-			<h3>Buildings</h3>
+		<div style="min-width:320px">
+			<h3>Island buildings</h3>
 			<ul id="buildings-island" class="building-list"></ul>
 		</div>
 	</div>
 
-</div>
+	<div class="row space-around margin-top-lg">
+		<div>
+			<h3>Island acres</h3>
+			<div id="island-acres"></div><br/>
+			<button onclick="tempFileLoadFunction=importIsland; el('file-load').accept='.dat';el('file-load').click()">Import map</button>
+		</div>
+	</div>
 
-<div id="tab-shops" style="display:none">
-	<table>
-		<tr><td>Retail:</td><td><div id="shop-retail"></div></td></tr>
-		<tr><td>T&amp;T:</td><td><div id="shop-nook"></div></td></tr>
-		<tr><td>Gracie:</td><td><div id="shop-gracie"></div></td></tr>
-		<tr><td>Nook's homes:</td><td><div id="shop-homes"></div></td></tr>
-		<tr><td>Leif:</td><td><div id="shop-leif"></div></td></tr>
-		<tr><td>Able sisters (clothes):</td><td><div id="shop-able1"></div></td></tr>
-		<tr><td>Able sisters (accesories):</td><td><div id="shop-able2"></div></td></tr>
-		<tr><td>Able sisters (patterns):</td><td><div id="labelle" class="patterns-labelle"></div></td></tr>
-		<tr><td>Kicks:</td><td><div id="shop-kicks"></div></td></tr>
-		<tr><td>Redd:</td><td><div id="shop-redd"></div></td></tr>
-		<tr><td>Island shop:</td><td><div id="shop-island"></div></td></tr>
-		<tr><td>Museum shop:</td><td><div id="shop-museum"></div></td></tr>
-		<tr><td>Lost &amp; found:</td><td><div id="lostfound"></div></td></tr>
-		<tr><td>Club LOL gyroids:</td><td><div id="lol-gyroids"></div></td></tr>
-		<tr id="tr-shop-harvey"><td>Harvey:</td><td><div id="shop-harvey"></div></td></tr>
-		<tr>
-			<td>Turnip  prices:</td>
-			<td>
-				<table>
-					<tr><th></th><th>AM</th><th>PM</th></tr>
-					<tbody id="table-turnip-prices">
-						<tr><td>Monday</td></tr>
-						<tr><td>Tuesday</td></tr>
-						<tr><td>Wednesday</td></tr>
-						<tr><td>Thursday</td></tr>
-						<tr><td>Friday</td></tr>
-						<tr><td>Saturday</td></tr>
-					</tbody>
-				</table>
-			</td>
-		</tr>
-	</table>
 </div>
 
 <div id="tab-villagers" style="display:none">
-	<div class="row">
-		<h3 class="no-separation">Current villagers</h3>
-		<table id="villagers">
-			<tr><td></td><td></td><th>Wall</th><th>Floor</th><th>Song</th><th>Shirt</th><th>Umbrella</th><th>Furniture</th><th>Catchphrase</th></tr>
-		</table>
+	<div class="row space-around">
+		<div>
+			<h3>Current residents</h3>
+			<table id="villagers">
+				<tr><td></td><td></td><th>Wall</th><th>Floor</th><th>Song</th><th>Shirt</th><th>Umbrella</th><th>Furniture</th><th>Catchphrase</th></tr>
+			</table>
+		</div>
 	</div>
 
-	<div class="row">
-		<div class="column column-5">
-			<h3>Past villagers</h3>
+	<div class="row space-around margin-top-lg">
+		<div>
+			<h3>Past residents</h3>
 			<div class="row">
-				<div class="column column-6"><table id="past-villagers1"></table></div>
-				<div class="column column-6"><table id="past-villagers2"></table></div>
+				<div style="width:144px"><table id="past-villagers1"></table></div>
+				<div style="width:144px"><table id="past-villagers2"></table></div>
 			</div>
 			
 		</div>
 
-		<div class="column column-5" id="column-caravan">
+		<div id="column-caravan">
 			<h3>Campsite &amp; caravans</h3>
 			<table id="caravan-villagers"></table>
 		</div>
 	</div>
 </div>
 
+<div id="tab-shops" style="display:none">
+	<div class="row space-around">
+		<div>
+			<h3>Shop items</h3>
+			<table>
+				<tr><td>Retail:</td><td><div id="shop-retail"></div></td></tr>
+				<tr><td>T&amp;T:</td><td><div id="shop-nook"></div></td></tr>
+				<tr><td>Gracie:</td><td><div id="shop-gracie"></div></td></tr>
+				<tr><td>Nook's homes:</td><td><div id="shop-homes"></div></td></tr>
+				<tr><td>Leif:</td><td><div id="shop-leif"></div></td></tr>
+				<tr><td>Able sisters (clothes):</td><td><div id="shop-able1"></div></td></tr>
+				<tr><td>Able sisters (accesories):</td><td><div id="shop-able2"></div></td></tr>
+				<tr><td>Able sisters (patterns):</td><td><div id="labelle" class="patterns-labelle"></div></td></tr>
+				<tr><td>Kicks:</td><td><div id="shop-kicks"></div></td></tr>
+				<tr><td>Redd:</td><td><div id="shop-redd"></div></td></tr>
+				<tr><td>Island shop:</td><td><div id="shop-island"></div></td></tr>
+				<tr><td>Museum shop:</td><td><div id="shop-museum"></div></td></tr>
+				<tr><td>Lost &amp; found:</td><td><div id="lostfound"></div></td></tr>
+				<tr><td>Club LOL gyroids:</td><td><div id="lol-gyroids"></div></td></tr>
+				<tr id="tr-shop-harvey"><td>Harvey:</td><td><div id="shop-harvey"></div></td></tr>
+			</table>
+		</div>
+		<div>
+			<h3>Turnip prices</h3>
+			<table>
+				<tr><th></th><th>AM</th><th>PM</th></tr>
+				<tbody id="table-turnip-prices">
+					<tr><td>Monday</td></tr>
+					<tr><td>Tuesday</td></tr>
+					<tr><td>Wednesday</td></tr>
+					<tr><td>Thursday</td></tr>
+					<tr><td>Friday</td></tr>
+					<tr><td>Saturday</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
 <div id="tab-other" style="display:none">
-	<h3 class="no-separation">Town info</h3>
-	<div class="row">
-		<div class="column column-5">
+	<h3>Town info</h3>
+	<div class="row space-between">
+		<div>
 			<table>
 				<tr>
 					<td>Town name/SID:</td><td><div id="town-name"></div> <span id="town-id" class="mono"></span></td>
@@ -418,6 +476,9 @@
 				</tr>
 				<tr>
 					<td><label for="grasstype">Grass type:</label></td><td><select id="select-grasstype"></select></td>
+				</tr>
+				<tr>
+					<td><label for="cliffside">Cliff side:</label></td><td><select id="select-cliffside"></select></td>
 				</tr>
 				<tr>
 					<td><label for="grasstype">Grass type (island):</label></td><td><select id="select-grasstypeisland"></select></td>
@@ -439,7 +500,7 @@
 				</tr>
 			</table>
 		</div>
-		<div class="column column-5">
+		<div>
 			<table>
 				<tr>
 					<td><label for="towntreesize">Town tree size stage:</label></td><td><select id="select-towntreesize"></select></td>
@@ -465,19 +526,19 @@
 		</div>
 	</div>
 
-	<div class="row">
-		<div id="museumroom0" class="column column-5 room-container">
+	<div class="row space-around margin-top-lg">
+		<div id="museumroom0" class="room-container">
 			<h3>Museum Room 1</h3>
 		</div>
-		<div id="museumroom2" class="column column-5 room-container">
+		<div id="museumroom2" class="room-container">
 			<h3>Museum Room 3</h3>
 		</div>
 	</div>
-	<div class="row">
-		<div id="museumroom1" class="column column-5 room-container">
+	<div class="row space-around margin-top-md">
+		<div id="museumroom1" class="room-container">
 			<h3>Museum Room 2</h3>
 		</div>
-		<div id="museumroom3" class="column column-5 room-container">
+		<div id="museumroom3" class="room-container">
 			<h3>Museum Room 4</h3>
 		</div>
 	</div>
@@ -495,7 +556,7 @@
 	You are responsible of any data lost.<br/><br/>
 	Be careful when editing your savegame, always keep a backup of your previous savegame.
 	<div class="buttons">
-		<button class="red" onclick="acceptDisclaimer()">I accept</button>
+		<button class="red" id="button-hide-disclaimer">I accept</button>
 	</div>
 </div>
 
@@ -533,6 +594,20 @@
 	</div>
 </div>
 
+<div id="dialog-replace" class="dialog">
+	<div>
+		Replace <em id="replace-item-name"></em> with
+	</div>
+	<div>
+		<select id="items-replace"></select>
+	</div>
+
+	<div class="buttons">
+		<button class="blue" onclick="acceptReplaceItem()">Replace</button>
+		<button onclick="MarcDialogs.close()">Cancel</button>
+	</div>
+</div>
+
 <div id="dialog-acre" class="dialog">
 	Select an acre to replace.<br/>
 	<b class="warning">Warning!</b> An invalid acre structure might freeze the game while booting. <a href="help.html#Warnings" class="help" target="_blank">More info</a>
@@ -543,7 +618,7 @@
 	<img src="" id="pattern-preview"/><br/>
 	<span id="pattern-preview-title"></span>
 
-	<a href="https://www.thulinma.com/acnl/" target="_blank">Edit</a>
+	<a href="https://acpatterns.com/editor" target="_blank">Edit</a>
 	<div class="buttons">
 		<button onclick="el('file-load').accept='.acnl';el('file-load').click()">Import pattern</button>
 		<button onclick="currentEditingItem.export()">Export pattern</button>
@@ -567,6 +642,43 @@
 </div>
 
 
+
+<div id="dialog-anniversary" class="dialog">
+	<div style="max-height:400px; overflow-y:scroll; padding-right: 6px;">
+		<p style="font-weight:bold;">
+			I can't believe it's been a decade!
+		</p>
+		<p>
+			It was 2014 when I lost my 3DS, which included my valuable AC:NL savegame with 1000+ hours of playtime.<br/>
+			I quickly grabbed a cheaper 2DS and managed to recover my eShop account and my digital AC:NL copy but, unfortunately, my savegame was forever gone... or so I thought.
+		</p>
+		<p>
+			I had put so much effort into it and I didn't feel like starting again.<br/>
+			But when the first 3DS RAM exploits were released, I was able to download a partial copy of my savegame from Dream Suite servers.<br/>
+			With that copy I would be able to start a new town and try to replicate the exact town I had before, including my mansion, its villagers and more.<br/>
+			I only needed a way to edit the savegame and, luckily with the RAM injection method and a lot of help from the community, I was able to create this editor and finally recover most of my savegame.
+		</p>
+		<p>
+			While I did it for personal purposes, I decided to make it public and honestly, I never expected it to become so popular.<br/>
+			Even after New Horizons release, AC:NL Save Editor still gets thousands of visits every month, and I'm glad to see it still being useful to so many people.
+		</p>
+		<p style="font-size:80%">
+			(I must admit I am not proud of the messy code. It was one of my first big web projects and I had learnt a lot since then.)
+		</p>
+		<p>
+			Despite having decided to stop updating the editor some years ago, I couldn't let the 10th anniversary of its release go by without a special update.<br/>
+			Enjoy it with some UI tweaks and a bunch of lil' new features, I hope you like them!
+		</p>
+		<p>
+			Thank you for all the feedback and support I've received over these years &lt;3,<br/>
+			<em>--Marc</em>
+		</p>
+		<div class="buttons">
+			<button onclick="MarcDialogs.close()">Close</button>
+		</div>
+	</div>
+
+</div>
 
 </body>
 </html>
