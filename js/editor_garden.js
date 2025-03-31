@@ -1,7 +1,7 @@
 /*
 * Animal Crossing: New Leaf Save Editor
 * Online savegame editor for ACNL videogame
-* (last update: 2025-03-19)
+* (last update: 2025-03-31)
 * By Marc Robledo https://www.marcrobledo.com
 *
 * License:
@@ -255,6 +255,7 @@ const OffsetsPlus={
 	PLAYER_EMOTIONS:		0x89d0,
 	PLAYER_MEOW:			0x8d1c,
 	PLAYER_DRESSERS:		0x92f0,
+	PLAYER_CENSUS_MENU:		0x572f,
 	PLAYER_SIZE:			0xa480,
 	PLAYER_EXTERIORS:		0xa0+0x05d864,
 	PLAYER_ROOMS:			0x05d97a,
@@ -2504,6 +2505,7 @@ Player.prototype.unlockEmotions=function(){
 			savegame.writeU8(emotionsOffset+i, Constants.ALL_EMOTIONS[i]);
 		}
 		UI.Snackbars.show('Emotions were unlocked for this player.');
+		MarcDialogs.close();
 	});
 }
 Player.prototype.fillEncyclopedia=function(){
@@ -2512,6 +2514,7 @@ Player.prototype.fillEncyclopedia=function(){
 		for(var i=0; i<Constants.FULL_ENCYCLOPEDIA.length; i++)
 			savegame.writeU8(encyclopediaOffset+i, Constants.FULL_ENCYCLOPEDIA[i]);
 		UI.Snackbars.show('Encyclopedia was filled for this player.');
+		MarcDialogs.close();
 	});
 }
 Player.prototype.fillCatalog=function(){
@@ -2521,7 +2524,31 @@ Player.prototype.fillCatalog=function(){
 		for(var i=0; i<maxInts; i++)
 			savegame.writeU32(catalogOffset+i*4, 0xffffffff);
 		UI.Snackbars.show('Catalog was filled for this player.');
+		MarcDialogs.close();
 	});
+}
+Player.prototype.toggleCensusMenu=function(){
+	if(!plusMode){
+		UI.Snackbars.show('This option is only available in Welcome Amiibo.', 'warning');
+		return false;
+	}
+	const censusOMenuffset=currentPlayer.offset+Offsets.PLAYER_CENSUS_MENU;
+	const censusMenuStatus=savegame.readU8(censusOMenuffset);
+	const CENSUS_MENU_MASK=0x40;
+
+	if(censusMenuStatus & CENSUS_MENU_MASK){
+		MarcDialogs.confirm('Do you want to disable census menu for this player?', function(){
+			savegame.writeU8(censusOMenuffset, censusMenuStatus & ~CENSUS_MENU_MASK);
+			UI.Snackbars.show('Census menu disabled.');
+			MarcDialogs.close();
+		});
+	}else{
+		MarcDialogs.confirm('Do you want to enable census menu for this player?', function(){
+			savegame.writeU8(censusOMenuffset, censusMenuStatus | CENSUS_MENU_MASK);
+			UI.Snackbars.show('Census menu enabled.');
+			MarcDialogs.close();
+		});	}
+	return true;
 }
 
 
