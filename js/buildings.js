@@ -1,7 +1,7 @@
 /*
 	Building list for Animal Crossing: New Leaf (Welcome amiibo)
 
-	FORMAT: [id,plusId,group,mask,name,lockInEditor]
+	FORMAT: [id,plusId,group,mask,name]
 
 	MASK COORDS:
 	0xbb,0xab,0x9b,0x0b,0x1b,0x2b,0x3b
@@ -186,8 +186,8 @@ var BUILDINGS=[
 [0xd7,0xd9,0,BUILDING_MASK_BUS_STOP,["bus stop","arrêt de bus","Bushaltestelle","fermata dell&#39;autobus","parada de autobús"]],
 [0xd8,0xda,0,BUILDING_MASK_1x1,["fire hydrant","borne incendie","Hydrant","idrante antincendio","boca de incendio"]],
 [0xd9,0xdb,0,BUILDING_MASK_1x1,["traffic signal","feu piétons","Ampel","semaforo","semáforo"]],
-[0xda,0xdc,-1,BUILDING_MASK_1x1,["custom-design sign","panneau motif perso","Designschild","cartello modello pers.","panel de diseño"],true],
-[0xdb,0xdd,-1,BUILDING_MASK_1x1,["face-cutout standee","panneau photo","Fotowand","sagoma per le foto","panel para fotos"],true],
+[0xda,0xdc,4,BUILDING_MASK_1x1,["custom-design sign","panneau motif perso","Designschild","cartello modello pers.","panel de diseño"]],
+[0xdb,0xdd,4,BUILDING_MASK_1x1,["face-cutout standee","panneau photo","Fotowand","sagoma per le foto","panel para fotos"]],
 [0xdc,0xde,0,BUILDING_MASK_1x1,["caution sign","panneau avertissement","Warnschild","segnale di pericolo","señal de peligro"]],
 [0xdd,0xdf,0,BUILDING_MASK_1x1,["do-not-enter sign","panneau d&#39;interdiction","Verbotsschild","segnale di divieto","prohibido el paso"]],
 [0xde,0xe0,0,BUILDING_MASK_1x1,["yield sign","panneau de priorité","Vorfahrtsschild","segnale di precedenza","ceda el paso"]],

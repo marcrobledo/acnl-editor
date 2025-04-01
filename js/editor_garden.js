@@ -1,7 +1,7 @@
 /*
 * Animal Crossing: New Leaf Save Editor
 * Online savegame editor for ACNL videogame
-* (last update: 2025-03-31)
+* (last update: 2025-04-01)
 * By Marc Robledo https://www.marcrobledo.com
 *
 * License:
@@ -93,6 +93,7 @@ var Offsets={
 	MAP_N_BUILDINGS_EVENT:	0x80+0x049525,
 	MAP_BUILDINGS:			0x80+0x049528,
 	MAP_ITEMS:				0x80+0x04da58,
+	MAP_PWP_PATTERNS:		0x049690,
 
 	ISLAND_GRASSTYPE:		0x80+0x06a406,
 	ISLAND_ACRES:			0x80+0x06a408,
@@ -207,6 +208,7 @@ const OffsetsPlus={
 	MAP_N_BUILDINGS_EVENT:	0x04be85,
 	MAP_BUILDINGS:			0x04be88,
 	MAP_ITEMS:				0x0534d8,
+	MAP_PWP_PATTERNS:		0x04bf70,
 
 	ISLAND_GRASSTYPE:		0x06feb6,
 	ISLAND_ACRES:			0x06feb8,
@@ -1661,6 +1663,9 @@ Building.prototype.isIslandStorageBin=function(){
 Building.prototype.isDock=function(){
 	return this.id===0x5d;
 }
+Building.prototype.isCustomDesign=function(){
+	return (!plusMode && (this.id==0xda || this.id==0xdb)) || (plusMode && (this.id==0xdc || this.id==0xdd));
+}
 Building.prototype.set=function(newId){
 	this._refreshMask(false);
 
@@ -1725,13 +1730,6 @@ Building.prototype._createEditRow=function(){
 	this.inputY=createInput(this.y);
 	addNumericInputEvent(this.inputY, 0, 94);
 
-	if(
-	(!plusMode && (this.id==0xda || this.id==0xdb)) ||
-	(plusMode && (this.id==0xdc || this.id==0xdd))
-	){
-		this.inputX.disabled=true;
-		this.inputY.disabled=true;
-	}
 	divCoord.appendChild(this.inputX);
 	divCoord.appendChild(createSpan('&times;'));
 	divCoord.appendChild(this.inputY);
@@ -1791,10 +1789,25 @@ Building.prototype.setY=function(y){
 Building.prototype.move=function(x,y){
 	this._refreshMask(false);
 
+	if(this.isCustomDesign() && !this.customPatternOffset){
+		for(var i=0; i<8 && !this.customPatternOffset; i++){
+			const offset=Offsets.MAP_PWP_PATTERNS+(0x0878 * i);
+			const patternX=savegame.readU8(offset + 0x0870);
+			const patternY=savegame.readU8(offset + 0x0870 + 4);
+			if(patternX===this.x && patternY===this.y){
+				this.customPatternOffset=offset;
+			}
+		}
+	}
+
 	this.x=isNaN(x)?16:x;
 	this.y=isNaN(y)?16:y;
 	this.inputX.value=this.x;
 	this.inputY.value=this.y;
+	if(this.isCustomDesign()){
+		savegame.writeU8(this.customPatternOffset + 0x0870, this.x);
+		savegame.writeU8(this.customPatternOffset + 0x0870 + 4, this.y);
+	}
 
 	this._refreshMask(true);
 	if(this.isDock() || this.isIslandStorageBin())
@@ -3015,7 +3028,10 @@ function checkWarnings(){
 
 
 function tryExample(){
-	fetch('./example_garden_plus.dat').then(function(response){
+	el('loading').innerHTML='Downloading example file...';
+	hide('loadform');
+	show('loading');
+	fetch('./resources/garden_plus_example.dat').then(function(response){
 		return response.arrayBuffer();
 	}).then(function(buffer){
 		const file=new File([new Uint8Array(buffer)], 'garden_plus.dat');
