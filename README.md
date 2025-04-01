@@ -39,3 +39,4 @@ A lot of thanks to:
 * jexom for documenting grass deterioration
 * froggestspirit for extracting acre information and item list
 * sprungit/shokolad-town for compiling hair style and color thumbnails
+* Luricky0 for finding out how the custom pattern PWPs work
