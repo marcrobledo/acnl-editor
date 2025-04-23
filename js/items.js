@@ -198,7 +198,7 @@ var ITEM_GROUPS=[
 "cedar (bees)",,
 "cedar (money 1)",,
 "cedar (money 2)",,
-null,,
+"cedar (egg)",,
 "cedar (festive lights)",
 ]},
 
