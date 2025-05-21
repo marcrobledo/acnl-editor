@@ -1,174 +1,240 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>Help - Animal Crossing: New Leaf Save Editor</title>
 	<link rel="shortcut icon" href="./data/favicon.png" />
-	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
+	<meta http-equiv="content-Type" content="text/html; charset=UTF-8" />
 	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
 	<meta name="description" content="An Animal Crossing: New Leaf town and items editor." />
 	<meta name="keywords" content="animal, crossing, new, leaf, save, editor, ram, town, pockets, items, hack, exploit" />
 	<script type="text/javascript">
-		function copyToClipboard(text){
-			var input=document.createElement('input');
-			input.value=text;
-			
+		function copyToClipboard(text) {
+			var input = document.createElement('input');
+			input.value = text;
+
 			document.body.appendChild(input);
 
 			input.select();
 			input.setSelectionRange(0, 99999); /* mobile fix */
 
 			document.execCommand('copy');
-			
+
 			document.body.removeChild(input);
 		}
 	</script>
-	<style type="text/css"><!--
-/* Open Sans */
-@font-face{font-family:'Open Sans';font-style:normal;font-weight:normal;src:local('Open Sans Light'),local('OpenSans-Light'),url(https://fonts.gstatic.com/s/opensans/v13/DXI1ORHCpsQm3Vp6mXoaTegdm0LZdjqr5-oayXSOefg.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2212,U+2215,U+E0FF,U+EFFD,U+F000}
-@font-face{font-family:'Open Sans';font-style:normal;font-weight:bold;src:local('Open Sans Semibold'),local('OpenSans-Semibold'),url(https://fonts.gstatic.com/s/opensans/v13/MTP_ySUJH_bn48VBG8sNSugdm0LZdjqr5-oayXSOefg.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2212,U+2215,U+E0FF,U+EFFD,U+F000}
+	<style type="text/css">
+		<!--
+		/* Open Sans */
+		@font-face {
+			font-family: 'Open Sans';
+			font-style: normal;
+			font-weight: normal;
+			src: local('Open Sans Light'), local('OpenSans-Light'), url(https://fonts.gstatic.com/s/opensans/v13/DXI1ORHCpsQm3Vp6mXoaTegdm0LZdjqr5-oayXSOefg.woff2) format('woff2');
+			unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000
+		}
+
+		@font-face {
+			font-family: 'Open Sans';
+			font-style: normal;
+			font-weight: bold;
+			src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(https://fonts.gstatic.com/s/opensans/v13/MTP_ySUJH_bn48VBG8sNSugdm0LZdjqr5-oayXSOefg.woff2) format('woff2');
+			unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000
+		}
 
 
 
-body{
-	font:16px 'Open Sans', sans-serif;
-	color: #374551;
-	margin: 50px;
-	line-height: 1.7;
-	background-color:#f8f8f8;
-}
-#wrapper{
-	max-width: 960px;
-	margin: 0 auto;
-}
-h1{
-	background-color:#467845;
-	background-image: url(./resources/logo.png);
-	background-size: 64px 64px;
-	background-repeat:no-repeat;
-	background-position: 40px 20px;
-	padding: 30px;
-	margin:0 auto 20px;
-	border-radius:10px;
-	text-align:center;
-	color:white;
-	font-weight:bold;
-	font-size: 160%;
-}
-h2{color: #408041; border-left: 14px solid #226624; padding-left: 20px}
-h3{color: #e18200; margin: 40px 0 10px;}
-a{color: #408041; font-weight: bold;}
-a:hover{color: #a6e1a7}
+		body {
+			font: 16px 'Open Sans', sans-serif;
+			color: #374551;
+			margin: 50px;
+			line-height: 1.7;
+			background-color: #f8f8f8;
+		}
 
-small{color: #8795a1}
-hr{border: none; border-bottom: 1px dotted #8795a1; margin: 60px 0}
+		#wrapper {
+			max-width: 960px;
+			margin: 0 auto;
+		}
 
-.warning{display: block; font-weight:bold; text-shadow: #a00000 0 1px;background-color: red; color: white; text-align:center; padding: 8px; border-radius:3px}
+		h1 {
+			background-color: #467845;
+			background-image: url(./resources/logo.png);
+			background-size: 64px 64px;
+			background-repeat: no-repeat;
+			background-position: 40px 20px;
+			padding: 30px;
+			margin: 0 auto 20px;
+			border-radius: 10px;
+			text-align: center;
+			color: white;
+			font-weight: bold;
+			font-size: 160%;
+		}
 
-.app-icon{
-	background:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAQCAMAAABA3o1rAAAAYFBMVEVeKYhqLJtvLKVvOpdwLKh4OK2CSq+QKCiYcbWfOTilKSmuisqwKCiwKyqyLSy1NTS3WVe4RUS4nMu5cm/GstXIgX/OmZjQwNzdvLnl2+rs2NTu4N3u5+zy7fD29vX4+vhHHc5MAAAA0UlEQVQYGQXBAW7TQBAAwLn12U6dVFFV+P8DQSCkqolj3y4z7QYAeAIAAgAJAOSAADLJa28AmcnaEeBY3tZhugDy7MtSdb+hw/hY2Z4eBbL9uDJ+j38I5PuKeBNA3TdMPzUE6gLaus0gbg3i+hkEtgboHXJugGUmMAFFAxNQrHQyoB7HZS2oG+Sfcb/sBDXB63nueUAEvPbzbx4E2wRZzu+EeYYvjl/JtFBZVWNvRnGqV+RQ3xGJzni0CAKg9r01GtAzqDEAcjSAhOpjAABVAMB/MvJhk51+UiQAAAAASUVORK5CYII=');
-	vertical-align:middle;
-	width:16px;height:16px;
-	display:inline-block;
-}
-.app-icon.purple{
-	background-position: -16px 0;
-}
+		h2 {
+			color: #408041;
+			border-left: 14px solid #226624;
+			padding-left: 20px
+		}
+
+		h3 {
+			color: #e18200;
+			margin: 40px 0 10px;
+		}
+
+		a {
+			color: #408041;
+			font-weight: bold;
+		}
+
+		a:hover {
+			color: #a6e1a7
+		}
+
+		small {
+			color: #8795a1
+		}
+
+		hr {
+			border: none;
+			border-bottom: 1px dotted #8795a1;
+			margin: 60px 0
+		}
+
+		.warning {
+			display: block;
+			font-weight: bold;
+			text-shadow: #a00000 0 1px;
+			background-color: red;
+			color: white;
+			text-align: center;
+			padding: 8px;
+			border-radius: 3px
+		}
+
+		.app-icon {
+			background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAQCAMAAABA3o1rAAAAYFBMVEVeKYhqLJtvLKVvOpdwLKh4OK2CSq+QKCiYcbWfOTilKSmuisqwKCiwKyqyLSy1NTS3WVe4RUS4nMu5cm/GstXIgX/OmZjQwNzdvLnl2+rs2NTu4N3u5+zy7fD29vX4+vhHHc5MAAAA0UlEQVQYGQXBAW7TQBAAwLn12U6dVFFV+P8DQSCkqolj3y4z7QYAeAIAAgAJAOSAADLJa28AmcnaEeBY3tZhugDy7MtSdb+hw/hY2Z4eBbL9uDJ+j38I5PuKeBNA3TdMPzUE6gLaus0gbg3i+hkEtgboHXJugGUmMAFFAxNQrHQyoB7HZS2oG+Sfcb/sBDXB63nueUAEvPbzbx4E2wRZzu+EeYYvjl/JtFBZVWNvRnGqV+RQ3xGJzni0CAKg9r01GtAzqDEAcjSAhOpjAABVAMB/MvJhk51+UiQAAAAASUVORK5CYII=');
+			vertical-align: middle;
+			width: 16px;
+			height: 16px;
+			display: inline-block;
+		}
+
+		.app-icon.purple {
+			background-position: -16px 0;
+		}
 
 
 
 
-@media only screen and (max-width: 721px){
-	body{font-size:14px; line-height: 1.4; margin: 24px}
-}
---></style>
+		@media only screen and (max-width: 721px) {
+			body {
+				font-size: 14px;
+				line-height: 1.4;
+				margin: 24px
+			}
+		}
+		-->
+	</style>
 </head>
-<body><div id="wrapper">
-<h1>Animal Crossing: New Leaf Save Editor</h1>
 
-<a href="./">Animal Crossing: New Leaf Save Editor</a> lets you edit your Animal Crossing: New Leaf savegame.<br/>
-<b>Features:</b>
+<body>
+	<div id="wrapper">
+		<h1>Animal Crossing: New Leaf Save Editor</h1>
+
+		<a href="./">Animal Crossing: New Leaf Save Editor</a> lets you edit your Animal Crossing: New Leaf savegame.<br />
+		<b>Features:</b>
 
 
-<ul>
-	<li>can edit any ACNL savegame (including Welcome Amiibo)</li>
-	<li>
-		can edit your town
 		<ul>
-			<li>acres, river, waterfalls and ponds</li>
-			<li>name, town hall and train station roof colors</li>
-			<li>move buildings, houses, rocks and more at your own</li>
+			<li>can edit any ACNL savegame (including Welcome Amiibo)</li>
+			<li>
+				can edit your town
+				<ul>
+					<li>acres, river, waterfalls and ponds</li>
+					<li>name, town hall and train station roof colors</li>
+					<li>move buildings, houses, rocks and more at your own</li>
+				</ul>
+			</li>
+			<li>can edit your player characters (name, face and gender, TPC pic, inventory and rooms)</li>
+			<li>can edit your villagers (animals, campsite and caravan zone)</li>
+			<li>other cool things
+				<ul>
+					<li>put all perfect fruit trees in your town</li>
+					<li>put both police stations in your town</li>
+					<li>put anything in the beach, the river or the island</li>
+					<li>put various plaza tree anywhere</li>
+					<li>let Holden/Filly join your town</li>
+					<li>get a tan even in winter</li>
+					<li>change ground grass shape</li>
+					<li>place unused players' patterns on ground</li>
+					<li>...and more!</li>
+				</ul>
+			</li>
 		</ul>
-	</li>
-	<li>can edit your player characters (name, face and gender, TPC pic, inventory and rooms)</li>
-	<li>can edit your villagers (animals, campsite and caravan zone)</li>
-	<li>other cool things
+		Please read the <a href="#Howto">Instructions</a> and the <a href="#FAQ">FAQ</a> carefully.<br /><br />
+
+		<div class="warning">
+			This app can damage your savegame if not used correctly. I'm not responsible of any data lost.<br />
+			Be careful when editing your savegame, always keep backups of your savegame.
+		</div>
+
+
+
+		<hr />
+
+
+		<h2 id="Howto">How to dump and inject AC:NL savegame</h2>
+		<h3>Requirements</h3>
 		<ul>
-			<li>put all perfect fruit trees in your town</li>
-			<li>put both police stations in your town</li>
-			<li>put anything in the beach, the river or the island</li>
-			<li>put various plaza tree anywhere</li>
-			<li>let Holden/Filly join your town</li>
-			<li>get a tan even in winter</li>
-			<li>change ground grass shape</li>
-			<li>place unused players' patterns on ground</li>
-			<li>...and more!</li>
+			<li>a hacked Nintendo 3DS/XL, New Nintendo 3DS/XL, Nintendo 2DS or New Nintendo 2DS XL</li>
+			<li>retail/digital version of AC:NL with or without Welcome amiibo update</li>
+			<li>an updated web browser (recommended: <a href="http://www.mozilla.com">Firefox</a>)</li>
 		</ul>
-	</li>
-</ul>
-Please read the <a href="#Howto">Instructions</a> and the <a href="#FAQ">FAQ</a> carefully.<br/><br/>
-
-<div class="warning">
-	This app can damage your savegame if not used correctly. I'm not responsible of any data lost.<br/>
-	Be careful when editing your savegame, always keep backups of your savegame.
-</div>
 
 
 
-<hr />
-
-
-<h2 id="Howto">How to dump and inject AC:NL savegame</h2>
-<h3>Requirements</h3>
-<ul>
-	<li>a hacked Nintendo 3DS/XL, New Nintendo 3DS/XL, Nintendo 2DS or New Nintendo 2DS XL</li>
-	<li>retail/digital version of AC:NL with or without Welcome amiibo update</li>
-	<li>an updated web browser (recommended: <a href="http://www.mozilla.com">Firefox</a>)</li>
-</ul>
+		<h3>Hack your 3DS</h3>
+		Follow <a href="https://3ds.hacks.guide/" target="_blank">this guide</a> in order to hack your 3DS. This is a
+		necessary step. You will only need to do this once.<br /><br />
+		The guide above will install a CFW (along <a href="https://github.com/FlagBrew/Checkpoint/"
+			target="_blank">Checkpoint</a>) that allows to run unsigned code in your 3DS. This will allow us to run <a
+			href="https://github.com/FlagBrew/Checkpoint/" target="_blank">Checkpoint</a>, which is a simple program that can
+		extract AC:NL (and other games aswell) savegame then reinsert it after being edited with the editor.
 
 
 
-<h3>Hack your 3DS</h3>
-Follow <a href="https://3ds.hacks.guide/" target="_blank">this guide</a> in order to hack your 3DS. This is a necessary step. You will only need to do this once.<br/><br/>
-The guide above will install a CFW (along <a href="https://github.com/FlagBrew/Checkpoint/" target="_blank">Checkpoint</a>) that allows to run unsigned code in your 3DS. This will allow us to run <a href="https://github.com/FlagBrew/Checkpoint/" target="_blank">Checkpoint</a>, which is a simple program that can extract AC:NL (and other games aswell) savegame then reinsert it after being edited with the editor.
+		<h3>Extract savegame</h3>
+		<ol>
+			<li>Open <strong>Homebrew Launcher</strong></li>
+			<li>Open <strong>Checkpoint</strong></li>
+			<li>Choose <strong>AC:NL icon</strong> and press A</li>
+			<li>Choose <strong>Backup (L)</strong> and type a name for the savegame backup</li>
+			<li>Power down the console, take out the SD card and put in the PC</li>
+		</ol>
 
 
 
-<h3>Extract savegame</h3>
-<ol>
-	<li>Open <strong>Homebrew Launcher</strong></li>
-	<li>Open <strong>Checkpoint</strong></li>
-	<li>Choose <strong>AC:NL icon</strong> and press A</li>
-	<li>Choose <strong>Backup (L)</strong> and type a name for the savegame backup</li>
-	<li>Power down the console, take out the SD card and put in the PC</li>
-</ol>
+		<h3>Insert savegame</h3>
+		<ol>
+			<li>Browse your SD card and make a backup of <strong>/3DS/Checkpoint/saves/Animal Crossing New
+					Leaf/[your_savegame_name]/</strong> entire folder</li>
+			<li>Open <strong>/3DS/Checkpoint/saves/Animal Crossing New Leaf/[your_savegame_name]/garden.dat (or
+					garden_plus.dat)</strong> file with <a href="./">AC:NL Save Editor</a> and edit it to your desire</li>
+			<li>Save the edited town as <b>/3DS/Checkpoint/saves/Animal Crossing New Leaf/[your_savegame_name]/garden.dat (or
+					garden_plus.dat)</b> in the SD <small>(make sure you are overwriting the original file and not creating a
+					copy)</small></li>
+			<li>Insert the SD card in the console</li>
+			<li>Open <strong>Homebrew Launcher</strong></li>
+			<li>Open <strong>Checkpoint</strong></li>
+			<li>Choose <strong>AC:NL icon</strong> and press A</li>
+			<li>Choose <strong>Restore (R)</strong> and select [your_savegame_name] folder</li>
+			<li>Run AC:NL and get ingame, your changes should be there!</li>
+		</ol>
 
 
-
-<h3>Insert savegame</h3>
-<ol>
-	<li>Browse your SD card and make a backup of <strong>/3DS/Checkpoint/saves/Animal Crossing New Leaf/[your_savegame_name]/</strong> entire folder</li>
-	<li>Open <strong>/3DS/Checkpoint/saves/Animal Crossing New Leaf/[your_savegame_name]/garden.dat (or garden_plus.dat)</strong> file with <a href="./">AC:NL Save Editor</a> and edit it to your desire</li>
-	<li>Save the edited town as <b>/3DS/Checkpoint/saves/Animal Crossing New Leaf/[your_savegame_name]/garden.dat (or garden_plus.dat)</b> in the SD <small>(make sure you are overwriting the original file and not creating a copy)</small></li>
-	<li>Insert the SD card in the console</li>
-	<li>Open <strong>Homebrew Launcher</strong></li>
-	<li>Open <strong>Checkpoint</strong></li>
-	<li>Choose <strong>AC:NL icon</strong> and press A</li>
-	<li>Choose <strong>Restore (R)</strong> and select [your_savegame_name] folder</li>
-	<li>Run AC:NL and get ingame, your changes should be there!</li>
-</ol>
-
-
-<!--
+		<!--
 <h3>Important note</h3>
 The game has an anti-cheat protection, so you cannot inject an old savegame or another's player savegame.<br/>
 Make sure you always inject the latest savegame, dump it before editing as it's explained here and you will be fine.<br/>
@@ -177,241 +243,256 @@ Alternatively you can use <span class="app-icon purple"></span> svdt which skips
 
 
 
-<hr />
+		<hr />
 
 
-<h2 id="FAQ">FAQ</h2>
+		<h2 id="FAQ">FAQ</h2>
 
-<!-- <h3>Will I be banned if I play online with a hacked savegame?</h3>
+		<!-- <h3>Will I be banned if I play online with a hacked savegame?</h3>
 Yes, you might be banned from online functions if you change your TPC pic and use the Club Tortimer.<br/> -->
 
-<h3>How can I rotate furniture in rooms?</h3>
-Right click on the desired furniture then left click to rotate it.
+		<h3>How can I rotate furniture in rooms?</h3>
+		Right click on the desired furniture then left click to rotate it.
 
-<h3>How can I place perfect fruit trees?</h3>
-Select the desired tree in the Current item dropdown menu, then choose Perfect 4 in the Flag 1 dropdown menu. You can even put non-native perfect fruit trees!<br/>
-You can also place rare mixed perfect fruit trees (2 normal fruit+1 perfect fruit). Right click on any of your normal fruit trees in your town, choose 0x01 mixed perfect in the Flag 2 dropdown menu then overwrite it in the map (or whever you want to place it).
+		<h3>How can I place perfect fruit trees?</h3>
+		Select the desired tree in the Current item dropdown menu, then choose Perfect 4 in the Flag 1 dropdown menu. You
+		can even put non-native perfect fruit trees!<br />
+		You can also place rare mixed perfect fruit trees (2 normal fruit+1 perfect fruit). Right click on any of your
+		normal fruit trees in your town, choose 0x01 mixed perfect in the Flag 2 dropdown menu then overwrite it in the map
+		(or whever you want to place it).
 
-<!-- <h3>Can I add new buildings with the editor?</h3>
+		<!-- <h3>Can I add new buildings with the editor?</h3>
 No. The option was disabled since it lead to some glitches at a later point.
 It's better to let the game do it by itself. Just add any new PWP (street lamp, for example) in-game with Isabelle, pay it, then wait for the next day so you can edit it in the editor. -->
 
-<h3>How can I move a building?</h3>
-There are two ways to move a building:
-<ul>
-	<li>Mouse over the map, the cursor will turn into a hand if the existing building in the spot can be moved. Click and hold, and move it to the desired location.</li>
-	<li>Buildings can also be moved manually by changing their coordinates in the building list, this allows to place buildings outside the playable area (the dock must be there). Additionally, you can press cursor keys in the keyboard instead of typing the numeric coordinates.</li>
-</ul>
+		<h3>How can I move a building?</h3>
+		There are two ways to move a building:
+		<ul>
+			<li>Mouse over the map, the cursor will turn into a hand if the existing building in the spot can be moved. Click
+				and hold, and move it to the desired location.</li>
+			<li>Buildings can also be moved manually by changing their coordinates in the building list, this allows to place
+				buildings outside the playable area (the dock must be there). Additionally, you can press cursor keys in the
+				keyboard instead of typing the numeric coordinates.</li>
+		</ul>
 
-<h3>How can I add special characters to my name?</h3>
-Choose a special character here:
-<select id="select-unicode" onchange="copyToClipboard(String.fromCharCode(parseInt(this.value)))" onblur="copyToClipboard(String.fromCharCode(parseInt(this.value)))">
-	<optgroup label="Nintendo DS">
-		<option value="57344">A Button</option>
-		<option value="57345">B Button</option>
-		<option value="57346">X Button</option>
-		<option value="57347">Y Button</option>
-		<option value="57348">L Button</option>
-		<option value="57349">R Button</option>
-		<option value="57350">D-pad</option>
-		<option value="57364">DS Touch Screen Calibration</option>
-	</optgroup>
-	<optgroup label="Nintendo DSi">
-		<option value="57373">DSi/3DS Touch Screen Calibration</option>
-		<option value="57374">Camera Icon</option>
-	</optgroup>
-	<optgroup label="Nintendo 3DS">
-		<option value="57465">D-pad Up</option>
-		<option value="57466">D-pad Down</option>
-		<option value="57467">D-pad Left</option>
-		<option value="57468">D-pad Right</option>
-		<option value="57469">D-pad Up &amp; Down</option>
-		<option value="57470">D-pad Left &amp; Right</option>
-		<option value="57464">Power Button</option>
-		<option value="57462">Video Icon</option>
-		<option value="57458">Turning Arrow</option>
-		<option value="57459">HOME Menu</option>
-		<option value="57460">Pedometer</option>
-		<option value="57461">Play Coin</option>
-		<option value="57457">Close Button</option>
-		<option value="57456">Close Button</option>
-	</optgroup>
-	<optgroup label="PictoChat">
-		<option value="57352">Happy Face</option>
-		<option value="57353">Angry Face</option>
-		<option value="57354">Sad Face</option>
-		<option value="57355">Sleepy Face</option>
-		<option value="57356">Sun</option>
-		<option value="57357">Cloud</option>
-		<option value="57358">Umbrella</option>
-		<option value="57359">Snowman</option>
-		<option value="57360">Black Box with !</option>
-		<option value="57361">Black Box with ?</option>
-		<option value="57362">Envelope</option>
-		<option value="57363">Cellphone</option>
-		<option value="57351">Clock</option>
-		<option value="57365">Spade</option>
-		<option value="57366">Diamond</option>
-		<option value="57367">Heart</option>
-		<option value="57368">Clubs</option>
-		<option value="57369">Right Arrow</option>
-		<option value="57370">Left Arrow</option>
-		<option value="57371">Up Arrow</option>
-		<option value="57372">Down Arrow</option>
-		<option value="57375">Box with X inside</option>
-		<option value="57376">Loading Squares 1</option>
-		<option value="57377">Loading Squares 2</option>
-		<option value="57378">Loading Squares 3</option>
-		<option value="57379">Loading Squares 4</option>
-		<option value="57380">Loading Squares 5</option>
-		<option value="57381">Loading Squares 6</option>
-		<option value="57382">Loading Squares 7</option>
-		<option value="57383">Loading Squares 8</option>
-		<option value="57384">Big X</option>
-		<option value="57385">Chat Room A</option>
-		<option value="57386">Chat Room B</option>
-		<option value="57387">Chat Room C</option>
-		<option value="57388">Chat Room D</option>
-		<option value="57389">A in Black Background</option>
-		<option value="57390">M in Black Background</option>
-		<option value="57392">P in PictoChat Logo</option>
-		<option value="57393">I in PictoChat Logo</option>
-		<option value="57394">C in PictoChat Logo</option>
-		<option value="57395">T in PictoChat Logo</option>
-		<option value="57396">H in PictoChat Logo</option>
-		<option value="57397">A in PictoChat Logo</option>
-		<option value="57406">Small X in Black Background</option>
-		<option value="57407">Large X in Black Background</option>
-	</optgroup>
-	<optgroup label="Nintendo Wii">
-		<option value="57447">Wii Logo</option>
-		<option value="57410">Wii Remote A Button</option>
-		<option value="57411">Wii Remote B Button</option>
-		<option value="57409">D-pad</option>
-		<option value="57412">Home Button</option>
-		<option value="57413">+ Button</option>
-		<option value="57414">- Button</option>
-		<option value="57415">1 Button</option>
-		<option value="57416">2 Button</option>
-		<option value="57408">Power Button</option>
-		<option value="57417">Analog Stick</option>
-		<option value="57418">Nunchuk C Button</option>
-		<option value="57419">Nunchuk Z Button</option>
-		<option value="57424">Left Analog Stick</option>
-		<option value="57425">Right Analog Stick</option>
-		<option value="57420">Classic Controller A Button</option>
-		<option value="57421">Classic Controller B Button</option>
-		<option value="57422">Classic Controller X Button</option>
-		<option value="57423">Classic Controller Y Button</option>
-		<option value="57426">Classic Controller L Button</option>
-		<option value="57427">Classic Controller R Button</option>
-		<option value="57428">Classic Controller ZL Button</option>
-		<option value="57429">Classic Controller ZR Button</option>
-		<option value="57430">Enter Key</option>
-		<option value="57431">Space Key</option>
-		<option value="57432">Wii Remote Pointer</option>
-		<option value="57433">Wii Remote Pointer 1</option>
-		<option value="57434">Wii Remote Pointer 2</option>
-		<option value="57435">Wii Remote Pointer 3</option>
-		<option value="57436">Wii Remote Pointer 4</option>
-		<option value="57437">Wii Remote Pointer Grabbing</option>
-		<option value="57438">Wii Remote Pointer Grabbing 1</option>
-		<option value="57439">Wii Remote Pointer Grabbing 2</option>
-		<option value="57440">Wii Remote Pointer Grabbing 3</option>
-		<option value="57441">Wii Remote Pointer Grabbing 4</option>
-		<option value="57442">Wii Remote Pointer Open</option>
-		<option value="57443">Wii Remote Pointer Open 1</option>
-		<option value="57444">Wii Remote Pointer Open 2</option>
-		<option value="57445">Wii Remote Pointer Open 3</option>
-		<option value="57446">Wii Remote Pointer Open 4</option>
-		<option value="57451">? in Black Background</option>
-		<option value="57448">Superscript er</option>
-	</optgroup>
-	<optgroup label="Extra">
-		<option value="9728">Sun</option>
-		<option value="9729">Cloud</option>
-		<option value="9730">Umbrella</option>
-		<option value="9731">Snowman</option>
-		<option value="9742">Telephone</option>
-		<option value="9756">Hand Left</option>
-		<option value="9757">Hand Up</option>
-		<option value="9758">Hand Right</option>
-		<option value="9759">Hand Down</option>
-		<option value="9824">Spade</option>
-		<option value="9829">Heart</option>
-		<option value="9827">Clubs</option>
-		<option value="9830">Diamond</option>
-		<option value="9828">White Spade</option>
-		<option value="9825">White Heart</option>
-		<option value="9831">White Clubs</option>
-		<option value="9826">White Diamond</option>
-		<option value="9743">White Telephone</option>
-		<option value="10004">Tick</option>
-		<option value="8481">TEL</option>
-	</optgroup>
-</select> and it will be copied to the clipboard<br/>Then paste it in the desired field.
+		<h3>How can I add special characters to my name?</h3>
+		Choose a special character here:
+		<select id="select-unicode" onchange="copyToClipboard(String.fromCharCode(parseInt(this.value)))"
+			onblur="copyToClipboard(String.fromCharCode(parseInt(this.value)))">
+			<optgroup label="Nintendo DS">
+				<option value="57344">A Button</option>
+				<option value="57345">B Button</option>
+				<option value="57346">X Button</option>
+				<option value="57347">Y Button</option>
+				<option value="57348">L Button</option>
+				<option value="57349">R Button</option>
+				<option value="57350">D-pad</option>
+				<option value="57364">DS Touch Screen Calibration</option>
+			</optgroup>
+			<optgroup label="Nintendo DSi">
+				<option value="57373">DSi/3DS Touch Screen Calibration</option>
+				<option value="57374">Camera Icon</option>
+			</optgroup>
+			<optgroup label="Nintendo 3DS">
+				<option value="57465">D-pad Up</option>
+				<option value="57466">D-pad Down</option>
+				<option value="57467">D-pad Left</option>
+				<option value="57468">D-pad Right</option>
+				<option value="57469">D-pad Up &amp; Down</option>
+				<option value="57470">D-pad Left &amp; Right</option>
+				<option value="57464">Power Button</option>
+				<option value="57462">Video Icon</option>
+				<option value="57458">Turning Arrow</option>
+				<option value="57459">HOME Menu</option>
+				<option value="57460">Pedometer</option>
+				<option value="57461">Play Coin</option>
+				<option value="57457">Close Button</option>
+				<option value="57456">Close Button</option>
+			</optgroup>
+			<optgroup label="PictoChat">
+				<option value="57352">Happy Face</option>
+				<option value="57353">Angry Face</option>
+				<option value="57354">Sad Face</option>
+				<option value="57355">Sleepy Face</option>
+				<option value="57356">Sun</option>
+				<option value="57357">Cloud</option>
+				<option value="57358">Umbrella</option>
+				<option value="57359">Snowman</option>
+				<option value="57360">Black Box with !</option>
+				<option value="57361">Black Box with ?</option>
+				<option value="57362">Envelope</option>
+				<option value="57363">Cellphone</option>
+				<option value="57351">Clock</option>
+				<option value="57365">Spade</option>
+				<option value="57366">Diamond</option>
+				<option value="57367">Heart</option>
+				<option value="57368">Clubs</option>
+				<option value="57369">Right Arrow</option>
+				<option value="57370">Left Arrow</option>
+				<option value="57371">Up Arrow</option>
+				<option value="57372">Down Arrow</option>
+				<option value="57375">Box with X inside</option>
+				<option value="57376">Loading Squares 1</option>
+				<option value="57377">Loading Squares 2</option>
+				<option value="57378">Loading Squares 3</option>
+				<option value="57379">Loading Squares 4</option>
+				<option value="57380">Loading Squares 5</option>
+				<option value="57381">Loading Squares 6</option>
+				<option value="57382">Loading Squares 7</option>
+				<option value="57383">Loading Squares 8</option>
+				<option value="57384">Big X</option>
+				<option value="57385">Chat Room A</option>
+				<option value="57386">Chat Room B</option>
+				<option value="57387">Chat Room C</option>
+				<option value="57388">Chat Room D</option>
+				<option value="57389">A in Black Background</option>
+				<option value="57390">M in Black Background</option>
+				<option value="57392">P in PictoChat Logo</option>
+				<option value="57393">I in PictoChat Logo</option>
+				<option value="57394">C in PictoChat Logo</option>
+				<option value="57395">T in PictoChat Logo</option>
+				<option value="57396">H in PictoChat Logo</option>
+				<option value="57397">A in PictoChat Logo</option>
+				<option value="57406">Small X in Black Background</option>
+				<option value="57407">Large X in Black Background</option>
+			</optgroup>
+			<optgroup label="Nintendo Wii">
+				<option value="57447">Wii Logo</option>
+				<option value="57410">Wii Remote A Button</option>
+				<option value="57411">Wii Remote B Button</option>
+				<option value="57409">D-pad</option>
+				<option value="57412">Home Button</option>
+				<option value="57413">+ Button</option>
+				<option value="57414">- Button</option>
+				<option value="57415">1 Button</option>
+				<option value="57416">2 Button</option>
+				<option value="57408">Power Button</option>
+				<option value="57417">Analog Stick</option>
+				<option value="57418">Nunchuk C Button</option>
+				<option value="57419">Nunchuk Z Button</option>
+				<option value="57424">Left Analog Stick</option>
+				<option value="57425">Right Analog Stick</option>
+				<option value="57420">Classic Controller A Button</option>
+				<option value="57421">Classic Controller B Button</option>
+				<option value="57422">Classic Controller X Button</option>
+				<option value="57423">Classic Controller Y Button</option>
+				<option value="57426">Classic Controller L Button</option>
+				<option value="57427">Classic Controller R Button</option>
+				<option value="57428">Classic Controller ZL Button</option>
+				<option value="57429">Classic Controller ZR Button</option>
+				<option value="57430">Enter Key</option>
+				<option value="57431">Space Key</option>
+				<option value="57432">Wii Remote Pointer</option>
+				<option value="57433">Wii Remote Pointer 1</option>
+				<option value="57434">Wii Remote Pointer 2</option>
+				<option value="57435">Wii Remote Pointer 3</option>
+				<option value="57436">Wii Remote Pointer 4</option>
+				<option value="57437">Wii Remote Pointer Grabbing</option>
+				<option value="57438">Wii Remote Pointer Grabbing 1</option>
+				<option value="57439">Wii Remote Pointer Grabbing 2</option>
+				<option value="57440">Wii Remote Pointer Grabbing 3</option>
+				<option value="57441">Wii Remote Pointer Grabbing 4</option>
+				<option value="57442">Wii Remote Pointer Open</option>
+				<option value="57443">Wii Remote Pointer Open 1</option>
+				<option value="57444">Wii Remote Pointer Open 2</option>
+				<option value="57445">Wii Remote Pointer Open 3</option>
+				<option value="57446">Wii Remote Pointer Open 4</option>
+				<option value="57451">? in Black Background</option>
+				<option value="57448">Superscript er</option>
+			</optgroup>
+			<optgroup label="Extra">
+				<option value="9728">Sun</option>
+				<option value="9729">Cloud</option>
+				<option value="9730">Umbrella</option>
+				<option value="9731">Snowman</option>
+				<option value="9742">Telephone</option>
+				<option value="9756">Hand Left</option>
+				<option value="9757">Hand Up</option>
+				<option value="9758">Hand Right</option>
+				<option value="9759">Hand Down</option>
+				<option value="9824">Spade</option>
+				<option value="9829">Heart</option>
+				<option value="9827">Clubs</option>
+				<option value="9830">Diamond</option>
+				<option value="9828">White Spade</option>
+				<option value="9825">White Heart</option>
+				<option value="9831">White Clubs</option>
+				<option value="9826">White Diamond</option>
+				<option value="9743">White Telephone</option>
+				<option value="10004">Tick</option>
+				<option value="8481">TEL</option>
+			</optgroup>
+		</select> and it will be copied to the clipboard<br />Then paste it in the desired field.
 
-<h3>I've injected Holden/Filly RVs, but they do not ask me to come to the town.</h3>
-Both Holden and Filly are RV locked, so they cannot come to your town as villagers legally.<br/>
-The only way to have Holden/Filly as villagers is to inject them directly into your town into an existing villager.
+		<h3>I've injected Holden/Filly RVs, but they do not ask me to come to the town.</h3>
+		Both Holden and Filly are RV locked, so they cannot come to your town as villagers legally.<br />
+		The only way to have Holden/Filly as villagers is to inject them directly into your town into an existing villager.
 
-<h3>Your editor glitched my savegame!</h3>
-No. It wasn't my editor, it was you.<br/>
-The editor can do cool things, but it's also a dangerous tool and you are the only responsible while using it. Keep always a backup of your previous savegame.<br/>
-If you think you've found a bug, post your feedback <a href="https://gbatemp.net/threads/animal-crossing-new-leaf-save-editor.382965" target="_blank">here</a>.
+		<h3>Your editor glitched my savegame!</h3>
+		No. It wasn't my editor, it was you.<br />
+		The editor can do cool things, but it's also a dangerous tool and you are the only responsible while using it. Keep
+		always a backup of your previous savegame.<br />
+		If you think you've found a bug, post your feedback <a
+			href="https://gbatemp.net/threads/animal-crossing-new-leaf-save-editor.382965" target="_blank">here</a>.
 
-<h3>Can I create building seeds like Wild World?</h3>
-No.
+		<h3>Can I create building seeds like Wild World?</h3>
+		No.
 
-<h3 id="Warnings">What can I do to ensure my savegame does not get glitched?</h3>
-<ul>
-	<li>
-		<b>there must be at least a pond, </b>
-	</li>
+		<h3 id="Warnings">What can I do to ensure my savegame does not get glitched?</h3>
+		<ul>
+			<li>
+				<b>there must be at least a pond, </b>
+			</li>
 
-	<li>
-		<b>there must be two waterfalls (wall and sea), </b>
-	</li>
+			<li>
+				<b>there must be two waterfalls (wall and sea), </b>
+			</li>
 
-	<li>
-		<b>there must be a town plaza acre, </b>
-	</li>
+			<li>
+				<b>there must be a town plaza acre, </b>
+			</li>
 
-	<li>
-		<b>there must be two slopes: </b> you can move them carefully using the acre editor
-	</li>
+			<li>
+				<b>there must be two slopes: </b> you can move them carefully using the acre editor
+			</li>
 
-	<li>
-		<b>do not do weird things with the acre editor: </b> try to keep a valid acre structure
-	</li>
+			<li>
+				<b>do not do weird things with the acre editor: </b> try to keep a valid acre structure
+			</li>
 
-	<li>
-		<b>keep at least two rocks: </b> move them using the map editor if you need it <small>(use right click to 'copy' the rock, place it anywhere then delete the original one)</small>
-	</li>
+			<li>
+				<b>keep at least two rocks: </b> move them using the map editor if you need it <small>(use right click to 'copy'
+					the rock, place it anywhere then delete the original one)</small>
+			</li>
 
-	<li>
-		<b>keep enough free space for buildings in the town plaza acre: </b> the game will freeze whenever special visitors (Redd, Gracie, Katrina...) try to put their tents there and there is not enough space
-	</li>
+			<li>
+				<b>keep enough free space for buildings in the town plaza acre: </b> the game will freeze whenever special
+				visitors (Redd, Gracie, Katrina...) try to put their tents there and there is not enough space
+			</li>
 
-	<li>
-		<b>be careful when moving any building: </b> you can adjust building placements with the editor, but don't do weird things like placing houses in the water
-	</li>
-</ul>
-
-
-<h3>The game says my savegame data is corrupted. What happened? Can I restore my savegame?</h3>
-That means you injected an old savegame, and the game blocked it using an anti-cheat protection system.<br/><br/>
-
-Do not worry, you can still restore it. You will need to update its secure NAND value.
-<ol>
-	<li><b>Make a backup of your old savegame you want to restore</b></li>
-	<li>Restart your game and save. Make a dump of this new AC:NL savegame.</li>
-	<li>Open the <b>old</b> garden.dat/garden_plus.dat savegame in the editor</li>
-	<li>Go to the Other tab, click on the pencil next to Secure Value and load the <b>newest</b> garden.dat/garden_plus.dat here.<br/>
-	That will turn your old savegame into a valid savegame for the console.</li>
-</ol>
-<!-- Alternatively you can use <span class="app-icon purple"></span> svdt which updates the NAND value for you. -->
+			<li>
+				<b>be careful when moving any building: </b> you can adjust building placements with the editor, but don't do
+				weird things like placing houses in the water
+			</li>
+		</ul>
 
 
-</div></body>
+		<h3>The game says my savegame data is corrupted. What happened? Can I restore my savegame?</h3>
+		That means you injected an old savegame, and the game blocked it using an anti-cheat protection system.<br /><br />
+
+		Do not worry, you can still restore it. You will need to update its secure NAND value.
+		<ol>
+			<li><b>Make a backup of your old savegame you want to restore</b></li>
+			<li>Restart your game and save. Make a dump of this new AC:NL savegame.</li>
+			<li>Open the <b>old</b> garden.dat/garden_plus.dat savegame in the editor</li>
+			<li>Go to the Other tab, click on the pencil next to Secure Value and load the <b>newest</b>
+				garden.dat/garden_plus.dat here.<br />
+				That will turn your old savegame into a valid savegame for the console.</li>
+		</ol>
+		<!-- Alternatively you can use <span class="app-icon purple"></span> svdt which updates the NAND value for you. -->
+
+
+	</div>
+</body>
+
 </html>
