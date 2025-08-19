@@ -224,8 +224,8 @@ var BUILDINGS=[
 const PWPS_INGAME_LIST=[
 	['default projects list'],
 	['topiaries','topiaires','Buchsbaums','sculturas arboreas','setos'],
-	['Dream Suite'],
-	['3 ?'],
+	['unknown renovations 2'], //Club LOL + Fortune Teller?
+	['unknown renovations 3'], //dream suite + museum renovation?
 	BUILDINGS[20][4],
 	BUILDINGS[21][4],
 	['town hall renovation+flower clock'],
