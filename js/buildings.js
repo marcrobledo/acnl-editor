@@ -222,14 +222,14 @@ var BUILDINGS=[
 
 
 const PWPS_INGAME_LIST=[
-	['default projects list'],
-	['topiaries','topiaires','Buchsbaums','sculturas arboreas','setos'],
-	['unknown renovations 2'], //Club LOL + Fortune Teller?
-	['unknown renovations 3'], //dream suite + museum renovation?
+	['default projects list','liste des projets par défaut','Standard-Bauprojekte','elenco dei progetti predefiniti','lista de proyectos predeterminados'],
+	['topiaries','topiaires','Buchsbaumskulpturen','sculturas arboreas','setos'],
+	['dream suite','institut du rêve','Schlummerhaus','casa del sogno','casa del sueño'],
+	['museum renovation','rénovation du musée','Museumsausbau','ristrutturazione del museo','renovación del museo'],
 	BUILDINGS[20][4],
 	BUILDINGS[21][4],
-	['town hall renovation+flower clock'],
-	['train station renovation'],
+	['town hall renovation+flower clock','rénovation de la mairie+horloge florale','Rathausumbau+Blumenuhr','nuovo municipio+orologio floreale','nuevo ayuntamiento+reloj de flores'],
+	['train station reconstruction','rénovation de la gare','Bahnhofsumbau','nuova stazione','nueva estación'],
 	BUILDINGS[103][4],
 	BUILDINGS[106][4],
 	BUILDINGS[102][4],
@@ -301,5 +301,6 @@ const PWPS_INGAME_LIST=[
 	["cobblestone bridge","pont en pierre","Steinbrücke","ponte di pietra","puente de piedra"],
 	BUILDINGS[163][4],
 	BUILDINGS[148][4],
-	BUILDINGS[150][4]
+	BUILDINGS[150][4],
+	["fortune-teller's shop",'cabinet de voyance','Wahrsagerladen','negozio della veggente','tienda de la adivina']
 ];
