@@ -30,7 +30,7 @@ caches.keys().then(function(cacheNames){
 });
 
 var PRECACHE_ID='acnl-editor';
-var PRECACHE_VERSION='v1.6.3a';
+var PRECACHE_VERSION='v1.6.4';
 var PRECACHE_URLS=[
 	'/acnl-editor/','/acnl-editor/index.html',
 	'/acnl-editor/help.html',
