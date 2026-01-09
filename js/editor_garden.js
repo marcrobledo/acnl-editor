@@ -591,7 +591,7 @@ function Town(){
 	}
 
 	/* read unlocked PWPs */
-	this.availablePWPs=new BitArray(Offsets.TOWN_AVAILABLEPWPS, el('pwps-available'), PWPS_INGAME_LIST, 80);
+	this.availablePWPs=new BitArray(Offsets.TOWN_AVAILABLEPWPS, el('pwps-available'), PWPS_INGAME_LIST, 81);
 }
 Town.prototype.fixBuildingCounters=function(){
 	var nBuildings=0;
