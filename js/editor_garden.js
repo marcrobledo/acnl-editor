@@ -179,6 +179,7 @@ var Offsets={
 
 	NOOK_UNLOCK:			0x80+0x05c7e0,
 	LEIF_UNLOCK:			0x80+0x060c70,
+	KICKS_UNLOCK:			0x80+0x060da8,
 
 	MIN_WALL:		0x2342,	MAX_WALL:		0x23c6,
 	MIN_FLOOR:		0x23c7,	MAX_FLOOR:		0x2445,
@@ -301,6 +302,7 @@ const OffsetsPlus={
 
 	NOOK_UNLOCK:			0x62264,
 	LEIF_UNLOCK:			0x666f4,
+	KICKS_UNLOCK:			0x6682c,
 
 	HHD_UNLOCK:				0x621dc,
 
@@ -584,6 +586,7 @@ function Town(){
 
 	this.shopNookUnlock=savegame.readU8(Offsets.NOOK_UNLOCK);
 	this.shopLeifUnlock=savegame.readU8(Offsets.LEIF_UNLOCK);
+	this.shopKicksUnlock=savegame.readU8(Offsets.KICKS_UNLOCK);
 
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
@@ -747,6 +750,7 @@ Town.prototype.save=function(){
 	savegame.writeU8(Offsets.NOOK_UNLOCK, this.shopNookUnlock);
 	savegame.writeU8(Offsets.NOOK_UNLOCK+1, this.shopNookUnlock);
 	savegame.writeU8(Offsets.LEIF_UNLOCK, this.shopLeifUnlock);
+	savegame.writeU8(Offsets.KICKS_UNLOCK, this.shopKicksUnlock);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -3602,6 +3606,8 @@ function initializeEverything2(){
 	}
 	el('checkbox-unlock-leif').checked=town.shopLeifUnlock > 1;
 	el('checkbox-unlock-leif').disabled=town.shopNookUnlock > 2;
+	el('checkbox-unlock-kicks').onchange=(ev)=>town.shopKicksUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-kicks').checked=town.shopKicksUnlock > 1;
 
 	/* read villagers */
 	villagers=new Array(10);
