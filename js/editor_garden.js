@@ -144,6 +144,7 @@ var Offsets={
 	PLAYER_SIZE:			0x9f10,
 	PLAYER_EXTERIORS:		0xa0+0x057e64,
 	PLAYER_ROOMS:			0x057f7a,
+	PLAYER_FLAGS:				0x5700, // likely incorrect, please verify! // TODO
 	
 	VILLAGERS:				0x027d10,
 	VILLAGER_ID:			0x00,
@@ -271,6 +272,7 @@ const OffsetsPlus={
 	PLAYER_EXTERIORS:		0xa0+0x05d864,
 	PLAYER_ROOMS:			0x05d97a,
 	PLAYER_STORAGE:			0x07a778,
+	PLAYER_FLAGS:				0x5700,
 	
 	VILLAGERS:				0x0292d0,
 	VILLAGER_ID:			0x00,
@@ -367,7 +369,15 @@ const Constants={
 	],
 
 	HAIR_COLORS:['593a38','935929','ef572e','41a6dc','ffe779','8bcf62','ee798b','fff8de','171806','550601','bb0c07','001449','dea70f','015a22','ad75bc','7a795a'],
-	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd']
+	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd'],
+
+	TFLAG_QRMACHINE: 6,
+	TFLAG_QRMACHINE_MASK: 1<<7,
+
+	PFLAG_QRMACHINE: 16,
+	PFLAG_QRMACHINE_MASK1: 1<<4,
+	PFLAG_QRMACHINE_MASK2: 1<<6,
+	PFLAG_QRMACHINE_MASK3: 1,
 };
 
 var mouseHeld=0,tempFile,tempFileLoadFunction;
@@ -603,6 +613,8 @@ function Town(){
 	this.shopFortuneUnlock=savegame.readU8(Offsets.UNLOCK_FORTUNE);
 	this.shopShampoodleUnlock=savegame.readU8(Offsets.UNLOCK_SHAMPOODLE);
 
+	this.qrMachine=savegame.readU8(Offsets.TOWN_ORDINANCES + Constants.TFLAG_QRMACHINE) & Constants.TFLAG_QRMACHINE_MASK;
+
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
 	for(var i=0; i<4; i++)
@@ -771,6 +783,12 @@ Town.prototype.save=function(){
 	savegame.writeU8(Offsets.UNLOCK_DREAM, this.shopDreamUnlock);
 	savegame.writeU8(Offsets.UNLOCK_FORTUNE, this.shopFortuneUnlock);
 	savegame.writeU8(Offsets.UNLOCK_SHAMPOODLE, this.shopShampoodleUnlock);
+
+	savegame.writeU8(
+		Offsets.TOWN_ORDINANCES+Constants.TFLAG_QRMACHINE,
+		savegame.readU8(Offsets.TOWN_ORDINANCES+Constants.TFLAG_QRMACHINE)
+		& ~Constants.TFLAG_QRMACHINE_MASK | this.qrMachine
+	);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -2331,6 +2349,7 @@ function Player(n){
 	this.registrationMonth=savegame.readU8(this.offset+Offsets.PLAYER_REGMONTH);
 	this.registrationDay=savegame.readU8(this.offset+Offsets.PLAYER_REGDAY);
 
+	this.qrMachine=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1) & Constants.PFLAG_QRMACHINE_MASK3;
 
 
 	var EXTERIOR_OFFSET=Offsets.PLAYER_EXTERIORS+0x1228*n;
@@ -2487,6 +2506,22 @@ Player.prototype.save=function(){
 	savegame.writeU16(this.offset+Offsets.PLAYER_REGYEAR, this.registrationYear);
 	savegame.writeU8(this.offset+Offsets.PLAYER_REGMONTH, this.registrationMonth);
 	savegame.writeU8(this.offset+Offsets.PLAYER_REGDAY, this.registrationDay);
+
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE)
+		& ~Constants.PFLAG_QRMACHINE_MASK1 | (this.qrMachine ? Constants.PFLAG_QRMACHINE_MASK1 : 0)
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE)
+		& ~Constants.PFLAG_QRMACHINE_MASK2 | (this.qrMachine ? Constants.PFLAG_QRMACHINE_MASK2 : 0)
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1)
+		& ~Constants.PFLAG_QRMACHINE_MASK3 | this.qrMachine
+	);
 
 
 
@@ -3538,7 +3573,13 @@ function initializeEverything2(){
 	addEvent(el('input-medals'), 'change', function(){currentPlayer.islandMedals.set(parseInt(this.value))});
 	addEvent(el('input-meow'), 'change', function(){currentPlayer.meowCoupons.set(parseInt(this.value))});
 
-
+	el('checkbox-qrmachine').onchange=(ev)=>{
+		currentPlayer.qrMachine=ev.target.checked?Constants.PFLAG_QRMACHINE_MASK3:0;
+		if (currentPlayer.qrMachine) {
+			town.qrMachine = Constants.TFLAG_QRMACHINE_MASK;
+			el('checkbox-unlock-qrmachine').checked = true;
+		}
+	}
 
 	/* read basic town info */
 	town=new Town();
@@ -3638,6 +3679,9 @@ function initializeEverything2(){
 	el('checkbox-unlock-fortune').checked=town.shopFortuneUnlock > 0;
 	el('checkbox-unlock-shampoodle').onchange=(ev)=>town.shopShampoodleUnlock=ev.target.checked?2:0;
 	el('checkbox-unlock-shampoodle').checked=town.shopShampoodleUnlock > 1;
+
+	el('checkbox-unlock-qrmachine').onchange=(ev)=>town.qrMachine=ev.target.checked?Constants.TFLAG_QRMACHINE_MASK:0;
+	el('checkbox-unlock-qrmachine').checked=town.qrMachine == Constants.TFLAG_QRMACHINE_MASK;
 
 	/* read villagers */
 	villagers=new Array(10);
@@ -3807,6 +3851,8 @@ function selectPlayer(p){
 		el('input-medals').value=currentPlayer.islandMedals.value;
 		if(plusMode)
 			el('input-meow').value=currentPlayer.meowCoupons.value;
+
+		el('checkbox-qrmachine').checked=currentPlayer.qrMachine == Constants.PFLAG_QRMACHINE_MASK3;
 
 		el('select-house-style').value=currentPlayer.houseStyle;
 		el('select-house-doorshape').value=currentPlayer.houseDoorShape;
