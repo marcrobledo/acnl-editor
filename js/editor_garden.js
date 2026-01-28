@@ -144,6 +144,7 @@ var Offsets={
 	PLAYER_SIZE:			0x9f10,
 	PLAYER_EXTERIORS:		0xa0+0x057e64,
 	PLAYER_ROOMS:			0x057f7a,
+	PLAYER_FLAGS:				0x5700, // likely incorrect, please verify! // TODO
 	
 	VILLAGERS:				0x027d10,
 	VILLAGER_ID:			0x00,
@@ -176,6 +177,15 @@ var Offsets={
 	SHOP_GRACIE:			0x80+0x065274,
 	SHOP_LOLGYROIDS:		0x80+0x06530e,
 	SHOP_ISLAND:			0x80+0x065334,
+
+	UNLOCK_NOOK:			0x80+0x05c7e0,
+	UNLOCK_LEIF:			0x80+0x060c70,
+	UNLOCK_KICKS:			0x80+0x060da8,
+	UNLOCK_MUSEUM:		0x80+0x065238,
+	UNLOCK_LOL:				0x80+0x0652fe,
+	UNLOCK_DREAM:			0x80+0x06531e,
+	UNLOCK_FORTUNE:		0x80+0x065320,
+	UNLOCK_SHAMPOODLE:	0x80+0x065330,
 
 	MIN_WALL:		0x2342,	MAX_WALL:		0x23c6,
 	MIN_FLOOR:		0x23c7,	MAX_FLOOR:		0x2445,
@@ -262,6 +272,7 @@ const OffsetsPlus={
 	PLAYER_EXTERIORS:		0xa0+0x05d864,
 	PLAYER_ROOMS:			0x05d97a,
 	PLAYER_STORAGE:			0x07a778,
+	PLAYER_FLAGS:				0x5700,
 	
 	VILLAGERS:				0x0292d0,
 	VILLAGER_ID:			0x00,
@@ -295,6 +306,15 @@ const OffsetsPlus={
 	SHOP_GRACIE:			0x6acf8,
 	SHOP_LOLGYROIDS:		0x6ad92,
 	SHOP_ISLAND:			0x6adb8,
+
+	UNLOCK_NOOK:			0x62264,
+	UNLOCK_LEIF:			0x666f4,
+	UNLOCK_KICKS:			0x6682c,
+	UNLOCK_MUSEUM:		0x6acbc,
+	UNLOCK_LOL:				0x6ad82,
+	UNLOCK_DREAM:			0x6ada2,
+	UNLOCK_FORTUNE:		0x6ada4,
+	UNLOCK_SHAMPOODLE:	0x6adb4,
 
 	HHD_UNLOCK:				0x621dc,
 
@@ -349,7 +369,23 @@ const Constants={
 	],
 
 	HAIR_COLORS:['593a38','935929','ef572e','41a6dc','ffe779','8bcf62','ee798b','fff8de','171806','550601','bb0c07','001449','dea70f','015a22','ad75bc','7a795a'],
-	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd']
+	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd'],
+
+	TFLAG_QRMACHINE: 6,
+	TFLAG_QRMACHINE_MASK: 1<<7,
+
+	PFLAG_QRMACHINE: 16,
+	PFLAG_QRMACHINE_MASK1: 1<<4,
+	PFLAG_QRMACHINE_MASK2: 1<<6,
+	PFLAG_QRMACHINE_MASK3: 1,
+	PFLAG_ISLAND: 18,
+	PFLAG_ISLAND_MASK: 1<<7,
+	PFLAG_CLUBTORTIMER: 31,
+	PFLAG_CLUBTORTIMER_MASK: 1<<2,
+	PFLAG_PERMIT: 13,
+	PFLAG_PERMIT_MASK1: 1<<0,
+	PFLAG_PERMIT_MASK2: 1<<2,
+	PFLAG_PERMIT_MASK3: 1<<3
 };
 
 var mouseHeld=0,tempFile,tempFileLoadFunction;
@@ -576,6 +612,17 @@ function Town(){
 	if(plusMode)
 		this.shopHarvey=new ItemGrid(0x06ae54, 2, 1, false);
 
+	this.shopNookUnlock=savegame.readU8(Offsets.UNLOCK_NOOK);
+	this.shopLeifUnlock=savegame.readU8(Offsets.UNLOCK_LEIF);
+	this.shopKicksUnlock=savegame.readU8(Offsets.UNLOCK_KICKS);
+	this.shopMuseumUnlock=savegame.readU8(Offsets.UNLOCK_MUSEUM);
+	this.shopLolUnlock=savegame.readU8(Offsets.UNLOCK_LOL);
+	this.shopDreamUnlock=savegame.readU8(Offsets.UNLOCK_DREAM);
+	this.shopFortuneUnlock=savegame.readU8(Offsets.UNLOCK_FORTUNE);
+	this.shopShampoodleUnlock=savegame.readU8(Offsets.UNLOCK_SHAMPOODLE);
+
+	this.qrMachine=savegame.readU8(Offsets.TOWN_ORDINANCES + Constants.TFLAG_QRMACHINE) & Constants.TFLAG_QRMACHINE_MASK;
+
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
 	for(var i=0; i<4; i++)
@@ -734,6 +781,22 @@ Town.prototype.save=function(){
 	this.lolGyroids.save();
 	if(plusMode)
 		this.shopHarvey.save();
+
+	savegame.writeU8(Offsets.UNLOCK_NOOK, this.shopNookUnlock);
+	savegame.writeU8(Offsets.UNLOCK_NOOK+1, this.shopNookUnlock);
+	savegame.writeU8(Offsets.UNLOCK_LEIF, this.shopLeifUnlock);
+	savegame.writeU8(Offsets.UNLOCK_KICKS, this.shopKicksUnlock);
+	savegame.writeU8(Offsets.UNLOCK_MUSEUM, this.shopMuseumUnlock);
+	savegame.writeU8(Offsets.UNLOCK_LOL, this.shopLolUnlock);
+	savegame.writeU8(Offsets.UNLOCK_DREAM, this.shopDreamUnlock);
+	savegame.writeU8(Offsets.UNLOCK_FORTUNE, this.shopFortuneUnlock);
+	savegame.writeU8(Offsets.UNLOCK_SHAMPOODLE, this.shopShampoodleUnlock);
+
+	savegame.writeU8(
+		Offsets.TOWN_ORDINANCES+Constants.TFLAG_QRMACHINE,
+		savegame.readU8(Offsets.TOWN_ORDINANCES+Constants.TFLAG_QRMACHINE)
+		& ~Constants.TFLAG_QRMACHINE_MASK | this.qrMachine
+	);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -2294,6 +2357,10 @@ function Player(n){
 	this.registrationMonth=savegame.readU8(this.offset+Offsets.PLAYER_REGMONTH);
 	this.registrationDay=savegame.readU8(this.offset+Offsets.PLAYER_REGDAY);
 
+	this.qrMachine=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1) & Constants.PFLAG_QRMACHINE_MASK3;
+	this.island=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND) & Constants.PFLAG_ISLAND_MASK;
+	this.clubTortimer=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER) & Constants.PFLAG_CLUBTORTIMER_MASK;
+	this.permit=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT+1) & Constants.PFLAG_PERMIT_MASK3;
 
 
 	var EXTERIOR_OFFSET=Offsets.PLAYER_EXTERIORS+0x1228*n;
@@ -2450,6 +2517,47 @@ Player.prototype.save=function(){
 	savegame.writeU16(this.offset+Offsets.PLAYER_REGYEAR, this.registrationYear);
 	savegame.writeU8(this.offset+Offsets.PLAYER_REGMONTH, this.registrationMonth);
 	savegame.writeU8(this.offset+Offsets.PLAYER_REGDAY, this.registrationDay);
+
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE)
+		& ~Constants.PFLAG_QRMACHINE_MASK1 | (this.qrMachine ? Constants.PFLAG_QRMACHINE_MASK1 : 0)
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE)
+		& ~Constants.PFLAG_QRMACHINE_MASK2 | (this.qrMachine ? Constants.PFLAG_QRMACHINE_MASK2 : 0)
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1)
+		& ~Constants.PFLAG_QRMACHINE_MASK3 | this.qrMachine
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND)
+		& ~Constants.PFLAG_ISLAND_MASK | this.island
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER)
+		& ~Constants.PFLAG_CLUBTORTIMER_MASK | this.clubTortimer
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT)
+		& ~Constants.PFLAG_PERMIT_MASK1 | (this.permit ? Constants.PFLAG_PERMIT_MASK3 : 0)
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT)
+		& ~Constants.PFLAG_PERMIT_MASK2 | (this.permit ? Constants.PFLAG_PERMIT_MASK2 : 0)
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT+1,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT+1)
+		& ~Constants.PFLAG_PERMIT_MASK3 | Constants.PFLAG_PERMIT_MASK3
+	);
 
 
 
@@ -3501,7 +3609,16 @@ function initializeEverything2(){
 	addEvent(el('input-medals'), 'change', function(){currentPlayer.islandMedals.set(parseInt(this.value))});
 	addEvent(el('input-meow'), 'change', function(){currentPlayer.meowCoupons.set(parseInt(this.value))});
 
-
+	el('checkbox-qrmachine').onchange=(ev)=>{
+		currentPlayer.qrMachine=ev.target.checked?Constants.PFLAG_QRMACHINE_MASK3:0;
+		if (currentPlayer.qrMachine) {
+			town.qrMachine = Constants.TFLAG_QRMACHINE_MASK;
+			el('checkbox-unlock-qrmachine').checked = true;
+		}
+	}
+	el('checkbox-island').onchange=(ev)=>currentPlayer.island=ev.target.checked?Constants.PFLAG_ISLAND_MASK:0;
+	el('checkbox-clubtortimer').onchange=(ev)=>currentPlayer.clubTortimer=ev.target.checked?Constants.PFLAG_CLUBTORTIMER_MASK:0;
+	el('checkbox-permit').onchange=(ev)=>currentPlayer.permit=ev.target.checked?Constants.PFLAG_PERMIT_MASK3:0;
 
 	/* read basic town info */
 	town=new Town();
@@ -3572,7 +3689,38 @@ function initializeEverything2(){
 	for(var i=0; i<4; i++)
 		el('museumroom'+i).appendChild(town.museumRooms[i].gridContainer);
 
+	/* shop unlocks */
+	addSelectEvent('unlock-nook', function(){
+		town.shopNookUnlock=parseInt(this.value);
+		if (town.shopNookUnlock > 2) town.shopLeifUnlock=town.shopNookUnlock;
+		el('checkbox-unlock-leif').checked=town.shopLeifUnlock > 1;
+		el('checkbox-unlock-leif').disabled=town.shopNookUnlock > 2;
+	});
+	el('select-unlock-nook').value=town.shopNookUnlock;
+	el('checkbox-unlock-leif').onchange=(ev)=>{
+		if (ev.target.checked) {
+			town.shopLeifUnlock=2;
+		} else {
+			town.shopLeifUnlock=0;
+		}
+	}
+	el('checkbox-unlock-leif').checked=town.shopLeifUnlock > 1;
+	el('checkbox-unlock-leif').disabled=town.shopNookUnlock > 2;
+	el('checkbox-unlock-kicks').onchange=(ev)=>town.shopKicksUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-kicks').checked=town.shopKicksUnlock > 1;
+	el('checkbox-unlock-museum').onchange=(ev)=>town.shopMuseumUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-museum').checked=town.shopMuseumUnlock > 0;
+	el('checkbox-unlock-lol').onchange=(ev)=>town.shopLolUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-lol').checked=town.shopLolUnlock > 1;
+	el('checkbox-unlock-dream').onchange=(ev)=>town.shopDreamUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-dream').checked=town.shopDreamUnlock > 0;
+	el('checkbox-unlock-fortune').onchange=(ev)=>town.shopFortuneUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-fortune').checked=town.shopFortuneUnlock > 0;
+	el('checkbox-unlock-shampoodle').onchange=(ev)=>town.shopShampoodleUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-shampoodle').checked=town.shopShampoodleUnlock > 1;
 
+	el('checkbox-unlock-qrmachine').onchange=(ev)=>town.qrMachine=ev.target.checked?Constants.TFLAG_QRMACHINE_MASK:0;
+	el('checkbox-unlock-qrmachine').checked=town.qrMachine == Constants.TFLAG_QRMACHINE_MASK;
 
 	/* read villagers */
 	villagers=new Array(10);
@@ -3742,6 +3890,11 @@ function selectPlayer(p){
 		el('input-medals').value=currentPlayer.islandMedals.value;
 		if(plusMode)
 			el('input-meow').value=currentPlayer.meowCoupons.value;
+
+		el('checkbox-qrmachine').checked=currentPlayer.qrMachine == Constants.PFLAG_QRMACHINE_MASK3;
+		el('checkbox-island').checked=currentPlayer.island == Constants.PFLAG_ISLAND_MASK;
+		el('checkbox-clubtortimer').checked=currentPlayer.clubTortimer == Constants.PFLAG_CLUBTORTIMER_MASK;
+		el('checkbox-permit').checked=currentPlayer.permit == Constants.PFLAG_PERMIT_MASK3;
 
 		el('select-house-style').value=currentPlayer.houseStyle;
 		el('select-house-doorshape').value=currentPlayer.houseDoorShape;
