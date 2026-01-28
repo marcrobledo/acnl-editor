@@ -177,14 +177,14 @@ var Offsets={
 	SHOP_LOLGYROIDS:		0x80+0x06530e,
 	SHOP_ISLAND:			0x80+0x065334,
 
-	NOOK_UNLOCK:			0x80+0x05c7e0,
-	LEIF_UNLOCK:			0x80+0x060c70,
-	KICKS_UNLOCK:			0x80+0x060da8,
-	MUSEUM_UNLOCK:		0x80+0x065238,
-	LOL_UNLOCK:				0x80+0x0652fe,
-	DREAM_UNLOCK:			0x80+0x06531e,
-	FORTUNE_UNLOCK:		0x80+0x065320,
-	SHAMPOODLE_UNLOCK:	0x80+0x065330,
+	UNLOCK_NOOK:			0x80+0x05c7e0,
+	UNLOCK_LEIF:			0x80+0x060c70,
+	UNLOCK_KICKS:			0x80+0x060da8,
+	UNLOCK_MUSEUM:		0x80+0x065238,
+	UNLOCK_LOL:				0x80+0x0652fe,
+	UNLOCK_DREAM:			0x80+0x06531e,
+	UNLOCK_FORTUNE:		0x80+0x065320,
+	UNLOCK_SHAMPOODLE:	0x80+0x065330,
 
 	MIN_WALL:		0x2342,	MAX_WALL:		0x23c6,
 	MIN_FLOOR:		0x23c7,	MAX_FLOOR:		0x2445,
@@ -305,14 +305,14 @@ const OffsetsPlus={
 	SHOP_LOLGYROIDS:		0x6ad92,
 	SHOP_ISLAND:			0x6adb8,
 
-	NOOK_UNLOCK:			0x62264,
-	LEIF_UNLOCK:			0x666f4,
-	KICKS_UNLOCK:			0x6682c,
-	MUSEUM_UNLOCK:		0x6acbc,
-	LOL_UNLOCK:				0x6ad82,
-	DREAM_UNLOCK:			0x6ada2,
-	FORTUNE_UNLOCK:		0x6ada4,
-	SHAMPOODLE_UNLOCK:	0x6adb4,
+	UNLOCK_NOOK:			0x62264,
+	UNLOCK_LEIF:			0x666f4,
+	UNLOCK_KICKS:			0x6682c,
+	UNLOCK_MUSEUM:		0x6acbc,
+	UNLOCK_LOL:				0x6ad82,
+	UNLOCK_DREAM:			0x6ada2,
+	UNLOCK_FORTUNE:		0x6ada4,
+	UNLOCK_SHAMPOODLE:	0x6adb4,
 
 	HHD_UNLOCK:				0x621dc,
 
@@ -594,14 +594,14 @@ function Town(){
 	if(plusMode)
 		this.shopHarvey=new ItemGrid(0x06ae54, 2, 1, false);
 
-	this.shopNookUnlock=savegame.readU8(Offsets.NOOK_UNLOCK);
-	this.shopLeifUnlock=savegame.readU8(Offsets.LEIF_UNLOCK);
-	this.shopKicksUnlock=savegame.readU8(Offsets.KICKS_UNLOCK);
-	this.shopMuseumUnlock=savegame.readU8(Offsets.MUSEUM_UNLOCK);
-	this.shopLolUnlock=savegame.readU8(Offsets.LOL_UNLOCK);
-	this.shopDreamUnlock=savegame.readU8(Offsets.DREAM_UNLOCK);
-	this.shopFortuneUnlock=savegame.readU8(Offsets.FORTUNE_UNLOCK);
-	this.shopShampoodleUnlock=savegame.readU8(Offsets.SHAMPOODLE_UNLOCK);
+	this.shopNookUnlock=savegame.readU8(Offsets.UNLOCK_NOOK);
+	this.shopLeifUnlock=savegame.readU8(Offsets.UNLOCK_LEIF);
+	this.shopKicksUnlock=savegame.readU8(Offsets.UNLOCK_KICKS);
+	this.shopMuseumUnlock=savegame.readU8(Offsets.UNLOCK_MUSEUM);
+	this.shopLolUnlock=savegame.readU8(Offsets.UNLOCK_LOL);
+	this.shopDreamUnlock=savegame.readU8(Offsets.UNLOCK_DREAM);
+	this.shopFortuneUnlock=savegame.readU8(Offsets.UNLOCK_FORTUNE);
+	this.shopShampoodleUnlock=savegame.readU8(Offsets.UNLOCK_SHAMPOODLE);
 
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
@@ -762,15 +762,15 @@ Town.prototype.save=function(){
 	if(plusMode)
 		this.shopHarvey.save();
 
-	savegame.writeU8(Offsets.NOOK_UNLOCK, this.shopNookUnlock);
-	savegame.writeU8(Offsets.NOOK_UNLOCK+1, this.shopNookUnlock);
-	savegame.writeU8(Offsets.LEIF_UNLOCK, this.shopLeifUnlock);
-	savegame.writeU8(Offsets.KICKS_UNLOCK, this.shopKicksUnlock);
-	savegame.writeU8(Offsets.MUSEUM_UNLOCK, this.shopMuseumUnlock);
-	savegame.writeU8(Offsets.LOL_UNLOCK, this.shopLolUnlock);
-	savegame.writeU8(Offsets.DREAM_UNLOCK, this.shopDreamUnlock);
-	savegame.writeU8(Offsets.FORTUNE_UNLOCK, this.shopFortuneUnlock);
-	savegame.writeU8(Offsets.SHAMPOODLE_UNLOCK, this.shopShampoodleUnlock);
+	savegame.writeU8(Offsets.UNLOCK_NOOK, this.shopNookUnlock);
+	savegame.writeU8(Offsets.UNLOCK_NOOK+1, this.shopNookUnlock);
+	savegame.writeU8(Offsets.UNLOCK_LEIF, this.shopLeifUnlock);
+	savegame.writeU8(Offsets.UNLOCK_KICKS, this.shopKicksUnlock);
+	savegame.writeU8(Offsets.UNLOCK_MUSEUM, this.shopMuseumUnlock);
+	savegame.writeU8(Offsets.UNLOCK_LOL, this.shopLolUnlock);
+	savegame.writeU8(Offsets.UNLOCK_DREAM, this.shopDreamUnlock);
+	savegame.writeU8(Offsets.UNLOCK_FORTUNE, this.shopFortuneUnlock);
+	savegame.writeU8(Offsets.UNLOCK_SHAMPOODLE, this.shopShampoodleUnlock);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
