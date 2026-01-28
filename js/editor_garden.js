@@ -378,6 +378,10 @@ const Constants={
 	PFLAG_QRMACHINE_MASK1: 1<<4,
 	PFLAG_QRMACHINE_MASK2: 1<<6,
 	PFLAG_QRMACHINE_MASK3: 1,
+	PFLAG_ISLAND: 18,
+	PFLAG_ISLAND_MASK: 1<<7,
+	PFLAG_CLUBTORTIMER: 31,
+	PFLAG_CLUBTORTIMER_MASK: 1<<2,
 };
 
 var mouseHeld=0,tempFile,tempFileLoadFunction;
@@ -2350,6 +2354,8 @@ function Player(n){
 	this.registrationDay=savegame.readU8(this.offset+Offsets.PLAYER_REGDAY);
 
 	this.qrMachine=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1) & Constants.PFLAG_QRMACHINE_MASK3;
+	this.island=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND) & Constants.PFLAG_ISLAND_MASK;
+	this.clubTortimer=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER) & Constants.PFLAG_CLUBTORTIMER_MASK;
 
 
 	var EXTERIOR_OFFSET=Offsets.PLAYER_EXTERIORS+0x1228*n;
@@ -2521,6 +2527,16 @@ Player.prototype.save=function(){
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1,
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1)
 		& ~Constants.PFLAG_QRMACHINE_MASK3 | this.qrMachine
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND)
+		& ~Constants.PFLAG_ISLAND_MASK | this.island
+	);
+	savegame.writeU8(
+		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER,
+		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER)
+		& ~Constants.PFLAG_CLUBTORTIMER_MASK | this.clubTortimer
 	);
 
 
@@ -3580,6 +3596,8 @@ function initializeEverything2(){
 			el('checkbox-unlock-qrmachine').checked = true;
 		}
 	}
+	el('checkbox-island').onchange=(ev)=>currentPlayer.island=ev.target.checked?Constants.PFLAG_ISLAND_MASK:0;
+	el('checkbox-clubtortimer').onchange=(ev)=>currentPlayer.clubTortimer=ev.target.checked?Constants.PFLAG_CLUBTORTIMER_MASK:0;
 
 	/* read basic town info */
 	town=new Town();
@@ -3853,6 +3871,8 @@ function selectPlayer(p){
 			el('input-meow').value=currentPlayer.meowCoupons.value;
 
 		el('checkbox-qrmachine').checked=currentPlayer.qrMachine == Constants.PFLAG_QRMACHINE_MASK3;
+		el('checkbox-island').checked=currentPlayer.island == Constants.PFLAG_ISLAND_MASK;
+		el('checkbox-clubtortimer').checked=currentPlayer.clubTortimer == Constants.PFLAG_CLUBTORTIMER_MASK;
 
 		el('select-house-style').value=currentPlayer.houseStyle;
 		el('select-house-doorshape').value=currentPlayer.houseDoorShape;
