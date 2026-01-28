@@ -177,6 +177,8 @@ var Offsets={
 	SHOP_LOLGYROIDS:		0x80+0x06530e,
 	SHOP_ISLAND:			0x80+0x065334,
 
+	NOOK_UNLOCK:			0x80+0x05c7e0,
+
 	MIN_WALL:		0x2342,	MAX_WALL:		0x23c6,
 	MIN_FLOOR:		0x23c7,	MAX_FLOOR:		0x2445,
 	MIN_SONG:		0x2126,	MAX_SONG:		0x2180,
@@ -295,6 +297,8 @@ const OffsetsPlus={
 	SHOP_GRACIE:			0x6acf8,
 	SHOP_LOLGYROIDS:		0x6ad92,
 	SHOP_ISLAND:			0x6adb8,
+
+	NOOK_UNLOCK:			0x62264,
 
 	HHD_UNLOCK:				0x621dc,
 
@@ -576,6 +580,8 @@ function Town(){
 	if(plusMode)
 		this.shopHarvey=new ItemGrid(0x06ae54, 2, 1, false);
 
+	this.shopNookUnlock=savegame.readU8(Offsets.NOOK_UNLOCK);
+
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
 	for(var i=0; i<4; i++)
@@ -734,6 +740,9 @@ Town.prototype.save=function(){
 	this.lolGyroids.save();
 	if(plusMode)
 		this.shopHarvey.save();
+
+	savegame.writeU8(Offsets.NOOK_UNLOCK, this.shopNookUnlock);
+	savegame.writeU8(Offsets.NOOK_UNLOCK+1, this.shopNookUnlock);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -3572,7 +3581,8 @@ function initializeEverything2(){
 	for(var i=0; i<4; i++)
 		el('museumroom'+i).appendChild(town.museumRooms[i].gridContainer);
 
-
+	addSelectEvent('unlock-nook', function(){town.shopNookUnlock=parseInt(this.value);});
+	el('select-unlock-nook').value=town.shopNookUnlock;
 
 	/* read villagers */
 	villagers=new Array(10);
