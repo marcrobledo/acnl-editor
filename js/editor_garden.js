@@ -183,6 +183,7 @@ var Offsets={
 	MUSEUM_UNLOCK:		0x80+0x065238,
 	LOL_UNLOCK:				0x80+0x0652fe,
 	DREAM_UNLOCK:			0x80+0x06531e,
+	FORTUNE_UNLOCK:		0x80+0x065320,
 
 	MIN_WALL:		0x2342,	MAX_WALL:		0x23c6,
 	MIN_FLOOR:		0x23c7,	MAX_FLOOR:		0x2445,
@@ -309,6 +310,7 @@ const OffsetsPlus={
 	MUSEUM_UNLOCK:		0x6acbc,
 	LOL_UNLOCK:				0x6ad82,
 	DREAM_UNLOCK:			0x6ada2,
+	FORTUNE_UNLOCK:		0x6ada4,
 
 	HHD_UNLOCK:				0x621dc,
 
@@ -596,6 +598,7 @@ function Town(){
 	this.shopMuseumUnlock=savegame.readU8(Offsets.MUSEUM_UNLOCK);
 	this.shopLolUnlock=savegame.readU8(Offsets.LOL_UNLOCK);
 	this.shopDreamUnlock=savegame.readU8(Offsets.DREAM_UNLOCK);
+	this.shopFortuneUnlock=savegame.readU8(Offsets.FORTUNE_UNLOCK);
 
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
@@ -763,6 +766,7 @@ Town.prototype.save=function(){
 	savegame.writeU8(Offsets.MUSEUM_UNLOCK, this.shopMuseumUnlock);
 	savegame.writeU8(Offsets.LOL_UNLOCK, this.shopLolUnlock);
 	savegame.writeU8(Offsets.DREAM_UNLOCK, this.shopDreamUnlock);
+	savegame.writeU8(Offsets.FORTUNE_UNLOCK, this.shopFortuneUnlock);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -3626,6 +3630,8 @@ function initializeEverything2(){
 	el('checkbox-unlock-lol').checked=town.shopLolUnlock > 1;
 	el('checkbox-unlock-dream').onchange=(ev)=>town.shopDreamUnlock=ev.target.checked?1:0;
 	el('checkbox-unlock-dream').checked=town.shopDreamUnlock > 0;
+	el('checkbox-unlock-fortune').onchange=(ev)=>town.shopFortuneUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-fortune').checked=town.shopFortuneUnlock > 0;
 
 	/* read villagers */
 	villagers=new Array(10);
