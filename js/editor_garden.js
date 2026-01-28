@@ -177,6 +177,15 @@ var Offsets={
 	SHOP_LOLGYROIDS:		0x80+0x06530e,
 	SHOP_ISLAND:			0x80+0x065334,
 
+	UNLOCK_NOOK:			0x80+0x05c7e0,
+	UNLOCK_LEIF:			0x80+0x060c70,
+	UNLOCK_KICKS:			0x80+0x060da8,
+	UNLOCK_MUSEUM:		0x80+0x065238,
+	UNLOCK_LOL:				0x80+0x0652fe,
+	UNLOCK_DREAM:			0x80+0x06531e,
+	UNLOCK_FORTUNE:		0x80+0x065320,
+	UNLOCK_SHAMPOODLE:	0x80+0x065330,
+
 	MIN_WALL:		0x2342,	MAX_WALL:		0x23c6,
 	MIN_FLOOR:		0x23c7,	MAX_FLOOR:		0x2445,
 	MIN_SONG:		0x2126,	MAX_SONG:		0x2180,
@@ -295,6 +304,15 @@ const OffsetsPlus={
 	SHOP_GRACIE:			0x6acf8,
 	SHOP_LOLGYROIDS:		0x6ad92,
 	SHOP_ISLAND:			0x6adb8,
+
+	UNLOCK_NOOK:			0x62264,
+	UNLOCK_LEIF:			0x666f4,
+	UNLOCK_KICKS:			0x6682c,
+	UNLOCK_MUSEUM:		0x6acbc,
+	UNLOCK_LOL:				0x6ad82,
+	UNLOCK_DREAM:			0x6ada2,
+	UNLOCK_FORTUNE:		0x6ada4,
+	UNLOCK_SHAMPOODLE:	0x6adb4,
 
 	HHD_UNLOCK:				0x621dc,
 
@@ -576,6 +594,15 @@ function Town(){
 	if(plusMode)
 		this.shopHarvey=new ItemGrid(0x06ae54, 2, 1, false);
 
+	this.shopNookUnlock=savegame.readU8(Offsets.UNLOCK_NOOK);
+	this.shopLeifUnlock=savegame.readU8(Offsets.UNLOCK_LEIF);
+	this.shopKicksUnlock=savegame.readU8(Offsets.UNLOCK_KICKS);
+	this.shopMuseumUnlock=savegame.readU8(Offsets.UNLOCK_MUSEUM);
+	this.shopLolUnlock=savegame.readU8(Offsets.UNLOCK_LOL);
+	this.shopDreamUnlock=savegame.readU8(Offsets.UNLOCK_DREAM);
+	this.shopFortuneUnlock=savegame.readU8(Offsets.UNLOCK_FORTUNE);
+	this.shopShampoodleUnlock=savegame.readU8(Offsets.UNLOCK_SHAMPOODLE);
+
 	/* read museum rooms */
 	this.museumRooms=new Array(4);
 	for(var i=0; i<4; i++)
@@ -734,6 +761,16 @@ Town.prototype.save=function(){
 	this.lolGyroids.save();
 	if(plusMode)
 		this.shopHarvey.save();
+
+	savegame.writeU8(Offsets.UNLOCK_NOOK, this.shopNookUnlock);
+	savegame.writeU8(Offsets.UNLOCK_NOOK+1, this.shopNookUnlock);
+	savegame.writeU8(Offsets.UNLOCK_LEIF, this.shopLeifUnlock);
+	savegame.writeU8(Offsets.UNLOCK_KICKS, this.shopKicksUnlock);
+	savegame.writeU8(Offsets.UNLOCK_MUSEUM, this.shopMuseumUnlock);
+	savegame.writeU8(Offsets.UNLOCK_LOL, this.shopLolUnlock);
+	savegame.writeU8(Offsets.UNLOCK_DREAM, this.shopDreamUnlock);
+	savegame.writeU8(Offsets.UNLOCK_FORTUNE, this.shopFortuneUnlock);
+	savegame.writeU8(Offsets.UNLOCK_SHAMPOODLE, this.shopShampoodleUnlock);
 
 	/* museum rooms */
 	for(var i=0; i<4; i++)
@@ -3572,7 +3609,35 @@ function initializeEverything2(){
 	for(var i=0; i<4; i++)
 		el('museumroom'+i).appendChild(town.museumRooms[i].gridContainer);
 
-
+	/* shop unlocks */
+	addSelectEvent('unlock-nook', function(){
+		town.shopNookUnlock=parseInt(this.value);
+		if (town.shopNookUnlock > 2) town.shopLeifUnlock=town.shopNookUnlock;
+		el('checkbox-unlock-leif').checked=town.shopLeifUnlock > 1;
+		el('checkbox-unlock-leif').disabled=town.shopNookUnlock > 2;
+	});
+	el('select-unlock-nook').value=town.shopNookUnlock;
+	el('checkbox-unlock-leif').onchange=(ev)=>{
+		if (ev.target.checked) {
+			town.shopLeifUnlock=2;
+		} else {
+			town.shopLeifUnlock=0;
+		}
+	}
+	el('checkbox-unlock-leif').checked=town.shopLeifUnlock > 1;
+	el('checkbox-unlock-leif').disabled=town.shopNookUnlock > 2;
+	el('checkbox-unlock-kicks').onchange=(ev)=>town.shopKicksUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-kicks').checked=town.shopKicksUnlock > 1;
+	el('checkbox-unlock-museum').onchange=(ev)=>town.shopMuseumUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-museum').checked=town.shopMuseumUnlock > 0;
+	el('checkbox-unlock-lol').onchange=(ev)=>town.shopLolUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-lol').checked=town.shopLolUnlock > 1;
+	el('checkbox-unlock-dream').onchange=(ev)=>town.shopDreamUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-dream').checked=town.shopDreamUnlock > 0;
+	el('checkbox-unlock-fortune').onchange=(ev)=>town.shopFortuneUnlock=ev.target.checked?1:0;
+	el('checkbox-unlock-fortune').checked=town.shopFortuneUnlock > 0;
+	el('checkbox-unlock-shampoodle').onchange=(ev)=>town.shopShampoodleUnlock=ev.target.checked?2:0;
+	el('checkbox-unlock-shampoodle').checked=town.shopShampoodleUnlock > 1;
 
 	/* read villagers */
 	villagers=new Array(10);
