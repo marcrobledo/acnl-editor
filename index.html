@@ -126,6 +126,7 @@
 				<span>Island</span>
 				<span>Villagers</span>
 				<span>Shops</span>
+				<span id="tab-button-museum">Museum</span>
 				<span>Other</span>
 			</div>
 		</div>
@@ -462,6 +463,15 @@
 			</table>
 		</div>
 	</div>
+</div>
+
+<div id="tab-museum" style="display:none">
+	<h3>Museum donations</h3>
+	<div class="museum-donation-actions">
+		<button onclick="town.museumDonations.setAll(true)">Donate all</button>
+		<button onclick="town.museumDonations.setAll(false)">Empty museum</button>
+	</div>
+	<div id="museum-donations"></div>
 </div>
 
 <div id="tab-other" style="display:none">
