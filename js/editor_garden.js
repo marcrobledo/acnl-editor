@@ -1,7 +1,7 @@
 /*
 * Animal Crossing: New Leaf Save Editor
 * Online savegame editor for ACNL videogame
-* (last update: 2025-04-01)
+* (last update: 2026-06-26)
 * By Marc Robledo https://www.marcrobledo.com
 *
 * License:
@@ -752,8 +752,7 @@ Town.prototype.save=function(){
 	/* museum rooms */
 	for(var i=0; i<4; i++)
 		this.museumRooms[i].save();
-	if(this.museumDonations)
-		this.museumDonations.save();
+	this.museumDonations.save();
 
 	/* turnip prices */
 	for(var i=0;i<6;i++){
@@ -2275,10 +2274,7 @@ Room.prototype.save=function(){
 
 
 
-function getMuseumDonationDefinitions(){
-	if(museumDonationDefinitions)
-		return museumDonationDefinitions;
-
+function buildMuseumDonationDefinitions(){
 	var definitions=[];
 	var donationIndex=0;
 
@@ -2455,7 +2451,6 @@ MuseumDonation.prototype.save=function(){
 	savegame.writeU8(this.donorOffset, donor || 0);
 }
 function MuseumDonations(){
-	var definitions=getMuseumDonationDefinitions();
 	this.entries=[];
 	this.container=document.createElement('div');
 	this.container.className='museum-donations';
@@ -2463,9 +2458,9 @@ function MuseumDonations(){
 	var currentGroup='';
 	var table=null;
 	var tbody=null;
-	for(var i=0; i<definitions.length; i++){
-		if(definitions[i].groupTitle!==currentGroup){
-			currentGroup=definitions[i].groupTitle;
+	for(var i=0; i<museumDonationDefinitions.length; i++){
+		if(museumDonationDefinitions[i].groupTitle!==currentGroup){
+			currentGroup=museumDonationDefinitions[i].groupTitle;
 
 			var group=document.createElement('div');
 			group.className='museum-donation-group';
@@ -2515,7 +2510,7 @@ function MuseumDonations(){
 			this.container.appendChild(group);
 		}
 
-		var donation=new MuseumDonation(definitions[i]);
+		var donation=new MuseumDonation(museumDonationDefinitions[i]);
 		this.entries.push(donation);
 		tbody.appendChild(donation.createRow());
 	}
@@ -3571,7 +3566,7 @@ function initializeEverything2(){
 			el('villager-new').appendChild(opt);
 		}
 	}
-	museumDonationDefinitions=getMuseumDonationDefinitions();
+	museumDonationDefinitions=buildMuseumDonationDefinitions();
 
 	/* hoping garbage collector does its job */
 	ITEM_GROUPS=null;
