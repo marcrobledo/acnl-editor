@@ -394,6 +394,73 @@ span.sprite{display:inline-block;vertical-align:middle}
 	background-color:#fafafa;
 }
 
+.museum-donations{
+	display:grid;
+	grid-template-columns:repeat(auto-fit, minmax(min(100%, 620px), 1fr));
+	gap:20px;
+	align-items:start;
+}
+.museum-donation-actions{
+	margin-bottom:16px;
+}
+.museum-donation-group{
+	min-width:0;
+}
+.museum-donation-group-header{
+	display:flex;
+	align-items:center;
+	gap:8px;
+	margin-bottom:8px;
+}
+.museum-donation-group-header h4{
+	margin:0 auto 0 0;
+}
+.museum-donation-group-header button{
+	padding:4px 8px;
+}
+.museum-donations-table{
+	width:100%;
+	table-layout:fixed;
+	border-collapse:collapse;
+	background:white;
+}
+.museum-donations-table th,
+.museum-donations-table td{
+	border:1px solid #ddd;
+	padding:4px 6px;
+	vertical-align:middle;
+}
+.museum-donations-table th{
+	background:#edffcd;
+	text-align:left;
+}
+.museum-donations-table td:first-child,
+.museum-donations-table th:first-child{
+	text-align:center;
+	width:66px;
+}
+.museum-donations-table th:nth-child(3),
+.museum-donations-table td:nth-child(3){
+	width:150px;
+}
+.museum-donations-table th:nth-child(4),
+.museum-donations-table td:nth-child(4){
+	width:190px;
+}
+.museum-donations-table input[type=date]{
+	box-sizing:border-box;
+	width:100%;
+}
+.museum-donations-table select{
+	box-sizing:border-box;
+	max-width:100%;
+	width:100%;
+}
+.museum-donation-empty{
+	color:#888;
+	background:#f4f4f4;
+}
+
 
 
 /* ITEMS RIBBON */

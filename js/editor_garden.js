@@ -84,6 +84,8 @@ var Offsets={
 	TOWN_TURNIP_PRICES:		0x80+0x06535c,
 	TOWN_MULTVARS:			0x05c7d6,
 
+	MUSEUM_DONATION_DATES:	0x80+0x065418,
+	MUSEUM_DONATION_DONORS:	0x80+0x065860,
 	MUSEUM_ROOMS:			0x80+0x0659d8,
 
 	MAP_GRASS_TODAY:		0x80+0x052a58,
@@ -199,6 +201,8 @@ const OffsetsPlus={
 	TOWN_TURNIP_PRICES:		0x06ade0,
 	TOWN_MULTVARS:			0x0621d6,
 
+	MUSEUM_DONATION_DATES:	0x06aeb8,
+	MUSEUM_DONATION_DONORS:	0x06b300,
 	MUSEUM_ROOMS:			0x06b478,
 
 	MAP_GRASS_TODAY:		0x0584d8,
@@ -352,12 +356,21 @@ const Constants={
 	EYE_COLORS:['323627','cd7246','5b9773','6d8680','5678c0','3f88bd']
 };
 
+const MUSEUM_DONATION_GROUPS=[
+	{title:'Fossils', itemGroup:'Fossils', limit:67},
+	{title:'Fish', itemGroup:'Fish', limit:72},
+	{title:'Marine creatures', itemGroup:'Marine creatures', limit:30},
+	{title:'Bugs', itemGroup:'Bugs', limit:72},
+	{title:'Art', itemGroup:'Art', limit:33}
+];
+
 var mouseHeld=0,tempFile,tempFileLoadFunction;
 var cleanSearch;
 var savegame,map,island,players,grassMap,grassMapToday,buildings,town;
 var currentPlayer,currentTab;
 var currentEditingItem;
 var selectBuildings, buildingHash;
+var museumDonationDefinitions=null;
 
 var plusMode=false;
 
@@ -580,6 +593,7 @@ function Town(){
 	this.museumRooms=new Array(4);
 	for(var i=0; i<4; i++)
 		this.museumRooms[i]=new Room(Offsets.MUSEUM_ROOMS+0xb98*i);
+	this.museumDonations=new MuseumDonations();
 
 	/* read turnip prices */
 	this.turnipPrices=[];
@@ -738,6 +752,8 @@ Town.prototype.save=function(){
 	/* museum rooms */
 	for(var i=0; i<4; i++)
 		this.museumRooms[i].save();
+	if(this.museumDonations)
+		this.museumDonations.save();
 
 	/* turnip prices */
 	for(var i=0;i<6;i++){
@@ -2259,6 +2275,287 @@ Room.prototype.save=function(){
 
 
 
+function getMuseumDonationDefinitions(){
+	if(museumDonationDefinitions)
+		return museumDonationDefinitions;
+
+	var definitions=[];
+	var donationIndex=0;
+
+	for(var i=0; i<MUSEUM_DONATION_GROUPS.length; i++){
+		var groupDef=MUSEUM_DONATION_GROUPS[i];
+		var itemGroupIndex=-1;
+		for(var j=0; j<ITEM_GROUPS.length && itemGroupIndex<0; j++){
+			if(ITEM_GROUPS[j].title===groupDef.itemGroup)
+				itemGroupIndex=j;
+		}
+
+		if(itemGroupIndex<0)
+			continue;
+
+		var itemGroup=ITEM_GROUPS[itemGroupIndex];
+		var firstId=(plusMode && itemGroup.plusId)? itemGroup.plusId : itemGroup.oldId;
+
+		for(var j=0; j<groupDef.limit; j++){
+			var itemName=itemGroup.items[j*2];
+			if(typeof ITEM_GROUPS_TRANSLATED!=='undefined' && ITEM_GROUPS_TRANSLATED[itemGroupIndex] && ITEM_GROUPS_TRANSLATED[itemGroupIndex][j])
+				itemName=ITEM_GROUPS_TRANSLATED[itemGroupIndex][j];
+
+			definitions.push({
+				index:donationIndex,
+				groupTitle:groupDef.title,
+				itemId:firstId+j,
+				itemName:itemName
+			});
+			donationIndex++;
+		}
+	}
+
+	return definitions;
+}
+function formatMuseumDonationDate(year, month, day){
+	if(!year || !month || !day)
+		return '';
+
+	return year+'-'+('0'+month).slice(-2)+'-'+('0'+day).slice(-2);
+}
+function getMuseumDonationDonorLabel(donor){
+	if(!donor)
+		return '-';
+
+	var player=players[donor-1];
+	var label='Player '+donor;
+	if(player){
+		var playerName=player.name.toString();
+		if(playerName)
+			label=playerName;
+	}
+
+	return label;
+}
+function MuseumDonation(definition){
+	this.index=definition.index;
+	this.groupTitle=definition.groupTitle;
+	this.itemId=definition.itemId;
+	this.itemName=definition.itemName;
+	this.dateOffset=Offsets.MUSEUM_DONATION_DATES+this.index*4;
+	this.donorOffset=Offsets.MUSEUM_DONATION_DONORS+this.index;
+
+	this.year=savegame.readU16(this.dateOffset);
+	this.month=savegame.readU8(this.dateOffset+2);
+	this.day=savegame.readU8(this.dateOffset+3);
+	this.donor=savegame.readU8(this.donorOffset);
+}
+MuseumDonation.prototype.isDonated=function(){
+	return !!(this.year || this.month || this.day || this.donor);
+}
+MuseumDonation.prototype.createRow=function(){
+	var donation=this;
+	var tr=document.createElement('tr');
+
+	var tdDonated=document.createElement('td');
+	this.checkbox=document.createElement('input');
+	this.checkbox.type='checkbox';
+	this.checkbox.checked=this.isDonated();
+	tdDonated.appendChild(this.checkbox);
+	tr.appendChild(tdDonated);
+
+	var tdItem=document.createElement('td');
+	tdItem.appendChild(document.createTextNode(this.itemName));
+	tr.appendChild(tdItem);
+
+	var tdDate=document.createElement('td');
+	this.dateInput=document.createElement('input');
+	this.dateInput.type='date';
+	this.dateInput.min='2000-01-01';
+	this.dateInput.max='2099-12-31';
+	this.dateInput.value=formatMuseumDonationDate(this.year, this.month, this.day);
+	tdDate.appendChild(this.dateInput);
+	tr.appendChild(tdDate);
+
+	var tdDonor=document.createElement('td');
+	this.donorSelect=document.createElement('select');
+	this.donorSelect.appendChild(createOption(0, '-'));
+	for(var i=1; i<=4; i++)
+		this.donorSelect.appendChild(createOption(i, getMuseumDonationDonorLabel(i)));
+	this.donorSelect.value=this.donor;
+	tdDonor.appendChild(this.donorSelect);
+	tr.appendChild(tdDonor);
+
+	this.tr=tr;
+	this.refreshInputs();
+
+	addEvent(this.checkbox, 'change', function(){
+		if(this.checked){
+			if(!donation.dateInput.value){
+				var d=new Date();
+				donation.dateInput.value=formatMuseumDonationDate(d.getFullYear(), d.getMonth()+1, d.getDate());
+			}
+			if(!parseInt(donation.donorSelect.value))
+				donation.donorSelect.value=1;
+		}
+		donation.refreshInputs();
+	});
+
+	return tr;
+}
+MuseumDonation.prototype.refreshInputs=function(){
+	var donated=this.checkbox.checked;
+	this.dateInput.disabled=!donated;
+	this.donorSelect.disabled=!donated;
+	this.tr.className=donated? '' : 'museum-donation-empty';
+}
+MuseumDonation.prototype.setDonated=function(donated, dateValue, donorValue){
+	this.checkbox.checked=donated;
+
+	if(donated){
+		if(!this.dateInput.value)
+			this.dateInput.value=dateValue;
+		if(!parseInt(this.donorSelect.value))
+			this.donorSelect.value=donorValue;
+	}else{
+		this.dateInput.value='';
+		this.donorSelect.value=0;
+	}
+
+	this.refreshInputs();
+}
+MuseumDonation.prototype.save=function(){
+	var donated=this.checkbox? this.checkbox.checked : this.isDonated();
+	var year=this.year;
+	var month=this.month;
+	var day=this.day;
+	var donor=this.donor;
+
+	if(this.dateInput){
+		if(this.dateInput.value){
+			var dateParts=this.dateInput.value.split('-');
+			year=parseInt(dateParts[0]);
+			month=parseInt(dateParts[1]);
+			day=parseInt(dateParts[2]);
+		}else{
+			year=0;
+			month=0;
+			day=0;
+		}
+	}
+	if(this.donorSelect)
+		donor=parseInt(this.donorSelect.value);
+
+	if(!donated){
+		year=0;
+		month=0;
+		day=0;
+		donor=0;
+	}
+
+	savegame.writeU16(this.dateOffset, year || 0);
+	savegame.writeU8(this.dateOffset+2, month || 0);
+	savegame.writeU8(this.dateOffset+3, day || 0);
+	savegame.writeU8(this.donorOffset, donor || 0);
+}
+function MuseumDonations(){
+	var definitions=getMuseumDonationDefinitions();
+	this.entries=[];
+	this.container=document.createElement('div');
+	this.container.className='museum-donations';
+
+	var currentGroup='';
+	var table=null;
+	var tbody=null;
+	for(var i=0; i<definitions.length; i++){
+		if(definitions[i].groupTitle!==currentGroup){
+			currentGroup=definitions[i].groupTitle;
+
+			var group=document.createElement('div');
+			group.className='museum-donation-group';
+
+			var header=document.createElement('div');
+			header.className='museum-donation-group-header';
+			var h4=document.createElement('h4');
+			h4.appendChild(document.createTextNode(currentGroup));
+			header.appendChild(h4);
+
+			var selectAllButton=document.createElement('button');
+			selectAllButton.type='button';
+			selectAllButton.appendChild(document.createTextNode('Donate all'));
+			selectAllButton.museumDonations=this;
+			selectAllButton.groupTitle=currentGroup;
+			addEvent(selectAllButton, 'click', function(){
+				this.museumDonations.setGroup(this.groupTitle, true);
+			});
+			header.appendChild(selectAllButton);
+
+			var unselectAllButton=document.createElement('button');
+			unselectAllButton.type='button';
+			unselectAllButton.appendChild(document.createTextNode('Empty'));
+			unselectAllButton.museumDonations=this;
+			unselectAllButton.groupTitle=currentGroup;
+			addEvent(unselectAllButton, 'click', function(){
+				this.museumDonations.setGroup(this.groupTitle, false);
+			});
+			header.appendChild(unselectAllButton);
+
+			group.appendChild(header);
+
+			table=document.createElement('table');
+			table.className='museum-donations-table';
+			var thead=document.createElement('thead');
+			var tr=document.createElement('tr');
+			['Donated','Item','Date','Donor'].forEach(function(label){
+				var th=document.createElement('th');
+				th.appendChild(document.createTextNode(label));
+				tr.appendChild(th);
+			});
+			thead.appendChild(tr);
+			table.appendChild(thead);
+			tbody=document.createElement('tbody');
+			table.appendChild(tbody);
+			group.appendChild(table);
+			this.container.appendChild(group);
+		}
+
+		var donation=new MuseumDonation(definitions[i]);
+		this.entries.push(donation);
+		tbody.appendChild(donation.createRow());
+	}
+}
+MuseumDonations.prototype.save=function(){
+	for(var i=0; i<this.entries.length; i++)
+		this.entries[i].save();
+}
+MuseumDonations.prototype.getFillDefaults=function(){
+	for(var i=0; i<this.entries.length; i++){
+		var entry=this.entries[i];
+		if((entry.checkbox && entry.checkbox.checked) || entry.isDonated()){
+			return {
+				dateValue:(entry.dateInput && entry.dateInput.value)? entry.dateInput.value : formatMuseumDonationDate(entry.year, entry.month, entry.day),
+				donorValue:(entry.donorSelect && parseInt(entry.donorSelect.value))? parseInt(entry.donorSelect.value) : (entry.donor || 1)
+			};
+		}
+	}
+
+	var d=new Date();
+	return {
+		dateValue:formatMuseumDonationDate(d.getFullYear(), d.getMonth()+1, d.getDate()),
+		donorValue:1
+	};
+}
+MuseumDonations.prototype.setAll=function(donated){
+	var defaults=this.getFillDefaults();
+	for(var i=0; i<this.entries.length; i++)
+		this.entries[i].setDonated(donated, defaults.dateValue, defaults.donorValue);
+}
+MuseumDonations.prototype.setGroup=function(groupTitle, donated){
+	var defaults=this.getFillDefaults();
+	for(var i=0; i<this.entries.length; i++)
+		if(this.entries[i].groupTitle===groupTitle)
+			this.entries[i].setDonated(donated, defaults.dateValue, defaults.donorValue);
+}
+
+
+
+
 
 function Player(n){
 	this.n=n;
@@ -3274,6 +3571,7 @@ function initializeEverything2(){
 			el('villager-new').appendChild(opt);
 		}
 	}
+	museumDonationDefinitions=getMuseumDonationDefinitions();
 
 	/* hoping garbage collector does its job */
 	ITEM_GROUPS=null;
@@ -3571,6 +3869,10 @@ function initializeEverything2(){
 	/* museum rooms */
 	for(var i=0; i<4; i++)
 		el('museumroom'+i).appendChild(town.museumRooms[i].gridContainer);
+	if(town.museumDonations){
+		el('museum-donations').innerHTML='';
+		el('museum-donations').appendChild(town.museumDonations.container);
+	}
 
 
 
@@ -3822,7 +4124,3 @@ function saveChanges(){
 
 	WarnOnLeave.set(false);
 }
-
-
-
-
