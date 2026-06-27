@@ -608,6 +608,7 @@ function Town(){
 		this.shopHarvey=new ItemGrid(0x06ae54, 2, 1, false);
 
 	this.shopNookUnlock=savegame.readU8(Offsets.UNLOCK_NOOK);
+	this.shopNookUnlockChanged=false;
 	this.shopLeifUnlock=savegame.readU8(Offsets.UNLOCK_LEIF);
 	this.shopKicksUnlock=savegame.readU8(Offsets.UNLOCK_KICKS);
 	this.shopMuseumUnlock=savegame.readU8(Offsets.UNLOCK_MUSEUM);
@@ -777,7 +778,8 @@ Town.prototype.save=function(){
 		this.shopHarvey.save();
 
 	savegame.writeU8(Offsets.UNLOCK_NOOK, this.shopNookUnlock);
-	savegame.writeU8(Offsets.UNLOCK_NOOK+1, this.shopNookUnlock);
+	if (this.shopNookUnlockChanged)
+		savegame.writeU8(Offsets.UNLOCK_NOOK+1, this.shopNookUnlock);
 	savegame.writeU8(Offsets.UNLOCK_LEIF, this.shopLeifUnlock);
 	savegame.writeU8(Offsets.UNLOCK_KICKS, this.shopKicksUnlock);
 	savegame.writeU8(Offsets.UNLOCK_MUSEUM, this.shopMuseumUnlock);
@@ -3909,6 +3911,7 @@ function initializeEverything2(){
 	/* shop unlocks */
 	addSelectEvent('unlock-nook', function(){
 		town.shopNookUnlock=parseInt(this.value);
+		town.shopNookUnlockChanged=true;
 		if (town.shopNookUnlock > 2) town.shopLeifUnlock=town.shopNookUnlock;
 		el('checkbox-unlock-leif').checked=town.shopLeifUnlock > 1;
 		el('checkbox-unlock-leif').disabled=town.shopNookUnlock > 2;
