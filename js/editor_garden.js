@@ -808,7 +808,7 @@ Town.prototype.save=function(){
 	savegame.writeU8(Offsets.UNLOCK_FORTUNE, this.shopFortuneUnlock);
 	savegame.writeU8(Offsets.UNLOCK_SHAMPOODLE, this.shopShampoodleUnlock);
 
-	savegame.writeU8(
+	if (this.qrMachineChanged) savegame.writeU8(
 		Offsets.TOWN_ORDINANCES+Constants.TFLAG_QRMACHINE,
 		savegame.readU8(Offsets.TOWN_ORDINANCES+Constants.TFLAG_QRMACHINE)
 		& ~Constants.TFLAG_QRMACHINE_MASK | this.qrMachine
@@ -2651,9 +2651,11 @@ function Player(n){
 	this.registrationMonth=savegame.readU8(this.offset+Offsets.PLAYER_REGMONTH);
 	this.registrationDay=savegame.readU8(this.offset+Offsets.PLAYER_REGDAY);
 
+	this.qrMachineChanged = false;
 	this.qrMachine=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1) & Constants.PFLAG_QRMACHINE_MASK3;
 	this.island=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND) & Constants.PFLAG_ISLAND_MASK;
 	this.clubTortimer=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER) & Constants.PFLAG_CLUBTORTIMER_MASK;
+	this.permitChanged = false;
 	this.permit=savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT+1) & Constants.PFLAG_PERMIT_MASK3;
 
 
@@ -2812,6 +2814,7 @@ Player.prototype.save=function(){
 	savegame.writeU8(this.offset+Offsets.PLAYER_REGMONTH, this.registrationMonth);
 	savegame.writeU8(this.offset+Offsets.PLAYER_REGDAY, this.registrationDay);
 
+	if (this.qrMachineChanged) {
 	savegame.writeU8(
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE,
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE)
@@ -2825,8 +2828,9 @@ Player.prototype.save=function(){
 	savegame.writeU8(
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1,
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_QRMACHINE+1)
-		& ~Constants.PFLAG_QRMACHINE_MASK3 | this.qrMachine
+		& ~Constants.PFLAG_QRMACHINE_MASK3 | (this.qrMachine ? Constants.PFLAG_QRMACHINE_MASK3 : 0)
 	);
+	}
 	savegame.writeU8(
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND,
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_ISLAND)
@@ -2837,10 +2841,11 @@ Player.prototype.save=function(){
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_CLUBTORTIMER)
 		& ~Constants.PFLAG_CLUBTORTIMER_MASK | this.clubTortimer
 	);
+	if (this.permitChanged) {
 	savegame.writeU8(
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT,
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT)
-		& ~Constants.PFLAG_PERMIT_MASK1 | (this.permit ? Constants.PFLAG_PERMIT_MASK3 : 0)
+		& ~Constants.PFLAG_PERMIT_MASK1 | (this.permit ? Constants.PFLAG_PERMIT_MASK1 : 0)
 	);
 	savegame.writeU8(
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT,
@@ -2850,8 +2855,9 @@ Player.prototype.save=function(){
 	savegame.writeU8(
 		this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT+1,
 		savegame.readU8(this.offset+Offsets.PLAYER_FLAGS+Constants.PFLAG_PERMIT+1)
-		& ~Constants.PFLAG_PERMIT_MASK3 | Constants.PFLAG_PERMIT_MASK3
+		& ~Constants.PFLAG_PERMIT_MASK3 | (this.permit ? Constants.PFLAG_PERMIT_MASK3 : 0)
 	);
+	}
 
 
 
@@ -3905,6 +3911,7 @@ function initializeEverything2(){
 	addEvent(el('input-meow'), 'change', function(){currentPlayer.meowCoupons.set(parseInt(this.value))});
 
 	el('checkbox-qrmachine').onchange=(ev)=>{
+		currentPlayer.qrMachineChanged=true;
 		currentPlayer.qrMachine=ev.target.checked?Constants.PFLAG_QRMACHINE_MASK3:0;
 		if (currentPlayer.qrMachine) {
 			town.qrMachine = Constants.TFLAG_QRMACHINE_MASK;
@@ -3913,7 +3920,10 @@ function initializeEverything2(){
 	}
 	el('checkbox-island').onchange=(ev)=>currentPlayer.island=ev.target.checked?Constants.PFLAG_ISLAND_MASK:0;
 	el('checkbox-clubtortimer').onchange=(ev)=>currentPlayer.clubTortimer=ev.target.checked?Constants.PFLAG_CLUBTORTIMER_MASK:0;
-	el('checkbox-permit').onchange=(ev)=>currentPlayer.permit=ev.target.checked?Constants.PFLAG_PERMIT_MASK3:0;
+	el('checkbox-permit').onchange=(ev)=>{
+		currentPlayer.permitChanged=true;
+		currentPlayer.permit=ev.target.checked?Constants.PFLAG_PERMIT_MASK3:0;
+	};
 
 	/* read basic town info */
 	town=new Town();
