@@ -140,7 +140,7 @@ var Offsets={
 	PLAYER_MEDALS:			0x6b7c,
 	PLAYER_WALLET:			0x6e38,
 	PLAYER_ISLANDBOX:		0x6e40,
-	PLAYER_LETTERS:			0x7008, /* TO-DO!!!!!!!!!!!!!!!!!!!!!!! */
+	PLAYER_LETTERS:			0x6f38,
 	PLAYER_EMOTIONS:		0x8900,
 	PLAYER_DRESSERS:		0x8e18,
 	PLAYER_SIZE:			0x9f10,
@@ -1030,9 +1030,13 @@ function refreshCurrentItemText(){
 }
 function click(evt,itemGridObj,firstClick){
 	var rect=itemGridObj.canvas.getBoundingClientRect();
-	var x=parseInt((evt.clientX-rect.left)/itemGridObj.tileSize);
-	var y=parseInt((evt.clientY-rect.top)/itemGridObj.tileSize);
-	if(parseInt(evt.clientX-rect.left)>itemGridObj.canvas.width || parseInt(evt.clientY-rect.top)>itemGridObj.canvas.height)
+	var tileWidth=rect.width/itemGridObj.width;
+	var tileHeight=rect.height/itemGridObj.height;
+	var x=parseInt((evt.clientX-rect.left)/tileWidth);
+	var y=parseInt((evt.clientY-rect.top)/tileHeight);
+	if(parseInt(evt.clientX-rect.left)>rect.width || parseInt(evt.clientY-rect.top)>rect.height)
+		return false;
+	if(x<0 || y<0 || x>=itemGridObj.width || y>=itemGridObj.height)
 		return false;
 
 	var itemSlot=itemGridObj.itemList.items[(parseInt(y*itemGridObj.width)+x)];
@@ -1121,8 +1125,8 @@ function click(evt,itemGridObj,firstClick){
 		el('tooltip-pattern').style.display='none';
 	}
 
-	el('tooltip').style.top=window.pageYOffset+24+rect.top+y*itemGridObj.tileSize+'px';
-	el('tooltip').style.left=rect.left+24+x*itemGridObj.tileSize+'px';
+	el('tooltip').style.top=window.pageYOffset+24+rect.top+y*tileHeight+'px';
+	el('tooltip').style.left=rect.left+24+x*tileWidth+'px';
 }
 
 
@@ -2292,6 +2296,607 @@ function refreshVillagerEdit(){
 
 
 
+var LETTER_STATUS_LABELS={
+	0:'Empty',
+	1:'Unopened',
+	2:'Opened',
+	3:'Draft / sending',
+	9:'Unopened with gift wrap',
+	10:'Opened with gift wrap'
+};
+var LETTER_SENDER_LABELS={
+	0:'Custom / villager',
+	1:'Mom',
+	2:'Dad',
+	3:'mom and dad',
+	4:'Isabelle',
+	5:'Isabelle',
+	6:'Happy Home Showcase',
+	7:'unknown sender',
+	8:'Nintendo staff',
+	9:'Happy Home Showcase order',
+	10:'The Museum',
+	11:'Post Office',
+	12:'Jack',
+	13:'Redd\'s Gallery',
+	14:'Gulliver',
+	15:'Snowboy',
+	16:'Certificate',
+	17:'Certificate',
+	18:'Katie',
+	19:'K.K. Slider',
+	20:'Wishy the Star',
+	21:'Timmy Nook',
+	22:'Tommy Nook',
+	23:'Nooklings',
+	24:'Timothy Nook',
+	25:'Blanca',
+	26:'Jingle',
+	27:'No sender (blank in game)',
+	28:'Snowtyke',
+	29:'Isabelle',
+	30:'Nintendo',
+	31:'Lottie',
+	32:'Campground',
+	33:'Nook\'s Homes',
+	34:'Leif'
+};
+var LETTER_EMPTY_PRESENT=0x7ffe;
+var LETTER_MAILBOX_FLAG=0x08;
+var LETTER_PAPER_COUNT=68;
+var LETTER_PAPER_BASE=0x223a;
+var LETTER_PAPER_BASE_PLUS=0x223f;
+var LETTER_RECIPIENT_UNKNOWN='unknown';
+var LETTER_RECIPIENT_PLAYER_PREFIX='player:';
+var LETTER_RECIPIENT_VILLAGER_PREFIX='villager:';
+var LETTER_SENDER_TYPE_PLAYER='player';
+var LETTER_SENDER_TYPE_VILLAGER='villager';
+var LETTER_SENDER_TYPE_SPECIAL='special';
+var LETTER_SENDER_TYPE_CUSTOM_PLAYER='custom-player';
+var LETTER_EMPTY_VILLAGER=0xffff;
+var LETTER_DRAFT_SENDER_VILLAGER=0x0231;
+var LETTER_RECEIVED_PLAYER_RECIPIENT_TYPE=1;
+var LETTER_DRAFT_VILLAGER_RECIPIENT_TYPE=2;
+var LETTER_PLAYER_SENDER_TYPE=1;
+var LETTER_VILLAGER_SENDER_TYPE=2;
+var LETTER_SYSTEM_SENDER_TYPE=5;
+var LETTER_NAME_INSERTION_NONE=0xff;
+var LETTER_SIZE=0x0280;
+var LETTER_NAME_LENGTH=9;
+var LETTER_INTRO_LENGTH=33;
+var LETTER_BODY_LENGTH=193;
+var LETTER_FOOTER_LENGTH=33;
+var LETTER_CUSTOM_PLAYER_FALLBACK_ID=0xffff;
+var LETTER_OFFSETS={
+	RECEIVER_PLAYER_ID:0x00,
+	RECEIVER_NAME:0x02,
+	RECEIVER_NAME_META:0x14,
+	RECEIVER_TOWN_ID:0x16,
+	RECEIVER_TOWN_NAME:0x18,
+	RECEIVER_TOWN_NAME_META:0x2a,
+	RECIPIENT_VILLAGER_ID:0x2c,
+	RECIPIENT_VILLAGER_PERSONALITY:0x2e,
+	PLAYER_INDEX_FIELD:0x30,
+	SENDER_PLAYER_ID:0x34,
+	SENDER_NAME:0x36,
+	SENDER_NAME_META:0x48,
+	SENDER_TOWN_ID:0x4a,
+	SENDER_TOWN_NAME:0x4c,
+	SENDER_TOWN_NAME_META:0x5e,
+	SENDER_VILLAGER_ID:0x60,
+	SENDER_VILLAGER_PERSONALITY:0x62,
+	SENDER_VILLAGER_TYPE:0x64,
+	SENDER_VILLAGER_UNKNOWN:0x66,
+	INTRO:0x68,
+	BODY:0xaa,
+	FOOTER:0x22c,
+	NAME_INSERTION:0x26e,
+	PAPER_TYPE:0x26f,
+	STATUS:0x270,
+	SPECIAL_SENDER_ID:0x271,
+	TYPE:0x272,
+	PRESENT:0x274
+};
+
+function setU16StringValue(u16string, value){
+	for(var i=0; i<u16string.maxLength; i++)
+		u16string.chars[i]=0;
+	for(var i=0; i<value.length && i<u16string.maxLength-1; i++)
+		u16string.chars[i]=value.charCodeAt(i);
+	u16string.toString();
+}
+function createU16Textarea(u16string, rows){
+	var textarea=document.createElement('textarea');
+	textarea.maxLength=u16string.maxLength-1;
+	textarea.rows=rows;
+	textarea.value=u16string.toString();
+	textarea.u16string=u16string;
+	addEvent(textarea, 'change', function(){
+		setU16StringValue(this.u16string, this.value);
+	});
+	return textarea;
+}
+function createLetterNameInsertionInput(letter){
+	var input=document.createElement('input');
+	input.type='number';
+	input.min=0;
+	input.max=255;
+	input.placeholder='none';
+	input.letter=letter;
+	setLetterNameInsertionInputValue(input, letter.receiverNamePosition);
+	addEvent(input, 'change', function(){
+		var value=this.value.trim();
+		if(value===''){
+			this.letter.receiverNamePosition=LETTER_NAME_INSERTION_NONE;
+		}else{
+			value=parseInt(value);
+			if(isNaN(value))
+				value=LETTER_NAME_INSERTION_NONE;
+			this.letter.receiverNamePosition=Math.max(0, Math.min(255, value));
+		}
+		setLetterNameInsertionInputValue(this, this.letter.receiverNamePosition);
+		this.letter.markNotEmpty();
+	});
+	return input;
+}
+function createLetterStatusSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	for(var value in LETTER_STATUS_LABELS)
+		select.appendChild(createOption(value, LETTER_STATUS_LABELS[value]));
+	if(typeof LETTER_STATUS_LABELS[letter.status]==='undefined')
+		select.appendChild(createOption(letter.status, 'Unknown '+letter.status));
+	select.value=letter.status;
+	addEvent(select, 'change', function(){
+		this.letter.status=parseInt(this.value);
+		if(getLetterBaseStatus(this.letter.status)===3 && getLetterRecipientValue(this.letter)===LETTER_RECIPIENT_UNKNOWN)
+			this.letter.setRecipient(LETTER_RECIPIENT_PLAYER_PREFIX+getLetterDefaultPlayerIndex(this.letter.playerIndex || 0));
+		this.letter.refreshEditor();
+	});
+	return select;
+}
+function getLetterBaseStatus(status){
+	if(status===9)
+		return 1;
+	if(status===10)
+		return 2;
+	return status;
+}
+function isLetterMailboxStatus(status){
+	return status===9 || status===10;
+}
+function setLetterMailboxStatus(letter, isMailbox){
+	var baseStatus=getLetterBaseStatus(letter.status);
+	if(baseStatus!==1 && baseStatus!==2)
+		baseStatus=1;
+
+	letter.status=isMailbox? (baseStatus|LETTER_MAILBOX_FLAG):baseStatus;
+}
+function getLetterSenderLabel(senderId){
+	return typeof LETTER_SENDER_LABELS[senderId]==='undefined'? 'unknown_value_'+senderId:LETTER_SENDER_LABELS[senderId];
+}
+function getLetterSenderType(letter){
+	if(letter.senderId!==0)
+		return LETTER_SENDER_TYPE_SPECIAL;
+	if(getLetterPlayerSenderIndex(letter)>=0)
+		return LETTER_SENDER_TYPE_PLAYER;
+	if(isLetterStoredPlayerSender(letter))
+		return LETTER_SENDER_TYPE_CUSTOM_PLAYER;
+	return LETTER_SENDER_TYPE_VILLAGER;
+}
+function setLetterPlayerMailShape(letter){
+	letter.senderId=0;
+	letter.senderVillagerId=LETTER_DRAFT_SENDER_VILLAGER;
+	letter.senderVillagerPersonality=0;
+	letter.senderVillagerType=LETTER_PLAYER_SENDER_TYPE;
+	letter.senderVillagerUnknown=0;
+
+	if(getLetterBaseStatus(letter.status)!==3){
+		letter.recipientVillagerId=LETTER_DRAFT_SENDER_VILLAGER;
+		letter.recipientVillagerPersonality=0;
+	}
+}
+function setLetterPlayerSender(letter, playerIndex){
+	var player=players[playerIndex];
+	if(!isLetterActivePlayerIndex(playerIndex))
+		return;
+
+	setLetterPlayerMailShape(letter);
+	letter.senderPlayerId=getLetterPlayerId(player);
+	letter.senderTownId=getLetterTownId();
+	setU16StringValue(letter.senderName, player.name.toString());
+	letter.senderNameMeta=playerIndex===letter.playerIndex? playerIndex+1:0;
+	setU16StringValue(letter.senderTownName, town.name.toString());
+	letter.senderTownNameMeta=getLetterStringMetaValue(town.name.toString());
+}
+function setLetterSpecialSender(letter, senderId){
+	letter.senderId=senderId;
+	letter.senderPlayerId=0;
+	letter.senderTownId=0;
+	letter.senderVillagerId=LETTER_EMPTY_VILLAGER;
+	letter.senderVillagerPersonality=0;
+	letter.senderVillagerType=LETTER_SYSTEM_SENDER_TYPE;
+	letter.senderVillagerUnknown=0;
+	setU16StringValue(letter.senderName, '');
+	letter.senderNameMeta=0;
+	setU16StringValue(letter.senderTownName, '');
+	letter.senderTownNameMeta=0;
+}
+function setLetterCustomPlayerSender(letter){
+	var source=getLetterStoredPlayerSenderSource(letter);
+	var currentIsCustom=letter.senderPlayerId!==0 && letter.senderPlayerId!==getLetterTownId() && getLetterPlayerSenderIndex(letter)<0;
+
+	setLetterPlayerMailShape(letter);
+	if(!currentIsCustom)
+		letter.senderPlayerId=source? source.senderPlayerId:LETTER_CUSTOM_PLAYER_FALLBACK_ID;
+	letter.senderTownId=getLetterTownId();
+	if(!currentIsCustom || !letter.senderName.toString())
+		setU16StringValue(letter.senderName, source? source.senderName:'Player');
+	letter.senderNameMeta=0;
+	if(town){
+		setU16StringValue(letter.senderTownName, town.name.toString());
+		letter.senderTownNameMeta=getLetterStringMetaValue(town.name.toString());
+	}
+}
+function createLetterSenderSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	select.appendChild(createOption(LETTER_SENDER_TYPE_PLAYER, 'Player'));
+	select.appendChild(createOption(LETTER_SENDER_TYPE_VILLAGER, 'Villager'));
+	select.appendChild(createOption(LETTER_SENDER_TYPE_CUSTOM_PLAYER, 'Custom* (former player)'));
+	select.appendChild(createOption(LETTER_SENDER_TYPE_SPECIAL, 'Special'));
+	select.value=getLetterSenderType(letter);
+	addEvent(select, 'change', function(){
+		if(this.value===LETTER_SENDER_TYPE_PLAYER)
+			setLetterPlayerSender(this.letter, getLetterDefaultPlayerIndex(this.letter.playerIndex || 0));
+		else if(this.value===LETTER_SENDER_TYPE_CUSTOM_PLAYER)
+			setLetterCustomPlayerSender(this.letter);
+		else if(this.value===LETTER_SENDER_TYPE_VILLAGER){
+			this.letter.senderId=0;
+			this.letter.setTownAsSenderIdentity();
+			this.letter.setVillagerSender(getLetterDefaultVillagerSenderId(this.letter.senderVillagerId));
+		}else if(this.letter.senderId===0)
+			setLetterSpecialSender(this.letter, 1);
+		this.letter.markNotEmpty();
+		this.letter.refreshEditor();
+	});
+	return select;
+}
+function createLetterPlayerSenderSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	updateLetterPlayerSenderOptions(select);
+	addEvent(select, 'change', function(){
+		setLetterPlayerSender(this.letter, parseInt(this.value));
+		this.letter.markNotEmpty();
+		this.letter.refreshEditor();
+	});
+	return select;
+}
+function createLetterCustomPlayerSenderNameInput(letter){
+	var input=document.createElement('input');
+	input.type='text';
+	input.maxLength=letter.senderName.maxLength-1;
+	input.letter=letter;
+	input.value=letter.senderName.toString();
+	addEvent(input, 'change', function(){
+		var name=this.value || 'Player';
+		setU16StringValue(this.letter.senderName, name);
+		setLetterCustomPlayerSender(this.letter);
+		this.letter.markNotEmpty();
+		this.letter.refreshEditor();
+	});
+	return input;
+}
+function updateLetterPlayerSenderOptions(select){
+	var letter=select.letter;
+	var selectedValue=select.value;
+	select.innerHTML='';
+
+	for(var i=0; i<4; i++)
+		if(isLetterActivePlayerIndex(i))
+			select.appendChild(createOption(i, getLetterPlayerOptionLabel(i)));
+
+	var playerIndex=getLetterPlayerSenderIndex(letter);
+	select.value=selectedValue;
+	if(!select.value)
+		select.value=playerIndex>=0? playerIndex:getLetterDefaultPlayerIndex(letter.playerIndex || 0);
+}
+function createLetterSpecialSenderSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	for(var value in LETTER_SENDER_LABELS){
+		if(parseInt(value)!==0)
+			select.appendChild(createOption(value, LETTER_SENDER_LABELS[value]));
+	}
+	if(letter.senderId!==0 && typeof LETTER_SENDER_LABELS[letter.senderId]==='undefined')
+		select.appendChild(createOption(letter.senderId, getLetterSenderLabel(letter.senderId)));
+	select.value=letter.senderId || 1;
+	addEvent(select, 'change', function(){
+		setLetterSpecialSender(this.letter, parseInt(this.value));
+		this.letter.markNotEmpty();
+		this.letter.refreshEditor();
+	});
+	return select;
+}
+function createLetterVillagerSenderSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	updateLetterVillagerSenderOptions(select);
+	addEvent(select, 'change', function(){
+		this.letter.setVillagerSender(parseInt(this.value));
+		this.letter.markNotEmpty();
+		this.letter.refreshEditor();
+	});
+	return select;
+}
+function updateLetterVillagerSenderOptions(select){
+	var letter=select.letter;
+	var selectedValue=select.value;
+	select.innerHTML='';
+	select.appendChild(createOption(LETTER_EMPTY_VILLAGER, '-'));
+
+	var villagerOptions=el('villager-new').options;
+	for(var i=0; i<villagerOptions.length; i++){
+		var value=parseInt(villagerOptions[i].value);
+		if(!isValidLetterVillagerId(value))
+			continue;
+
+		select.appendChild(createOption(value, getLetterVillagerOptionLabel(value)));
+	}
+
+	select.value=selectedValue;
+	if(!select.value)
+		select.value=letter.status? letter.senderVillagerId:LETTER_EMPTY_VILLAGER;
+	if(!select.value)
+		select.value=LETTER_EMPTY_VILLAGER;
+}
+function createLetterRecipientSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	updateLetterRecipientOptions(select);
+	select.value=getLetterRecipientValue(letter);
+	addEvent(select, 'change', function(){
+		this.letter.setRecipient(this.value);
+		this.letter.status=3;
+		this.letter.refreshEditor();
+	});
+	return select;
+}
+function updateLetterRecipientOptions(select){
+	var selectedValue=select.value;
+	select.innerHTML='';
+
+	for(var i=0; i<4; i++)
+		if(isLetterActivePlayerIndex(i))
+			select.appendChild(createOption(LETTER_RECIPIENT_PLAYER_PREFIX+i, getLetterPlayerOptionLabel(i)));
+
+	var villagerOptions=el('villager-new').options;
+	for(var i=0; i<villagerOptions.length; i++){
+		var value=parseInt(villagerOptions[i].value);
+		if(isValidLetterVillagerId(value))
+			select.appendChild(createOption(LETTER_RECIPIENT_VILLAGER_PREFIX+value, getLetterVillagerOptionLabel(value)));
+	}
+
+	select.value=selectedValue;
+}
+function isValidLetterVillagerId(villagerId){
+	return villagerId!==LETTER_EMPTY_VILLAGER && villagerId<0x1000 && isValidVillagerId(villagerId) && !!el('villager-new-'+villagerId);
+}
+function getLetterDefaultVillagerSenderId(preferredId){
+	if(isValidLetterVillagerId(preferredId))
+		return preferredId;
+
+	var villagerOptions=el('villager-new').options;
+	for(var i=0; i<villagerOptions.length; i++){
+		var value=parseInt(villagerOptions[i].value);
+		if(isValidLetterVillagerId(value))
+			return value;
+	}
+
+	return LETTER_EMPTY_VILLAGER;
+}
+function getLetterTownId(){
+	if(!town)
+		return -1;
+
+	return (town.townId2<<8)+town.townId1;
+}
+function getLetterPlayerId(player){
+	return player? (player.playerId2<<8)+player.playerId1 : 0;
+}
+function isLetterActivePlayerIndex(playerIndex){
+	var player=players && players[playerIndex];
+	return !!(player && getLetterPlayerId(player)!==0 && player.name.toString());
+}
+function getLetterDefaultPlayerIndex(preferredIndex){
+	if(isLetterActivePlayerIndex(preferredIndex))
+		return preferredIndex;
+
+	for(var i=0; i<4; i++)
+		if(isLetterActivePlayerIndex(i))
+			return i;
+
+	return 0;
+}
+function isLetterStoredPlayerSender(letter){
+	return letter.senderId===0 &&
+		getLetterPlayerSenderIndex(letter)<0 &&
+		letter.senderPlayerId!==0 &&
+		letter.senderPlayerId!==getLetterTownId() &&
+		letter.senderName.toString() &&
+		(letter.senderVillagerType===LETTER_PLAYER_SENDER_TYPE || letter.senderVillagerId===LETTER_EMPTY_VILLAGER);
+}
+function getLetterStoredPlayerSenderSource(ignoreLetter){
+	if(!players)
+		return false;
+
+	for(var i=0; i<players.length; i++){
+		var player=players[i];
+		if(!player || !player.letters)
+			continue;
+
+		for(var j=0; j<player.letters.length; j++){
+			var letter=player.letters[j];
+			if(letter && letter!==ignoreLetter && isLetterStoredPlayerSender(letter)){
+				return {
+					senderPlayerId:letter.senderPlayerId,
+					senderName:letter.senderName.toString()
+				};
+			}
+		}
+	}
+
+	return false;
+}
+function isLetterStoredPlayerRecipient(letter){
+	return getLetterBaseStatus(letter.status)===3 &&
+		letter.receiverPlayerId!==0 &&
+		letter.receiverPlayerId!==getLetterTownId() &&
+		letter.recipientVillagerId===0;
+}
+function getLetterPlayerOptionLabel(playerIndex){
+	var player=players && players[playerIndex];
+	if(!player)
+		return 'Player '+(playerIndex+1);
+
+	var playerName=player.name.toString() || ('Player '+(playerIndex+1));
+	return playerName;
+}
+function getLetterVillagerOptionLabel(villagerId){
+	var villagerOption=el('villager-new-'+villagerId);
+	return villagerOption? villagerOption.innerHTML.replace(/^\*+\s*/, ''):'Unknown villager '+villagerId;
+}
+function getLetterVillagerPersonality(villagerId){
+	var villagerOption=el('villager-new-'+villagerId);
+	if(villagerOption && typeof villagerOption.status!=='undefined')
+		return parseInt(villagerOption.status) || 0;
+
+	if(typeof villagers!=='undefined' && villagers){
+		for(var i=0; i<villagers.length; i++){
+			if(villagers[i] && villagers[i].id===villagerId)
+				return villagers[i].personality || 0;
+		}
+	}
+
+	return 0;
+}
+function getLetterStringMetaValue(value){
+	return (value || '').length;
+}
+function setLetterNameInsertionInputValue(input, value){
+	input.value=value===LETTER_NAME_INSERTION_NONE? '' : value;
+}
+function ensureLetterNoNameInsertion(letter){
+	if(letter.receiverNamePosition===0)
+		letter.receiverNamePosition=LETTER_NAME_INSERTION_NONE;
+}
+function updateLetterUnknownRecipientOption(select, showUnknown){
+	var unknownOption=select.querySelector('option[value="'+LETTER_RECIPIENT_UNKNOWN+'"]');
+	if(showUnknown && !unknownOption){
+		unknownOption=createOption(LETTER_RECIPIENT_UNKNOWN, 'Unknown recipient');
+		unknownOption.disabled=true;
+		select.appendChild(unknownOption);
+	}else if(!showUnknown && unknownOption){
+		unknownOption.parentNode.removeChild(unknownOption);
+	}
+}
+function getLetterPlayerRecipientIndex(letter){
+	if(!players)
+		return -1;
+
+	for(var i=0; i<players.length; i++){
+		var player=players[i];
+		if(!isLetterActivePlayerIndex(i))
+			continue;
+
+		var playerId=getLetterPlayerId(player);
+		if(playerId===letter.receiverPlayerId)
+			return i;
+	}
+
+	return -1;
+}
+function getLetterPlayerSenderIndex(letter){
+	if(!players)
+		return -1;
+
+	for(var i=0; i<players.length; i++){
+		var player=players[i];
+		if(!isLetterActivePlayerIndex(i))
+			continue;
+
+		var playerId=getLetterPlayerId(player);
+		if(playerId===letter.senderPlayerId)
+			return i;
+	}
+
+	return -1;
+}
+function getLetterRecipientVillagerId(letter){
+	if(isLetterStoredPlayerRecipient(letter))
+		return -1;
+
+	if(isValidLetterVillagerId(letter.recipientVillagerId))
+		return letter.recipientVillagerId;
+
+	if(getLetterBaseStatus(letter.status)===3 && isValidLetterVillagerId(letter.senderVillagerId))
+		return letter.senderVillagerId;
+
+	return -1;
+}
+function getLetterRecipientValue(letter){
+	var recipientIndex=getLetterPlayerRecipientIndex(letter);
+	if(recipientIndex>=0)
+		return LETTER_RECIPIENT_PLAYER_PREFIX+recipientIndex;
+
+	var villagerId=getLetterRecipientVillagerId(letter);
+	if(villagerId>=0)
+		return LETTER_RECIPIENT_VILLAGER_PREFIX+villagerId;
+
+	return LETTER_RECIPIENT_UNKNOWN;
+}
+function getLetterPaperItemId(paperType){
+	return (plusMode? LETTER_PAPER_BASE_PLUS : LETTER_PAPER_BASE)+parseInt(paperType);
+}
+function getLetterPaperLabel(paperType){
+	var paperOption=el('item_'+getLetterPaperItemId(paperType));
+	return paperOption? paperOption.text : 'Unknown paper '+paperType;
+}
+function createLetterPaperSelect(letter){
+	var select=document.createElement('select');
+	select.letter=letter;
+	for(var i=0; i<LETTER_PAPER_COUNT; i++){
+		var paperOption=el('item_'+getLetterPaperItemId(i));
+		if(paperOption || i===letter.paperType)
+			select.appendChild(createOption(i, getLetterPaperLabel(i)));
+	}
+	if(letter.paperType>=LETTER_PAPER_COUNT)
+		select.appendChild(createOption(letter.paperType, getLetterPaperLabel(letter.paperType)));
+	select.value=letter.paperType;
+	addEvent(select, 'change', function(){
+		this.letter.paperType=parseInt(this.value);
+		this.letter.markNotEmpty();
+	});
+	return select;
+}
+function createLetterField(label, control){
+	var field=document.createElement('div');
+	field.className='player-letter-field';
+	var fieldLabel=createSpan(label);
+	field.appendChild(fieldLabel);
+	field.appendChild(control);
+	return field;
+}
+function createLetterTextField(label, control){
+	var field=document.createElement('label');
+	field.className='player-letter-text-field';
+	var fieldLabel=createSpan(label);
+	field.appendChild(fieldLabel);
+	field.appendChild(control);
+	return field;
+}
+
 function Letter(offset){
 	this.offset=offset;
 
@@ -2303,6 +2908,397 @@ Letter.prototype.save=function(){
 	this.intro.save();
 	this.body.save();
 	this.end.save();
+}
+
+function PlayerLetter(offset, playerIndex){
+	this.offset=offset;
+	this.playerIndex=playerIndex || 0;
+
+	this.receiverPlayerId=savegame.readU16(this.offset+LETTER_OFFSETS.RECEIVER_PLAYER_ID);
+	this.receiverName=new U16String(this.offset+LETTER_OFFSETS.RECEIVER_NAME, LETTER_NAME_LENGTH);
+	this.receiverNameMeta=savegame.readU16(this.offset+LETTER_OFFSETS.RECEIVER_NAME_META);
+	this.receiverTownId=savegame.readU16(this.offset+LETTER_OFFSETS.RECEIVER_TOWN_ID);
+	this.receiverTownName=new U16String(this.offset+LETTER_OFFSETS.RECEIVER_TOWN_NAME, LETTER_NAME_LENGTH);
+	this.receiverTownNameMeta=savegame.readU16(this.offset+LETTER_OFFSETS.RECEIVER_TOWN_NAME_META);
+	this.recipientVillagerId=savegame.readU16(this.offset+LETTER_OFFSETS.RECIPIENT_VILLAGER_ID);
+	this.recipientVillagerPersonality=savegame.readU16(this.offset+LETTER_OFFSETS.RECIPIENT_VILLAGER_PERSONALITY);
+	this.playerIndexField=savegame.readU8(this.offset+LETTER_OFFSETS.PLAYER_INDEX_FIELD);
+
+	this.senderPlayerId=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_PLAYER_ID);
+	this.senderName=new U16String(this.offset+LETTER_OFFSETS.SENDER_NAME, LETTER_NAME_LENGTH);
+	this.senderNameMeta=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_NAME_META);
+	this.senderTownId=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_TOWN_ID);
+	this.senderTownName=new U16String(this.offset+LETTER_OFFSETS.SENDER_TOWN_NAME, LETTER_NAME_LENGTH);
+	this.senderTownNameMeta=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_TOWN_NAME_META);
+
+	this.intro=new U16String(this.offset+LETTER_OFFSETS.INTRO, LETTER_INTRO_LENGTH);
+	this.body=new U16String(this.offset+LETTER_OFFSETS.BODY, LETTER_BODY_LENGTH);
+	this.end=new U16String(this.offset+LETTER_OFFSETS.FOOTER, LETTER_FOOTER_LENGTH);
+
+	this.receiverNamePosition=savegame.readU8(this.offset+LETTER_OFFSETS.NAME_INSERTION);
+	this.paperType=savegame.readU8(this.offset+LETTER_OFFSETS.PAPER_TYPE);
+	this.status=savegame.readU8(this.offset+LETTER_OFFSETS.STATUS);
+	this.senderId=savegame.readU8(this.offset+LETTER_OFFSETS.SPECIAL_SENDER_ID);
+	this.type=savegame.readU8(this.offset+LETTER_OFFSETS.TYPE);
+	this.senderVillagerId=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_ID);
+	this.senderVillagerPersonality=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_PERSONALITY);
+	this.senderVillagerType=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_TYPE);
+	this.senderVillagerUnknown=savegame.readU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_UNKNOWN);
+	this.present=new ItemGrid(this.offset+LETTER_OFFSETS.PRESENT, 1, 1, false);
+}
+PlayerLetter.prototype.createEditor=function(slot){
+	this.controls={};
+	var container=document.createElement('div');
+	container.className='player-letter';
+	this.container=container;
+
+	var header=document.createElement('div');
+	header.className='player-letter-header';
+	var title=document.createElement('h4');
+	title.innerHTML='Slot '+(slot+1);
+	header.appendChild(title);
+	var deleteButton=document.createElement('button');
+	deleteButton.className='red';
+	deleteButton.type='button';
+	deleteButton.innerHTML='Delete';
+	this.controls.deleteButton=deleteButton;
+	var letter=this;
+	addEvent(deleteButton, 'click', function(){
+		letter.clear();
+	});
+	header.appendChild(deleteButton);
+	container.appendChild(header);
+
+	var fields=document.createElement('div');
+	fields.className='player-letter-fields';
+	this.controls.status=createLetterStatusSelect(this);
+	this.controls.senderId=createLetterSenderSelect(this);
+	this.controls.playerSenderId=createLetterPlayerSenderSelect(this);
+	this.controls.customPlayerSenderName=createLetterCustomPlayerSenderNameInput(this);
+	this.controls.specialSenderId=createLetterSpecialSenderSelect(this);
+	this.controls.recipient=createLetterRecipientSelect(this);
+	this.controls.senderVillagerId=createLetterVillagerSenderSelect(this);
+	this.controls.paperType=createLetterPaperSelect(this);
+	this.controls.receiverNamePosition=createLetterNameInsertionInput(this);
+	fields.appendChild(createLetterField('State', this.controls.status));
+	this.controls.senderField=createLetterField('Sender type', this.controls.senderId);
+	fields.appendChild(this.controls.senderField);
+	this.controls.recipientField=createLetterField('Recipient', this.controls.recipient);
+	fields.appendChild(this.controls.recipientField);
+	this.controls.playerSenderField=createLetterField('Player sender', this.controls.playerSenderId);
+	fields.appendChild(this.controls.playerSenderField);
+	this.controls.customPlayerSenderNameField=createLetterField('Custom player name*', this.controls.customPlayerSenderName);
+	fields.appendChild(this.controls.customPlayerSenderNameField);
+	this.controls.specialSenderField=createLetterField('Special sender', this.controls.specialSenderId);
+	fields.appendChild(this.controls.specialSenderField);
+	this.controls.senderVillagerField=createLetterField('Villager sender', this.controls.senderVillagerId);
+	fields.appendChild(this.controls.senderVillagerField);
+	fields.appendChild(createLetterField('Paper', this.controls.paperType));
+	fields.appendChild(createLetterField('Name insertion', this.controls.receiverNamePosition));
+	container.appendChild(fields);
+
+	var presentPanel=document.createElement('div');
+	presentPanel.className='player-letter-present';
+	var presentHeader=createSpan('Attached present');
+	presentPanel.appendChild(presentHeader);
+	var presentBody=document.createElement('div');
+	presentBody.className='player-letter-present-body';
+	presentBody.appendChild(this.present.canvas);
+	this.controls.presentName=createSpan('');
+	this.controls.presentName.className='player-letter-present-name';
+	presentBody.appendChild(this.controls.presentName);
+	presentPanel.appendChild(presentBody);
+	var presentActions=document.createElement('div');
+	presentActions.className='player-letter-present-actions';
+	this.controls.wrapped=document.createElement('input');
+	this.controls.wrapped.type='checkbox';
+	this.controls.wrapped.letter=this;
+	var wrappedLabel=document.createElement('label');
+	wrappedLabel.appendChild(this.controls.wrapped);
+	wrappedLabel.appendChild(createSpan(' Gift wrap'));
+	addEvent(this.controls.wrapped, 'change', function(){
+		setLetterMailboxStatus(this.letter, this.checked);
+		this.letter.markNotEmpty();
+		this.letter.refreshEditor();
+	});
+	presentActions.appendChild(wrappedLabel);
+	var removePresentButton=document.createElement('button');
+	removePresentButton.type='button';
+	removePresentButton.innerHTML='Remove present';
+	var letter=this;
+	addEvent(removePresentButton, 'click', function(){
+		letter.present.itemList.items[0].set(0, 0, LETTER_EMPTY_PRESENT);
+		letter.present.itemList.edited=true;
+		letter.refreshPresentEditor();
+	});
+	presentActions.appendChild(removePresentButton);
+	presentPanel.appendChild(presentActions);
+	addEvent(this.present.canvas, 'mouseup', function(evt){
+		if(evt.button===0){
+			letter.markNotEmpty();
+			letter.refreshPresentEditor();
+		}
+	});
+	container.appendChild(presentPanel);
+
+	var textFields=document.createElement('div');
+	textFields.className='player-letter-text-fields';
+	this.controls.intro=createU16Textarea(this.intro, 2);
+	this.controls.body=createU16Textarea(this.body, 6);
+	this.controls.end=createU16Textarea(this.end, 2);
+	addEvent(this.controls.intro, 'change', function(){letter.markNotEmpty()});
+	addEvent(this.controls.body, 'change', function(){letter.markNotEmpty()});
+	addEvent(this.controls.end, 'change', function(){letter.markNotEmpty()});
+	textFields.appendChild(createLetterTextField('Intro', this.controls.intro));
+	textFields.appendChild(createLetterTextField('Body', this.controls.body));
+	textFields.appendChild(createLetterTextField('Footer', this.controls.end));
+	container.appendChild(textFields);
+	this.refreshEditor();
+
+	return container;
+}
+PlayerLetter.prototype.markNotEmpty=function(){
+	if(this.status===0){
+		this.status=1;
+		if(this.controls)
+			this.controls.status.value=this.status;
+	}
+}
+PlayerLetter.prototype.setOwnerAsSender=function(){
+	var player=players[this.playerIndex];
+	if(!isLetterActivePlayerIndex(this.playerIndex))
+		return;
+
+	this.senderId=0;
+	this.senderPlayerId=getLetterPlayerId(player);
+	this.senderTownId=getLetterTownId();
+	setU16StringValue(this.senderName, player.name.toString());
+	this.senderNameMeta=this.playerIndex+1;
+	setU16StringValue(this.senderTownName, town.name.toString());
+	this.senderTownNameMeta=getLetterStringMetaValue(town.name.toString());
+}
+PlayerLetter.prototype.setTownAsSenderIdentity=function(){
+	var townId=getLetterTownId();
+	var townName=town.name.toString();
+	this.senderPlayerId=townId;
+	this.senderTownId=townId;
+	setU16StringValue(this.senderName, townName);
+	this.senderNameMeta=getLetterStringMetaValue(townName);
+	setU16StringValue(this.senderTownName, townName);
+	this.senderTownNameMeta=getLetterStringMetaValue(townName);
+}
+PlayerLetter.prototype.setPlayerRecipient=function(playerIndex){
+	var player=players[playerIndex];
+	if(!isLetterActivePlayerIndex(playerIndex))
+		return;
+
+	this.playerIndexField=playerIndex;
+	this.receiverPlayerId=getLetterPlayerId(player);
+	this.receiverTownId=getLetterTownId();
+	this.recipientVillagerId=0;
+	this.recipientVillagerPersonality=0;
+	this.senderVillagerId=LETTER_DRAFT_SENDER_VILLAGER;
+	this.senderVillagerPersonality=0;
+	this.senderVillagerType=LETTER_VILLAGER_SENDER_TYPE;
+	this.senderVillagerUnknown=0;
+	setU16StringValue(this.receiverName, player.name.toString());
+	this.receiverNameMeta=playerIndex+1;
+	setU16StringValue(this.receiverTownName, town.name.toString());
+	this.receiverTownNameMeta=getLetterStringMetaValue(town.name.toString());
+}
+PlayerLetter.prototype.setVillagerRecipient=function(villagerId){
+	if(!isValidLetterVillagerId(villagerId))
+		return;
+
+	var townId=(town.townId2<<8)+town.townId1;
+	var townName=town.name.toString();
+	this.playerIndexField=LETTER_DRAFT_VILLAGER_RECIPIENT_TYPE;
+	this.senderId=0;
+	this.recipientVillagerId=villagerId;
+	this.recipientVillagerPersonality=getLetterVillagerPersonality(villagerId);
+	this.senderVillagerId=LETTER_DRAFT_SENDER_VILLAGER;
+	this.senderVillagerPersonality=0;
+	this.senderVillagerType=LETTER_VILLAGER_SENDER_TYPE;
+	this.senderVillagerUnknown=0;
+	this.receiverPlayerId=townId;
+	this.receiverTownId=townId;
+	setU16StringValue(this.receiverName, townName);
+	this.receiverNameMeta=getLetterStringMetaValue(townName);
+	setU16StringValue(this.receiverTownName, townName);
+	this.receiverTownNameMeta=getLetterStringMetaValue(townName);
+}
+PlayerLetter.prototype.setVillagerSender=function(villagerId){
+	this.senderVillagerId=villagerId;
+	if(isValidLetterVillagerId(villagerId)){
+		this.senderId=0;
+		this.playerIndexField=LETTER_RECEIVED_PLAYER_RECIPIENT_TYPE;
+		this.senderVillagerPersonality=getLetterVillagerPersonality(villagerId);
+		this.senderVillagerType=LETTER_VILLAGER_SENDER_TYPE;
+		this.senderVillagerUnknown=0;
+		ensureLetterNoNameInsertion(this);
+		this.setTownAsSenderIdentity();
+	}else{
+		this.senderVillagerPersonality=0;
+		this.senderVillagerType=0;
+		this.senderVillagerUnknown=0;
+	}
+}
+PlayerLetter.prototype.setRecipient=function(value){
+	this.setOwnerAsSender();
+	if(value.indexOf(LETTER_RECIPIENT_PLAYER_PREFIX)===0){
+		this.setPlayerRecipient(parseInt(value.substr(LETTER_RECIPIENT_PLAYER_PREFIX.length)));
+	}else if(value.indexOf(LETTER_RECIPIENT_VILLAGER_PREFIX)===0){
+		this.setVillagerRecipient(parseInt(value.substr(LETTER_RECIPIENT_VILLAGER_PREFIX.length)));
+	}
+}
+PlayerLetter.prototype.normalizeDraftRecipient=function(){
+	if(getLetterBaseStatus(this.status)!==3)
+		return;
+
+	var playerIndex=getLetterPlayerRecipientIndex(this);
+	if(playerIndex>=0){
+		this.setOwnerAsSender();
+		this.setPlayerRecipient(playerIndex);
+		return;
+	}
+
+	var villagerId=getLetterRecipientVillagerId(this);
+	if(villagerId>=0){
+		this.setOwnerAsSender();
+		this.setVillagerRecipient(villagerId);
+	}
+}
+PlayerLetter.prototype.refreshPresentEditor=function(){
+	var present=this.present.itemList.items[0];
+	var hasPresent=present.id!==LETTER_EMPTY_PRESENT;
+	present.refreshName();
+	this.present.repaintAll();
+	if(this.controls && this.controls.presentName)
+		this.controls.presentName.innerHTML=hasPresent? present.name:'-';
+	if(this.controls && this.controls.wrapped){
+		this.controls.wrapped.checked=hasPresent && isLetterMailboxStatus(this.status);
+		this.controls.wrapped.disabled=!hasPresent;
+	}
+}
+PlayerLetter.prototype.refreshEditor=function(options){
+	if(!this.controls)
+		return;
+
+	var refreshOptions=!(options && options.skipOptions);
+	var isDraft=getLetterBaseStatus(this.status)===3;
+	var recipientValue=getLetterRecipientValue(this);
+	var senderType=getLetterSenderType(this);
+	var playerSenderIndex=getLetterPlayerSenderIndex(this);
+	this.controls.status.value=this.status;
+	this.controls.senderId.value=senderType;
+	if(refreshOptions)
+		updateLetterPlayerSenderOptions(this.controls.playerSenderId);
+	this.controls.playerSenderId.value=playerSenderIndex>=0? playerSenderIndex:getLetterDefaultPlayerIndex(this.playerIndex || 0);
+	this.controls.customPlayerSenderName.value=this.senderName.toString();
+	this.controls.specialSenderId.value=this.senderId || 1;
+	if(refreshOptions){
+		updateLetterRecipientOptions(this.controls.recipient);
+		updateLetterUnknownRecipientOption(this.controls.recipient, isDraft && recipientValue===LETTER_RECIPIENT_UNKNOWN);
+	}
+	this.controls.recipient.value=recipientValue;
+	this.controls.senderField.style.display=isDraft?'none':'block';
+	this.controls.recipientField.style.display=isDraft?'block':'none';
+	var validVillagerSender=isValidLetterVillagerId(this.senderVillagerId);
+	if(refreshOptions)
+		updateLetterVillagerSenderOptions(this.controls.senderVillagerId);
+	this.controls.senderVillagerId.value=(this.status && validVillagerSender)? this.senderVillagerId:LETTER_EMPTY_VILLAGER;
+	this.controls.playerSenderField.style.display=(!isDraft && senderType===LETTER_SENDER_TYPE_PLAYER && this.status!==0)?'block':'none';
+	this.controls.customPlayerSenderNameField.style.display=(!isDraft && senderType===LETTER_SENDER_TYPE_CUSTOM_PLAYER && this.status!==0)?'block':'none';
+	this.controls.specialSenderField.style.display=(!isDraft && senderType===LETTER_SENDER_TYPE_SPECIAL && this.status!==0)?'block':'none';
+	this.controls.senderVillagerField.style.display=(!isDraft && senderType===LETTER_SENDER_TYPE_VILLAGER && this.status!==0)?'block':'none';
+	this.controls.deleteButton.disabled=this.status===0;
+	this.controls.paperType.value=this.paperType;
+	setLetterNameInsertionInputValue(this.controls.receiverNamePosition, this.receiverNamePosition);
+	this.controls.intro.value=this.intro.toString();
+	this.controls.body.value=this.body.toString();
+	this.controls.end.value=this.end.toString();
+	this.refreshPresentEditor();
+}
+PlayerLetter.prototype.clear=function(){
+	this.receiverPlayerId=0;
+	this.receiverTownId=0;
+	setU16StringValue(this.receiverName, '');
+	setU16StringValue(this.receiverTownName, '');
+	this.receiverNameMeta=0;
+	this.receiverTownNameMeta=0;
+	this.recipientVillagerId=0;
+	this.recipientVillagerPersonality=0;
+	this.playerIndexField=0;
+	this.senderPlayerId=0;
+	this.senderTownId=0;
+	setU16StringValue(this.senderName, '');
+	setU16StringValue(this.senderTownName, '');
+	this.senderNameMeta=0;
+	this.senderTownNameMeta=0;
+	setU16StringValue(this.intro, '');
+	setU16StringValue(this.body, '');
+	setU16StringValue(this.end, '');
+	this.receiverNamePosition=0;
+	this.paperType=0;
+	this.status=0;
+	this.senderId=0;
+	this.type=0;
+	this.senderVillagerId=LETTER_EMPTY_VILLAGER;
+	this.senderVillagerPersonality=0;
+	this.senderVillagerType=0;
+	this.senderVillagerUnknown=0;
+	this.present.itemList.items[0].set(0, 0, LETTER_EMPTY_PRESENT);
+	this.present.itemList.edited=true;
+	this.refreshEditor({skipOptions:true});
+}
+PlayerLetter.prototype.save=function(){
+	this.normalizeDraftRecipient();
+
+	if(getLetterBaseStatus(this.status)!==3){
+		var playerSenderIndex=getLetterPlayerSenderIndex(this);
+		if(this.senderId===0 && playerSenderIndex>=0){
+			setLetterPlayerSender(this, playerSenderIndex);
+		}else if(this.senderId===0 && isLetterStoredPlayerSender(this)){
+			setLetterPlayerMailShape(this);
+		}else if(this.senderId===0 && isValidLetterVillagerId(this.senderVillagerId)){
+			this.playerIndexField=LETTER_RECEIVED_PLAYER_RECIPIENT_TYPE;
+			this.senderVillagerPersonality=getLetterVillagerPersonality(this.senderVillagerId);
+			this.senderVillagerType=LETTER_VILLAGER_SENDER_TYPE;
+			this.senderVillagerUnknown=0;
+			this.setTownAsSenderIdentity();
+		}else if(this.senderId!==0){
+			setLetterSpecialSender(this, this.senderId);
+		}
+	}
+
+	savegame.writeU16(this.offset+LETTER_OFFSETS.RECEIVER_PLAYER_ID, this.receiverPlayerId);
+	this.receiverName.save();
+	savegame.writeU16(this.offset+LETTER_OFFSETS.RECEIVER_NAME_META, this.receiverNameMeta);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.RECEIVER_TOWN_ID, this.receiverTownId);
+	this.receiverTownName.save();
+	savegame.writeU16(this.offset+LETTER_OFFSETS.RECEIVER_TOWN_NAME_META, this.receiverTownNameMeta);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.RECIPIENT_VILLAGER_ID, this.recipientVillagerId);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.RECIPIENT_VILLAGER_PERSONALITY, this.recipientVillagerPersonality);
+	savegame.writeU8(this.offset+LETTER_OFFSETS.PLAYER_INDEX_FIELD, this.playerIndexField);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_PLAYER_ID, this.senderPlayerId);
+	this.senderName.save();
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_NAME_META, this.senderNameMeta);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_TOWN_ID, this.senderTownId);
+	this.senderTownName.save();
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_TOWN_NAME_META, this.senderTownNameMeta);
+	this.intro.save();
+	this.body.save();
+	this.end.save();
+	savegame.writeU8(this.offset+LETTER_OFFSETS.NAME_INSERTION, this.receiverNamePosition);
+	savegame.writeU8(this.offset+LETTER_OFFSETS.PAPER_TYPE, this.paperType);
+	savegame.writeU8(this.offset+LETTER_OFFSETS.STATUS, this.status);
+	savegame.writeU8(this.offset+LETTER_OFFSETS.SPECIAL_SENDER_ID, this.senderId);
+	savegame.writeU8(this.offset+LETTER_OFFSETS.TYPE, this.type);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_ID, this.senderVillagerId);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_PERSONALITY, this.senderVillagerPersonality);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_TYPE, this.senderVillagerType);
+	savegame.writeU16(this.offset+LETTER_OFFSETS.SENDER_VILLAGER_UNKNOWN, this.senderVillagerUnknown);
+	this.present.save();
 }
 
 
@@ -2688,9 +3684,12 @@ function Player(n){
 	}
 
 
-	this.letters=new Array(10);
-	for(var i=0; i<10; i++){
-		this.letters[i]=new Letter(this.offset+Offsets.PLAYER_LETTERS+i*0x0280);
+	this.letters=[];
+	if(plusMode){
+		for(var i=0; i<10; i++){
+			this.letters[i]=new PlayerLetter(this.offset+Offsets.PLAYER_LETTERS+i*LETTER_SIZE, n);
+			el('letters'+n).appendChild(this.letters[i].createEditor(i));
+		}
 	}
 
 
@@ -2743,6 +3742,30 @@ function Player(n){
 Player.prototype.setName=function(newName){
 	this.searchPlayerIdReferences();
 	this.name.set(newName);
+}
+Player.prototype.clearLetters=function(){
+	if(!plusMode)
+		return;
+
+	var player=this;
+	MarcDialogs.confirm('Delete all pocket letters for this player?', function(){
+		for(var i=0; i<player.letters.length; i++)
+			player.letters[i].clear();
+		UI.Snackbars.show('Pocket letters were deleted.');
+		MarcDialogs.close();
+	});
+}
+function refreshPlayerLetters(){
+	if(!plusMode || !players)
+		return;
+
+	for(var i=0; i<players.length; i++){
+		if(!players[i] || !players[i].letters)
+			continue;
+
+		for(var j=0; j<players[i].letters.length; j++)
+			players[i].letters[j].refreshEditor();
+	}
 }
 
 Player.prototype.searchPlayerIdReferences=function(){
@@ -2806,6 +3829,9 @@ Player.prototype.save=function(){
 		this.itemsStorage2.save();
 		this.itemsStorage3.save();
 	}
+	if(plusMode)
+		for(var i=0; i<this.letters.length; i++)
+			this.letters[i].save();
 
 	savegame.writeU8(this.offset+Offsets.PLAYER_TPCREGION, this.TPCregion);
 	savegame.writeU8(this.offset+Offsets.PLAYER_BIRTHDAYMONTH, this.birthdayMonth);
@@ -3835,6 +4861,8 @@ function initializeEverything2(){
 	players=new Array(4);
 	for(var i=0; i<4; i++)
 		players[i]=new Player(i);
+	el('player-letters-section').style.display=plusMode?'block':'none';
+	refreshPlayerLetters();
 	
 	itemGridPockets=new ItemGrid('itemsPockets', 16, 1);
 	el('pockets').appendChild(itemGridPockets.canvas);
@@ -4036,6 +5064,7 @@ function initializeEverything2(){
 	villagers=new Array(10);
 	for(var i=0; i<10; i++)
 		new Villager(i);
+	refreshPlayerLetters();
 
 	/* read buildings */
 	buildings=new Array();
@@ -4215,12 +5244,12 @@ function selectPlayer(p){
 		el('select-house-pavement').value=currentPlayer.housePavement;
 		el('select-house-mailbox').value=currentPlayer.houseMailbox;
 
-		var PLAYER_BLOCKS=['patterns','rooms0','rooms1','rooms2','rooms3','rooms4','rooms5'];
+		var PLAYER_BLOCKS=['patterns','letters','rooms0','rooms1','rooms2','rooms3','rooms4','rooms5'];
 
 		for(var i=0; i<4; i++){
 			if(i==p){
 				for(j=0; j<PLAYER_BLOCKS.length; j++)
-					if(PLAYER_BLOCKS[j]==='patterns')
+					if(PLAYER_BLOCKS[j]==='patterns' || PLAYER_BLOCKS[j]==='letters')
 						el(PLAYER_BLOCKS[j]+i).style.display='grid';
 					else
 						show(PLAYER_BLOCKS[j]+i);

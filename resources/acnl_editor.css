@@ -746,6 +746,121 @@ span.editable:hover{text-decoration:underline;cursor:pointer}
 	grid-template-columns:repeat(5, 64px);
 	gap:4px;
 }
+.player-section-header{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:12px;
+}
+.player-section-header h3{
+	margin-bottom:0;
+}
+.player-letters{
+	display:grid;
+	grid-template-columns:repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+	gap:14px;
+	margin-top:12px;
+}
+.player-letter{
+	border:1px solid #ddd;
+	border-radius:3px;
+	background:#fff;
+	padding:10px;
+}
+.player-letter-header{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	gap:8px;
+	margin-bottom:8px;
+}
+.player-letter h4{
+	margin:0;
+	color:#3c7748;
+}
+.player-letter-header button{
+	padding:4px 8px;
+}
+.player-letter button:not(:disabled),
+.player-letter select:not(:disabled),
+.player-letter input[type="checkbox"]:not(:disabled),
+.player-letter-present-actions label,
+.player-section-header button:not(:disabled){
+	cursor:pointer;
+}
+.player-letter-fields{
+	display:grid;
+	grid-template-columns:repeat(2, minmax(0, 1fr));
+	gap:8px;
+}
+.player-letter-present{
+	margin-top:10px;
+	padding:8px;
+	background:#f5f5f5;
+	border-radius:3px;
+}
+.player-letter-present>span{
+	display:block;
+	color:#777;
+	font-size:85%;
+	margin-bottom:6px;
+}
+.player-letter-present-body{
+	display:flex;
+	align-items:center;
+	gap:10px;
+}
+.player-letter-present-body .grid{
+	width:36px;
+	height:36px;
+	image-rendering:pixelated;
+}
+.player-letter-present-body .grid:hover{
+	cursor:pointer;
+}
+.player-letter-present-name{
+	flex:1;
+	min-width:0;
+}
+.player-letter-present-actions{
+	display:flex;
+	align-items:center;
+	gap:8px;
+	margin-top:8px;
+}
+.player-letter-present-actions label{
+	margin-right:auto;
+}
+.player-letter-field,
+.player-letter-text-field{
+	display:block;
+}
+.player-letter-field>span,
+.player-letter-text-field>span{
+	display:block;
+	color:#777;
+	font-size:85%;
+	margin-bottom:2px;
+}
+.player-letter-field input,
+.player-letter-field select,
+.player-letter-text-field textarea{
+	box-sizing:border-box;
+	width:100%;
+}
+.player-letter-field .grid{
+	display:block;
+}
+.player-letter-text-fields{
+	margin-top:10px;
+}
+.player-letter-text-field{
+	margin-top:8px;
+}
+.player-letter-text-field textarea{
+	resize:vertical;
+	min-height:48px;
+}
 .patterns-labelle{
 	display:grid;
 	grid-template-columns:repeat(4, 64px);
