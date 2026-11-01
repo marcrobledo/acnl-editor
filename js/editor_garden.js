@@ -1,7 +1,7 @@
 /*
 * Animal Crossing: New Leaf Save Editor
 * Online savegame editor for ACNL videogame
-* (last update: 2026-06-27)
+* (last update: 2026-11-01)
 * By Marc Robledo https://www.marcrobledo.com
 *
 * License:
@@ -686,6 +686,8 @@ Town.prototype.fixTownPlayTimeFromTreeSize=function(){
 		town.playTime.setHours(time);
 		town.daysPlayed=time;
 
+		el('town-sessions').innerHTML=town.daysPlayed;
+	
 		MarcDialogs.close()
 	})
 }
